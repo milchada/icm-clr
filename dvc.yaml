@@ -1,0 +1,48 @@
+# -*- coding: utf-8 -*-
+stages:
+  extract:
+    cmd: python3 -m scripts.extract.extract
+    params:
+    - extract
+    deps:
+    - ./scripts/extract/
+    outs:
+    - ./dataset_raw/
+    frozen: true
+
+  prepare:
+    cmd: python3 -m scripts.preprocessing.prepare
+    params:
+    - prepare
+    deps:
+    - ./dataset_raw/
+    - ./scripts/preprocessing/prepare.py
+    outs:
+    - ./dataset/
+
+  train:
+    cmd: python3 -m scripts.model.train
+    deps:
+    - ./dataset/
+    - ./dataset_raw/
+    - ./scripts/model/
+    outs:
+    - ./runs/
+    
+  write_representation:
+    cmd: python3 -m scripts.postprocessing.write_representation
+    deps:
+    - ./scripts/postprocessing/write_representation.py
+    - ./runs/
+    - ./dataset_raw/
+    - ./dataset/
+    outs:
+    - ./postprocessing/representation.npy
+    
+  create_UMAP:
+    cmd: python3 -m scripts.postprocessing.create_UMAP
+    deps:
+    - ./scripts/postprocessing/create_UMAP.py
+    - ./postprocessing/representation.npy
+    outs:
+    - ./postprocessing/umap.npy

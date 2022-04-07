@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+
+#Mass, Snapshots and Simulations to get the data from
+extract:
+    MIN_STELLAR_MASS: 1e9
+    MAX_STELLAR_MASS: 1e12
+    SNAPSHOTS: [59, 63, 67, 72, 78, 84, 91]
+    SIMULATIONS:
+      - "TNG50-1"
+
+prepare:
+    #Seed for the random split algorithm
+    SPLIT_SEED: 0
+    #Simulation to use with the split fractions: Training, Validation, Testing
+    #Note, that feature scaling is determined by the first set
+    SETS:
+      - ["TNG50-1", [0.8, 0.1, 0.1]]
+    #List of observables and unobservables used
+    #NOTE: the names might alter from the original dataset_raw fields as prepare.py is modifying the fields
+    OBSEVABLES:
+      - 'mass'
+      - 'lookback'
+    UNOBSERVABLES:
+      - 'mean_merger_lookback_time'
+      - 'mean_merger_mass_ratio'
+      - 'mass_last_maj_merger'
+      - 'lookback_time_last_maj_merger'
+      - 'exsitu'
+    #Split According to root descendant
+    ROOT_DESCENDANT_SPLIT: True

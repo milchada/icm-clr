@@ -72,7 +72,6 @@ parser.add_argument('--patience', default=10, type=int,
                     help='stop after loss has not improved for this amount of epochs (default: 10)')
 
 
-
 def main():
     args = parser.parse_args()
     assert args.n_views == 2, "Only two view training is supported. Please use --n-views 2."

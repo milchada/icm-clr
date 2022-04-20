@@ -36,22 +36,8 @@ class SimClrDataset(Dataset):
     
         return img[lower:upper, lower:upper]
     
-    
-    '''
     def _stretch(self, x):
-        x = np.log10(x - np.min(x) + 1)
-        max_val = np.nanmax(x)
-        min_val = np.nanmin(x)
-        x = (x - min_val)/(max_val-min_val)
-        return np.array(x*(2**8), dtype=np.uint8)
-    '''
-    
-    #def _clean(self, x):
-    #    x = np.clip(x, 0., None)
-    #    x /= np.max(x)
-    #    return x
-    
-    def _stretch(self, x):
+        """Perform a log stretch on x and normalize"""
         x[x<=0] = np.nan
         x = np.log10(x)
         x[x<-7] = np.nan
@@ -68,19 +54,27 @@ class SimClrDataset(Dataset):
         return x
     
     def _rgbstretch(self, r, g, b):
-        #r = self._clean(r)
-        #g = self._clean(g)
-        #b = self._clean(b)
+        """Stretch rgb together to preserve the color"""
+        
+        r = np.clip(r, 0, None)
+        g = np.clip(g, 0, None)
+        b = np.clip(b, 0, None)
         
         i = (r + g + b)/3
+        
         factor = self._stretch(i)/i
-        factor = np.nan_to_num(factor)
+        factor = np.nan_to_num(factor, posinf=0.0)
+        
         r *= factor
         g *= factor
         b *= factor
-        r = np.clip(r, 0, 1)
-        g = np.clip(g, 0, 1)
-        b = np.clip(b, 0, 1)
+        
+        max_value = np.max([r,g,b], axis=0)
+        max_mask = max_value > 1
+        
+        r[max_mask] /= max_value[max_mask]
+        g[max_mask] /= max_value[max_mask]
+        b[max_mask] /= max_value[max_mask]
         
         return r, g, b
         
@@ -94,12 +88,8 @@ class SimClrDataset(Dataset):
             G = hdul['SUBARU_HSC.G'].data
             R = hdul['SUBARU_HSC.R'].data
             I = hdul['SUBARU_HSC.I'].data
-            
-        G = self._stretch(G)
-        R = self._stretch(R)
-        I = self._stretch(I)
         
-        #I, R, G = self._rgbstretch(I,R,G)
+        I, R, G = self._rgbstretch(I,R,G)
 
         G = np.array(G*(2**8 - 1), dtype=np.uint8)
         R = np.array(R*(2**8 - 1), dtype=np.uint8)

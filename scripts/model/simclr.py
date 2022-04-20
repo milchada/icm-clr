@@ -8,6 +8,7 @@ from torch.cuda.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from scripts.util.train import save_config_file, accuracy, save_checkpoint
+import numpy as np
 
 torch.manual_seed(0)
 
@@ -114,7 +115,7 @@ class SimCLR(object):
             logging.debug(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}\tTop5 accuracy: {top5[0]}")
             
             #Early stopping
-            loss_memory.append(loss)
+            loss_memory.append(loss.cpu().detach().numpy())
         
             epoch_min_val =  np.argmin(loss_memory)
             if (epoch_counter + 1) > epoch_min_val + self.args.patience:

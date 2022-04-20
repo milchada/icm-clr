@@ -21,14 +21,11 @@ def get_transforms(size, random_crop_scale=(0.2, 1.0), gaussian_blur_sigma=(0.1,
     
     random_affine = transforms.RandomAffine((-10,10), translate=(0.1,0.1), scale=(1,3))
     resize = transforms.Resize(size)
-    
-    random_resized_crop = transforms.RandomResizedCrop(size=size, scale=random_crop_scale, ratio=(1,1))
     gaussian_blur = transforms.GaussianBlur(round_up_to_odd(size*0.1), sigma=gaussian_blur_sigma)
-    std = np.random.uniform(0.0, 0.01)
+    std = np.random.uniform(0.0, 0.02)
     gaussian_noise = GaussianNoise(std = std)
     
     data_transforms = transforms.Compose([transforms.ToPILImage(),
-                                          #random_resized_crop,
                                           random_affine,
                                           resize,
                                           transforms.RandomHorizontalFlip(),

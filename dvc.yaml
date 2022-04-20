@@ -28,7 +28,8 @@ stages:
     - ./scripts/model/
     outs:
     - ./runs/
-    
+
+    frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
@@ -38,7 +39,7 @@ stages:
     - ./dataset/
     outs:
     - ./postprocessing/representation.npy
-    
+
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
     deps:

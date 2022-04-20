@@ -1,0 +1,118 @@
+schema: '2.0'
+stages:
+  extract:
+    cmd: python3 -m scripts.extract.extract
+    deps:
+    - path: ./scripts/extract/
+      md5: 2594fe97c7cc4a8fdea65444fd09bd98.dir
+      size: 57623
+      nfiles: 12
+    params:
+      params.yaml:
+        extract:
+          MIN_STELLAR_MASS: 1000000000.0
+          MAX_STELLAR_MASS: 1000000000000.0
+          SNAPSHOTS:
+          - 59
+          - 63
+          - 67
+          - 72
+          - 78
+          - 84
+          - 91
+          SIMULATIONS:
+          - TNG50-1
+    outs:
+    - path: ./dataset_raw/
+      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      size: 223191428819
+      nfiles: 77181
+  prepare:
+    cmd: python3 -m scripts.preprocessing.prepare
+    deps:
+    - path: ./dataset_raw/
+      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      size: 223191428819
+      nfiles: 77181
+    - path: ./scripts/preprocessing/prepare.py
+      md5: 9d2455b0d2644d1606608620abb95eac
+      size: 11084
+    params:
+      params.yaml:
+        prepare:
+          SPLIT_SEED: 0
+          SETS:
+          - - TNG50-1
+            - - 0.8
+              - 0.1
+              - 0.1
+          OBSEVABLES:
+          - mass
+          - lookback
+          UNOBSERVABLES:
+          - mean_merger_lookback_time
+          - mean_merger_mass_ratio
+          - mass_last_maj_merger
+          - lookback_time_last_maj_merger
+          - exsitu
+          ROOT_DESCENDANT_SPLIT: true
+    outs:
+    - path: ./dataset/
+      md5: 9fa40c8656f562539f844ed940e9b969.dir
+      size: 15390346
+      nfiles: 11
+  train:
+    cmd: python3 -m scripts.model.train
+    deps:
+    - path: ./dataset/
+      md5: 9fa40c8656f562539f844ed940e9b969.dir
+      size: 15390346
+      nfiles: 11
+    - path: ./dataset_raw/
+      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      size: 223191428819
+      nfiles: 77181
+    - path: ./scripts/model/
+      md5: c8c457bc77b88a4eacc948f6f64cd2e9.dir
+      size: 79920
+      nfiles: 12
+    outs:
+    - path: ./runs/
+      md5: 120baa5633a7868860dc1aae95e84c09.dir
+      size: 642666498
+      nfiles: 8
+  write_representation:
+    cmd: python3 -m scripts.postprocessing.write_representation
+    deps:
+    - path: ./dataset/
+      md5: 9fa40c8656f562539f844ed940e9b969.dir
+      size: 15390346
+      nfiles: 11
+    - path: ./dataset_raw/
+      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      size: 223191428819
+      nfiles: 77181
+    - path: ./runs/
+      md5: 120baa5633a7868860dc1aae95e84c09.dir
+      size: 642666498
+      nfiles: 8
+    - path: ./scripts/postprocessing/write_representation.py
+      md5: 2c20a87459ea4fe5f093322413e01f93
+      size: 1491
+    outs:
+    - path: ./postprocessing/representation.npy
+      md5: ec6cddb695c6584fdc9d45ae4f30f96a
+      size: 1800320
+  create_UMAP:
+    cmd: python3 -m scripts.postprocessing.create_UMAP
+    deps:
+    - path: ./postprocessing/representation.npy
+      md5: ec6cddb695c6584fdc9d45ae4f30f96a
+      size: 1800320
+    - path: ./scripts/postprocessing/create_UMAP.py
+      md5: 7363fe1725f4d34a9eb7a9e1f43b5c8d
+      size: 748
+    outs:
+    - path: ./postprocessing/umap.npy
+      md5: 9790f27dec4b3aab4da49f7b826a5dad
+      size: 28256

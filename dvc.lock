@@ -24,14 +24,14 @@ stages:
           - TNG50-1
     outs:
     - path: ./dataset_raw/
-      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
       size: 223191428819
       nfiles: 77181
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./dataset_raw/
-      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
       size: 223191428819
       nfiles: 77181
     - path: ./scripts/preprocessing/prepare.py
@@ -58,61 +58,61 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 9fa40c8656f562539f844ed940e9b969.dir
-      size: 15390346
+      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
+      size: 12452383
       nfiles: 11
   train:
     cmd: python3 -m scripts.model.train
     deps:
     - path: ./dataset/
-      md5: 9fa40c8656f562539f844ed940e9b969.dir
-      size: 15390346
+      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
+      size: 12452383
       nfiles: 11
     - path: ./dataset_raw/
-      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
       size: 223191428819
       nfiles: 77181
     - path: ./scripts/model/
-      md5: c8c457bc77b88a4eacc948f6f64cd2e9.dir
-      size: 79920
-      nfiles: 12
+      md5: 22c6ab317c8d65e59480b684533441e4.dir
+      size: 90117
+      nfiles: 14
     outs:
     - path: ./runs/
-      md5: 120baa5633a7868860dc1aae95e84c09.dir
-      size: 642666498
-      nfiles: 8
+      md5: 9d109710960e471ce5e6cd056b966e25.dir
+      size: 1542397643
+      nfiles: 15
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: 9fa40c8656f562539f844ed940e9b969.dir
-      size: 15390346
+      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
+      size: 12452383
       nfiles: 11
     - path: ./dataset_raw/
-      md5: a1ac615127b122b3b2a2f911c24faffe.dir
+      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
       size: 223191428819
       nfiles: 77181
     - path: ./runs/
-      md5: 120baa5633a7868860dc1aae95e84c09.dir
-      size: 642666498
-      nfiles: 8
+      md5: 9d109710960e471ce5e6cd056b966e25.dir
+      size: 1542397643
+      nfiles: 15
     - path: ./scripts/postprocessing/write_representation.py
-      md5: 2c20a87459ea4fe5f093322413e01f93
+      md5: 79f7c52cbd003968abe1984f8d937f4e
       size: 1491
     outs:
     - path: ./postprocessing/representation.npy
-      md5: ec6cddb695c6584fdc9d45ae4f30f96a
-      size: 1800320
+      md5: 5bdb49d1b1d5a17735fb94a1cc8a2996
+      size: 1437312
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
     deps:
     - path: ./postprocessing/representation.npy
-      md5: ec6cddb695c6584fdc9d45ae4f30f96a
-      size: 1800320
+      md5: 5bdb49d1b1d5a17735fb94a1cc8a2996
+      size: 1437312
     - path: ./scripts/postprocessing/create_UMAP.py
       md5: 7363fe1725f4d34a9eb7a9e1f43b5c8d
       size: 748
     outs:
     - path: ./postprocessing/umap.npy
-      md5: 9790f27dec4b3aab4da49f7b826a5dad
-      size: 28256
+      md5: 232f7ce8ab5361bc44e02c2d60b0bda4
+      size: 22584

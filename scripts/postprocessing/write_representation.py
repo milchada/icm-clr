@@ -23,7 +23,7 @@ model = ResNetSimCLR(args.depth,
                      args.projection_dim,
                      args.num_channels)
 
-checkpoint = torch.load("./runs/Apr19_15-42-22_ravg1001/checkpoint_0012.pth.tar")
+checkpoint = torch.load("./runs/Apr22_13-20-17_ravg1204/checkpoint_0033.pth.tar")
 model.load_state_dict(checkpoint['state_dict'])
 
 features = []

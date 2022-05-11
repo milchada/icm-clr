@@ -20,21 +20,38 @@ stages:
     outs:
     - ./dataset/
 
-  train:
-    cmd: python3 -m scripts.model.train
+  train_simclr:
+    cmd: python3 -m scripts.model.train_simclr
+    params:
+    - data
+    - train_simclr
+    deps:
+    - ./dataset/
+    - ./dataset_raw/
+    - ./scripts/model/train_simclr.py
+    - ./scripts/model/resnet.py
+    - ./scripts/model/resnet_simclr.py
+    - ./scripts/model/losses.py
+    outs:
+    - ./model/resnet.pt
+
+  train_cinn:
+    cmd: python3 -m scripts.model.train_cinn
+    params:
+    - data
+    - train_cinn
     deps:
     - ./dataset/
     - ./dataset_raw/
     - ./scripts/model/
     outs:
-    - ./runs/
+    - ./model/cinn_*
 
-    frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - ./scripts/postprocessing/write_representation.py
-    - ./runs/
+    - ./model/resnet.pt
     - ./dataset_raw/
     - ./dataset/
     outs:

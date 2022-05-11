@@ -176,16 +176,14 @@ class WideBasic(enn.EquivariantModule):
 
 
 class Wide_ResNet(torch.nn.Module):
-    def __init__(self, depth, widen_factor, dropout_rate, num_classes=100,
+    def __init__(self, depth, widen_factor, dropout_rate, num_classes, num_channels,
                  N: int = 16,
                  r: int = 0,
                  f: bool = True,
                  deltaorth: bool = False,
                  fixparams: bool = True,
-                 initial_stride: int = 1,
-                 num_channels = 1,
-                 ):
-        r"""
+                 initial_stride: int = 1):
+        """
         
         Build and equivariant Wide ResNet.
         

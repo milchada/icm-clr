@@ -4,24 +4,38 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
 from astropy.io import fits
+from .transforms import get_default_transforms, get_transforms
+import yaml
 
 class SimClrDataset(Dataset):
+    """Dataset to load and transform images given as .fits"""
 
-    def __init__(self, csv_file, transform=None, n_views=1, labels=False):
+    def __init__(self, image_file, label_file=None, transform=False, n_views=1):
         """
         Args:
-            csv_file (string): Path to the csv file with the image filename as first field.
-            transform (callable, optional): Optional transform to be applied on each sample.
-            n_views (integer, optional): Number of views to return for each image; only used if transform is given
-            labels: Return labels if true
+            image_file (string): Path to the csv file with "image_path" as field.
+            label_file (string, optional): Path to the csv file with labels to return (If not set, only images are returned).
+            transform (boolean, optional): Apply random transformations at each call (Default: False).
+            n_views (integer, optional): Number of views to return for each image (Default: 1).
         """
-        self.df = pd.read_csv(csv_file)
+        
+        self.df = pd.read_csv(image_file)
         self.image_paths = self.df['image_path']
+        
+        if label_file is None:
+            self.df_label = None
+        else:
+            self.df_label = pd.read_csv(label_file)
+            assert len(self.df) == len(self.df_label), "Error: Number of rows in the image and label csv have to be equal!"
+            
+        
         self.transform = transform
         self.n_views = n_views
-        self.labels = labels
+        
+        #Load desired image size from the parameter file (pixel per side)
+        data_params = yaml.safe_load(open('params.yaml'))['data']
+        self.image_size = data_params["IMAGE_SIZE"]
         
         assert n_views >= 1
 
@@ -100,23 +114,19 @@ class SimClrDataset(Dataset):
     def __getitem__(self, idx):
 
         image = self._get_single_image(idx)
-        
-        label = np.array(self.df.iloc[idx, :].to_numpy())
     
         if self.transform:
-            samples = [self.transform(image) for i in range(self.n_views)]
+            samples = [get_transforms(self.image_size)(image) for i in range(self.n_views)]
+        else:
+            samples = [get_default_transforms(self.image_size)(image) for i in range(self.n_views)]
             
-            if not self.labels:
-                return samples
-            else:
-                return {'image': samples, 'label': label}
+        if self.df_label is None:
+            return samples
+        else:
+            label = np.array(self.df_label.iloc[idx, :].to_numpy())
+            
+            return samples, label
         
-        else: 
-            
-            if not self.labels:
-                return [image]
-            else:
-                return {'image': [image], 'label': label}
     
     
 if __name__ == "__main__":
@@ -137,7 +147,7 @@ if __name__ == "__main__":
         plt.savefig('./temp/SimClrDataset_' + str(i) + '.png')
 
         dataset = SimClrDataset("./dataset/m_train.csv",
-                                transform=get_transforms(128),
+                                transform=True,
                                 n_views=n_views)
 
         for j in range(n_views):

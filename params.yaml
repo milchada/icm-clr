@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+#Parameter for the metric tracking with neptune
+neptune:
+    project_name: "lukas.eisert/simclr"
+    api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
+    tags: ["debug"]
+
 #Mass, Snapshots and Simulations to get the data from
 extract:
     MIN_STELLAR_MASS: 1e9
@@ -28,3 +34,102 @@ prepare:
       - 'exsitu'
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
+    
+data:
+    #Valid range for the UNOBSERVABLE parameters; if samples are outside of this interval, results are treated as categorical 
+    #Used to identify galaxies with no major mergers
+    VALID_RANGE:
+      - None
+      - None
+      - [7., 11.5]
+      - [0., 13.7]
+      - None
+    IMAGE_SIZE: 128
+
+train_simclr:
+    #Number of data loading workers
+    NUM_WORKERS: 18
+    #Learning Rate for the SIMCLR training
+    LEARNING_RATE: 0.0003
+    #Weight decay for the simclr training
+    WEIGHT_DECAY: 0.0001
+    #Size of batches used for the training and evaluation
+    BATCH_SIZE: 64
+    #Maximum number of training epochs
+    NUM_EPOCHS: 30
+    #Stop the training after validation loss has not improved for $PATIENCE epochs
+    PATIENCE: 5
+
+train_cinn:
+    #Size of batches used for the training and evaluation
+    BATCH_SIZE: 2048
+    #Maximum number of training epochs
+    NUM_EPOCHS: 50
+    #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
+    LR_DECAY: 0.7
+    MILESTONES: [5,10,15,20,25,30,35,40,45]
+    #Stop the training after validation loss has not improved for $PATIENCE epochs
+    PATIENCE: 5
+    #Level of the gaussian noise augmentation
+    NOISE: 0.025
+    #Number of models used in the averaging
+    NUM_MODELS: 7
+
+model:
+    #Parameters of the Adam Optimizer
+    LEARNING_RATE: 0.002
+    CLAMP: 1.0
+    L2_DECAY: 0.00002
+    BETA_1: 0.9
+    BETA_2: 0.999
+    
+    #Number of coupling layers
+    NUM_COUPLING_LAYERS: 12
+    
+    #Conditional input size of the coupling layers 
+    NUM_COND_NODES: 128
+    
+    #Width and Depth of the hidden networks in the coupling layers 
+    NUM_HIDDEN_NODES: 128
+    NUM_HIDDEN_LAYERS: 2
+    
+    #Dropout and Batch Norm between the layers in the hidden networks in the coupling layers
+    DROPOUT: 0.0
+    BATCH_NORM: False
+
+    #Width and Depth of the conditional network
+    NUM_HIDDEN_NODES_COND: 128    
+    NUM_HIDDEN_LAYERS_COND: 2
+    
+    #Dropout and Batch Norm between the layers in the conditional network
+    DROPOUT_COND: 0.0
+    BATCH_NORM_COND: False
+    
+    #Parameters for the resnet 
+    RESNET_DEPTH: 16
+    RESNET_WIDTH: 1
+    RESNET_DROPOUT: 0.3
+    RESNET_REPRESENTATION_DIM: 128
+    RESNET_PROJECTION_DIM: 128
+    RESNET_PROJECTION_DEPTH: 1
+    RESNET_NUM_CHANNELS: 3
+
+losses:
+    #Kernel vor forward and backward maximum mean discrepancy loss
+    mmd_forw_kernels: [[0.2, 2], [1.5, 2], [3.0, 2]]
+    mmd_back_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
+    
+    #Prefactor for the losses
+    #i.e. the overall loss is given as weighted sum with the weights given as prefactors
+    lambd_max_likelihood: 1.
+    lambd_mmd_forw: 0.
+    lambd_mmd_back: 0.
+    lambd_mae: 0.
+    lambd_mse: 0.
+    
+    #Softmax temperature for NCE Loss
+    nce_temperature: 0.07
+    
+sample_posterior:
+    #Number of posterior samples drawn for each galaxy in the test set
+    NUM_SAMPLES: 1000

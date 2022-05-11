@@ -18,6 +18,10 @@ postprocessing_path = "./postprocessing/"
 metrics_path = "./metrics/"
 plots_path = "./plots/"
 
+resnet_path = model_path + 'resnet.pt'
+
+device = 'cuda:0'
+
 #Label dict (code friendly -> human friendly)
 label_dict = {"fraction_disk_stars": "Fraction of Disk Stars [D/T]",
               "mass": "Stellar Mass [log $M_\odot$]",

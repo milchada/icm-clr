@@ -116,3 +116,49 @@ stages:
     - path: ./postprocessing/umap.npy
       md5: 232f7ce8ab5361bc44e02c2d60b0bda4
       size: 22584
+  train_simclr:
+    cmd: python3 -m scripts.model.train_simclr
+    deps:
+    - path: ./dataset/
+      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
+      size: 12452383
+      nfiles: 11
+    - path: ./dataset_raw/
+      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
+      size: 223191428819
+      nfiles: 77181
+    - path: ./scripts/model/losses.py
+      md5: baeadb85948b485147af65a17c14cc5a
+      size: 3599
+    - path: ./scripts/model/resnet.py
+      md5: 119eb97321e303a901b5f1430e516b07
+      size: 16441
+    - path: ./scripts/model/resnet_simclr.py
+      md5: c1700e6ae2825ec5e0755aa8317135e7
+      size: 1748
+    - path: ./scripts/model/train_simclr.py
+      md5: ae336127d29cbcc64263b0135007fb9d
+      size: 6915
+    params:
+      params.yaml:
+        data:
+          VALID_RANGE:
+          - None
+          - None
+          - - 7.0
+            - 11.5
+          - - 0.0
+            - 13.7
+          - None
+          IMAGE_SIZE: 128
+        train_simclr:
+          NUM_WORKERS: 18
+          LEARNING_RATE: 0.0003
+          WEIGHT_DECAY: 0.0001
+          BATCH_SIZE: 64
+          NUM_EPOCHS: 30
+          PATIENCE: 5
+    outs:
+    - path: ./model/resnet.pt
+      md5: 14b3c3b7b5768a54f12a4f000e2a416d
+      size: 125136030

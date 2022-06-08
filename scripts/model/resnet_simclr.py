@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torchsummary import summary
+#from torchsummary import summary
 from scripts.model.resnet import Wide_ResNet
 
 import yaml
@@ -9,7 +9,7 @@ model_default_params = yaml.safe_load(open('params.yaml'))['model']
 
 class ResNetSimCLR(nn.Module):
 
-    def __init__(self, params):
+    def __init__(self, params={}):
         
         super(ResNetSimCLR, self).__init__()
         
@@ -21,7 +21,11 @@ class ResNetSimCLR(nn.Module):
                                   params["RESNET_WIDTH"],
                                   params["RESNET_DROPOUT"],
                                   num_classes=params["RESNET_REPRESENTATION_DIM"],
-                                  num_channels=params["RESNET_NUM_CHANNELS"])
+                                  num_channels=params["RESNET_NUM_CHANNELS"],
+                                  N=params["RESNET_ROTATION_EQUIVARIANCE"],
+                                  f=params["RESNET_REFLECTION_EQUIVARIANCE"],
+                                  r=params["RESNET_ROTATION_RESTRICTION"],
+                                  initial_stride=params["RESNET_INITIAL_STRIDE"])
         
 
         # add mlp projection head
@@ -35,7 +39,7 @@ class ResNetSimCLR(nn.Module):
             else:
                 self.projection.add_module("ResNet_Linear_" + str(i), nn.Linear(params["RESNET_PROJECTION_DIM"], params["RESNET_PROJECTION_DIM"]))
         
-        summary(self.projection.cuda(), (params["RESNET_NUM_CHANNELS"], 128, 128))
+        #summary(self.projection.cuda(), (params["RESNET_NUM_CHANNELS"], 128, 128))
         
     def forward(self, x, projection_head=True):
         

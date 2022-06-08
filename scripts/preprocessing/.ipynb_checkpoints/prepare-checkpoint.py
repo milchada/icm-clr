@@ -116,17 +116,20 @@ def add_image_path(df, image_path):
     snapshot_ids = df["snapshot_id"].to_numpy(dtype=np.int32)
     subhalo_ids = df["subhalo_id"].to_numpy(dtype=np.int32)
 
+    #Loop over all images
     for j, (snap, i, filepath) in enumerate(zip(snapnums, sub_ids, filelist)):
+        #Get matched df index for the image
         index = np.argwhere(np.logical_and(snapshot_ids==snap, subhalo_ids==i))
         assert len(index)<=1, "Multiple Data for one Image"
 
+        #Check if there is data in df available for the given image
         if len(index) == 1:
             index = index[0]
             target.append(origin[index])
             mask.append(True)
         else:
             mask.append(False)
-           
+
     df_matched = pd.DataFrame(np.array(target)[:,0,:], columns=df.columns)
     df_matched['image_path'] = np.array(filelist)[mask]
         

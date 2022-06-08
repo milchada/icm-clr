@@ -16,24 +16,43 @@ class CombinedModel(nn.Module):
         #Use default parameters if not set
         params = dict(model_default_params, **params)
 
+        #Load model architectures
         self.resnet = ResNetSimCLR(params)
         self.cinn = cINN(params)
-
-        self.trainable_parameters = [p for p in self.cinn.parameters() if p.requires_grad]
-        self.trainable_parameters += [p for p in self.resnet.parameters() if p.requires_grad]
-               
+         
         for p in self.trainable_parameters:
-            p.data = 0.01 * torch.randn_like(p)
-            
+            p.data = 0.01 * torch.randn_like(p)   
+
+    @property
+    def trainable_parameters(self):
+        """Return trainable parameters"""
+        trainable_parameters = [p for p in self.cinn.parameters() if p.requires_grad]
+        trainable_parameters += [p for p in self.resnet.parameters() if p.requires_grad]
+        
+        return trainable_parameters
+    
+    @property
+    def num_trainable_parameters(self):
+        """Return number of trainable parameters"""
+        return sum(p.numel() for p in self.trainable_parameters)
+    
     def load_pretrained_resnet(self, path):
-        """Load the with simclr pretrained resnet"""
-        checkpoint = torch.load(path)
+        """Load the simclr pretrained resnet"""
+        checkpoint = torch.load(path, map_location=torch.device('cpu'))
         self.resnet.load_state_dict(checkpoint)
+        
+    def fix_resnet_weights(self):
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+            
+    def unfix_resnet_weights(self):
+        for param in self.resnet.parameters():
+            param.requires_grad = True
             
     def forward(self, x, l):
-        z, jac = self.cinn(x, c=self.resnet(l, projection_head=False), rev=False, jac=True)
+        z, jac = self.cinn(x.to(torch.float16), l=self.resnet(l, projection_head=False).to(torch.float16))
         return z, jac
 
     def reverse_sample(self, z, l):
-        return self.cinn(z, c=self.resnet(l, projection_head=False), rev=True, jac=False)[0]
+        return self.cinn.reverse_sample(z.to(torch.float16), l=self.resnet(l, projection_head=False).to(torch.float16)).to(torch.float64)
     

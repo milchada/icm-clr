@@ -1,39 +1,32 @@
 import torch
-from scripts.data.SimClrDataset import SimClrDataset
-from scripts.data.transforms import get_transforms
-from scripts.data.transforms import get_default_transforms
-from scripts.model.resnet_simclr import ResNetSimCLR
-from scripts.model.train import parser
+import scripts.data.data as data
+from scripts.model.load import load_resnet_model
 from torch.cuda.amp import autocast
 import config as c
 from tqdm import tqdm
 import numpy as np
 
-args = parser.parse_args()
+#Prepare data
+test_loader = data.get_test_loader(batch_size=128, labels=False, transform=False, n_views=1, shuffle=False, drop_last=False)
 
-transforms = get_default_transforms(args.image_size)
-test_dataset = SimClrDataset('~/simclr/dataset/m_test.csv', transform=transforms)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
-                                                        num_workers=args.workers, pin_memory=True, drop_last=False)
+#Load model
+model = load_resnet_model()
+model.eval()
 
-model = ResNetSimCLR(args.depth,
-                     args.widen_factor,
-                     args.dropout_rate,
-                     args.representation_dim,
-                     args.projection_dim,
-                     args.num_channels)
+features_list = []
 
-checkpoint = torch.load("./runs/Apr22_13-20-17_ravg1204/checkpoint_0033.pth.tar")
-model.load_state_dict(checkpoint['state_dict'])
-
-features = []
-
+#Get representations for all test galaxies
 for images in tqdm(test_loader):
     images = torch.cat(images, dim=0)
-    with autocast(enabled=args.fp16_precision):
-        features.append(model(images, projection_head=False).detach().numpy())
+    images = images.to(c.device)
+    
+    with torch.no_grad(), autocast(enabled=True):
+        features = model(images, projection_head=False).detach().cpu().numpy()
+        features_list.append(features)
         
-features = np.concatenate(features, axis=0)
+features = np.concatenate(features_list, axis=0)
+
+#Save
 with open(c.postprocessing_path + 'representation.npy', 'wb') as f:
     np.save(f, features)
         

@@ -89,10 +89,8 @@ if __name__ == "__main__":
         print("Load " + simulation)
         output_path_sim = c.dataset_raw_path + simulation + "/labels/"
         
-        if os.path.exists(output_path_sim):
-            shutil.rmtree(output_path_sim) 
-            
-        os.makedirs(output_path_sim)
+        if not os.path.exists(output_path_sim):
+            os.makedirs(output_path_sim)
      
         for snap in tqdm(snapshots, total=len(snapshots), disable=False):
     

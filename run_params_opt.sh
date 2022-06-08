@@ -19,4 +19,17 @@
 #SBATCH --mail-user=eisert@mpia.de
 #SBATCH --time=23:00:00
 
+module load anaconda/3
+
+module load intel/19.1.3
+module load impi/2019.9
+module load fftw-serial
+module load hdf5-serial
+module load gsl
+
+module load cuda/11.2
+module load cudnn/8.1.0
+module load pytorch/gpu-cuda-11.2/1.8.1
+conda activate simclr
+
 srun python -m scripts.util.params_opt

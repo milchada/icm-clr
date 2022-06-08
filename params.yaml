@@ -8,9 +8,9 @@ neptune:
 
 #Mass, Snapshots and Simulations to get the data from
 extract:
-    MIN_STELLAR_MASS: 1e9
+    MIN_STELLAR_MASS: 1e10
     MAX_STELLAR_MASS: 1e12
-    SNAPSHOTS: [59, 63, 67, 72, 78, 84, 91]
+    SNAPSHOTS: [72, 78, 84, 91]
     SIMULATIONS:
       - "TNG50-1"
 
@@ -27,10 +27,11 @@ prepare:
       - 'mass'
       - 'lookback'
     UNOBSERVABLES:
-      - 'mean_merger_lookback_time'
-      - 'mean_merger_mass_ratio'
+      - 'lookback'
+      - 'mass'
+      - 'fraction_disk_stars'
+      - 'stellar_age'
       - 'mass_last_maj_merger'
-      - 'lookback_time_last_maj_merger'
       - 'exsitu'
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
@@ -41,14 +42,17 @@ data:
     VALID_RANGE:
       - None
       - None
-      - [7., 11.5]
-      - [0., 13.7]
       - None
+      - None
+      - [7., 11.5]
+      #- [0., 13.7]
+      - None
+    #Edge size of the images
     IMAGE_SIZE: 128
-
-train_simclr:
     #Number of data loading workers
     NUM_WORKERS: 18
+
+train_simclr:
     #Learning Rate for the SIMCLR training
     LEARNING_RATE: 0.0003
     #Weight decay for the simclr training
@@ -56,32 +60,47 @@ train_simclr:
     #Size of batches used for the training and evaluation
     BATCH_SIZE: 64
     #Maximum number of training epochs
-    NUM_EPOCHS: 30
-    #Stop the training after validation loss has not improved for $PATIENCE epochs
+    NUM_EPOCHS: 40
+    #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 5
 
 train_cinn:
-    #Size of batches used for the training and evaluation
-    BATCH_SIZE: 2048
-    #Maximum number of training epochs
-    NUM_EPOCHS: 50
-    #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
-    LR_DECAY: 0.7
-    MILESTONES: [5,10,15,20,25,30,35,40,45]
-    #Stop the training after validation loss has not improved for $PATIENCE epochs
-    PATIENCE: 5
-    #Level of the gaussian noise augmentation
-    NOISE: 0.025
-    #Number of models used in the averaging
-    NUM_MODELS: 7
-
-model:
     #Parameters of the Adam Optimizer
-    LEARNING_RATE: 0.002
-    CLAMP: 1.0
-    L2_DECAY: 0.00002
+    L2_DECAY: 0.0001
     BETA_1: 0.9
     BETA_2: 0.999
+    
+    #Initial learning rate
+    LEARNING_RATE: 0.002
+    #Reduce the Learning rate if the validation loss has not improved for this number of epochs
+    LR_PATIENCE: 5 
+    #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
+    LR_DECAY: 0.5
+    
+    #Maximum number of training epochs
+    NUM_EPOCHS: 200
+    #Stop the training after validation loss has not improved for this number of epochs
+    PATIENCE: 20
+
+    #Use the simclr pretrained resnet
+    USE_PRETRAINED_RESNET: True
+    #Fix initialy the Resnet params during training
+    FIX_RESNET_PARAMS: True
+    #Unfix the RESNET params if the cINN training has reached this learning rate
+    #(set to 0 if RESNET should be always fixed)
+    RESNET_LR_THRESHOLD: 0.00005
+    
+    #Size of batches used for the training (and validation)
+    BATCH_SIZE: 256
+
+    #Level of the gaussian noise augmentation (Note that quantities are normalized)
+    NOISE: 0.025
+    #Number of models used in the averaging
+    NUM_MODELS: 1
+
+model:
+    #Clamp parameter of the coupling layers
+    CLAMP: 1.0
     
     #Number of coupling layers
     NUM_COUPLING_LAYERS: 12
@@ -107,19 +126,35 @@ model:
     
     #Parameters for the resnet 
     RESNET_DEPTH: 16
-    RESNET_WIDTH: 1
+    RESNET_WIDTH: 4
     RESNET_DROPOUT: 0.3
     RESNET_REPRESENTATION_DIM: 128
     RESNET_PROJECTION_DIM: 128
-    RESNET_PROJECTION_DEPTH: 1
+    RESNET_PROJECTION_DEPTH: 2
     RESNET_NUM_CHANNELS: 3
+    
+    #The Number of discrete rotations the RESNET is initially equivariant
+    RESNET_ROTATION_EQUIVARIANCE: 8
+    #Restrict the Rotation equivariance 
+    #0 = No restriction
+    #1 = Restriction before the last block to N/2
+    #2 = Restriction after the first block to N/2
+    #3 = Restriction after the first (to N/2) and the second block (to 1)
+    RESNET_ROTATION_RESTRICTION: 0
+    #Flag if the RESNET
+    RESNET_REFLECTION_EQUIVARIANCE: True
+    #Initial Stride of the Resnet
+    RESNET_INITIAL_STRIDE: 2
+    
+    #NOTE: If RESNET_ROTATION_EQUIVARIANCE = 1 and RESNET_REFLECTION_EQUIVARIANCE = False
+    #the RESNET should be equivalent to standard CNNs
 
 losses:
     #Kernel vor forward and backward maximum mean discrepancy loss
     mmd_forw_kernels: [[0.2, 2], [1.5, 2], [3.0, 2]]
     mmd_back_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
     
-    #Prefactor for the losses
+    #Prefactor for the cINN losses
     #i.e. the overall loss is given as weighted sum with the weights given as prefactors
     lambd_max_likelihood: 1.
     lambd_mmd_forw: 0.
@@ -127,9 +162,15 @@ losses:
     lambd_mae: 0.
     lambd_mse: 0.
     
-    #Softmax temperature for NCE Loss
+    #Softmax temperature for SimCLR NCE Loss
     nce_temperature: 0.07
     
 sample_posterior:
     #Number of posterior samples drawn for each galaxy in the test set
-    NUM_SAMPLES: 1000
+    NUM_SAMPLES: 400
+
+peak_detection:
+    EVAL_BINS: 512
+    MIN_PEAK_DISTANCE: 32
+    MIN_PEAK_PROMINENCE: 0.02
+    MIN_PEAK_HEIGHT: 0.05

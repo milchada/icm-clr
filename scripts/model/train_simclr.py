@@ -5,6 +5,7 @@ from scripts.data.SimClrDataset import SimClrDataset
 from scripts.model.resnet_simclr import ResNetSimCLR
 from scripts.model.losses import loss_simclr
 import config as c
+from scripts.data import data
 from tqdm import tqdm
 import numpy as np
 import os
@@ -75,19 +76,12 @@ def train_simclr(params={},
             experiment_tracking = False
     
     #Prepare the data 
-    train_dataset = SimClrDataset(c.dataset_path + 'm_train.csv', transform=True, n_views=N_VIEWS)
-    val_dataset = SimClrDataset(c.dataset_path + 'm_val.csv', transform=True, n_views=N_VIEWS)
-    
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=params["BATCH_SIZE"], shuffle=True,
-        num_workers=params['NUM_WORKERS'], pin_memory=True, drop_last=True)
-    
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=params["BATCH_SIZE"], shuffle=True,
-        num_workers=params['NUM_WORKERS'], pin_memory=True, drop_last=True)
+    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, transform=True, n_views=N_VIEWS, shuffle=True, drop_last=True) 
+    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=False, transform=True, n_views=N_VIEWS, shuffle=True, drop_last=True)
 
     #Load the model
     model = ResNetSimCLR(params)
+    model.to(c.device)
     
     optimizer = torch.optim.Adam(model.parameters(), params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
 

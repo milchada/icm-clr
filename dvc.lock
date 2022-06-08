@@ -10,12 +10,9 @@ stages:
     params:
       params.yaml:
         extract:
-          MIN_STELLAR_MASS: 1000000000.0
+          MIN_STELLAR_MASS: 10000000000.0
           MAX_STELLAR_MASS: 1000000000000.0
           SNAPSHOTS:
-          - 59
-          - 63
-          - 67
           - 72
           - 78
           - 84
@@ -24,9 +21,9 @@ stages:
           - TNG50-1
     outs:
     - path: ./dataset_raw/
-      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
-      size: 223191428819
-      nfiles: 77181
+      md5: 7b8fc82f4e03313def9232c2feaaa1c5.dir
+      size: 426259
+      nfiles: 4
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:

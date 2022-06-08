@@ -7,9 +7,7 @@ stages:
     deps:
     - ./scripts/extract/
     outs:
-    - ./dataset_raw/
-    frozen: true
-
+    - ./dataset_raw/TNG50-1/labels/
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     params:
@@ -28,10 +26,10 @@ stages:
     deps:
     - ./dataset/
     - ./dataset_raw/
-    - ./scripts/model/train_simclr.py
+    - ./scripts/model/losses.py
     - ./scripts/model/resnet.py
     - ./scripts/model/resnet_simclr.py
-    - ./scripts/model/losses.py
+    - ./scripts/model/train_simclr.py
     outs:
     - ./model/resnet.pt
 
@@ -46,6 +44,9 @@ stages:
     - ./scripts/model/
     outs:
     - ./model/cinn_*
+
+  #Resnet Analysis
+  #---------------------------------------------------------
 
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
@@ -64,3 +65,73 @@ stages:
     - ./postprocessing/representation.npy
     outs:
     - ./postprocessing/umap.npy
+
+  #Postprocessing
+  #---------------------------------------------------------
+  sample_posterior:
+    cmd: python3 -m scripts.postprocessing.sample_posterior
+    params:
+    - sample_posterior
+    deps:
+    - ./dataset/
+    - ./model/
+    - data.py
+    - ./scripts/postprocessing/sample_posterior.py
+    outs:
+    - ./postprocessing/posterior.npy:
+        cache: false
+        
+    frozen: true
+
+  test_z:
+    cmd: python3 -m scripts.postprocessing.test_z
+    deps:
+    - ./scripts/postprocessing/test_z.py
+    - ./model/
+    - ./dataset/
+    outs:
+    - ./plots/test_z/
+    - ./postprocessing/z_norm.npy
+    metrics:
+    - ./metrics/test_z.json
+
+  peak_detection:
+    cmd: python3 -m scripts.postprocessing.peak_detection
+    params:
+    - peak_detection
+    deps:
+    - ./postprocessing/posterior.npy
+    - ./scripts/postprocessing/peak_detection.py
+    outs:
+    - ./postprocessing/map.npy
+    - ./postprocessing/peak_number.npy
+    - ./postprocessing/peak_position.npy
+    - ./postprocessing/peak_prominence.npy
+    metrics:
+    - ./metrics/peak_detection.json
+    
+    frozen: true
+
+  #Plots
+  #---------------------------------------------------------
+  plot_posterior:
+    cmd: python3 -m scripts.plot.plot_posterior
+    deps:
+    - ./scripts/plot/plot_posterior.py
+    - ./model/
+    - ./dataset/
+    outs:
+    - ./plots/posterior_example.pdf
+  
+  plot_map:
+    cmd: python3 -m scripts.plot.plot_map
+    deps:
+    - ./scripts/plot/plot_map.py
+    - ./postprocessing/peak_number.npy
+    - ./postprocessing/peak_position.npy
+    - ./postprocessing/map.npy
+    - ./dataset/
+    outs:
+    - ./plots/map/
+    metrics:
+    - ./metrics/plot_map.json

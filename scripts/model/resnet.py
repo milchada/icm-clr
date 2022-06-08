@@ -9,17 +9,6 @@ import e2cnn.nn as enn
 from e2cnn.nn import init
 from e2cnn import gspaces
 
-__all__ = [
-    "wrn16_8_stl_d8d4d1",
-    "wrn16_8_stl_d8d4d4",
-    "wrn16_8_stl_d1d1d1",
-    "wrn28_10_d8d4d1",
-    "wrn28_7_d8d4d1",
-    "wrn28_10_c8c4c1",
-    "wrn28_10_d1d1d1"
-]
-
-
 ########################################################################################################################
 # Code adapted from:
 # https://github.com/meliketoy/wide-resnet.pytorch/blob/master/networks/wide_resnet.py

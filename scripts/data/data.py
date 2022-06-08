@@ -13,6 +13,8 @@ Note that an import of this file returns an instance of the class Data
 import torch
 from torch.utils.data import DataLoader
 
+from scripts.data.SimClrDataset import SimClrDataset
+
 import pandas as pd
 from pickle import load
 import numpy as np
@@ -30,6 +32,8 @@ class Data():
         #Load Default Params
         data_params = yaml.safe_load(open('params.yaml'))['data']
         self.__valid_range = data_params['VALID_RANGE']
+        self.__num_workers = data_params['NUM_WORKERS']
+        self.__image_size = data_params['IMAGE_SIZE']
         
     
     @property
@@ -197,51 +201,32 @@ class Data():
     def NUM_COND(self):
         return len(self.l_header)
     
+    @property
+    def IMAGE_SIZE(self):
+        return self.__image_size
+    
 
-    #Pytorch data loader
+    #Pytorch data loader for batch-wise multithreaded loading of images
     #-----------------------------------------------------
-    def get_train_loader(self, batch_size):
-        x_train = torch.Tensor(self.df_x_train.to_numpy())
-        l_train = torch.Tensor(self.df_l_train.to_numpy())
-        
-        train_data = torch.utils.data.TensorDataset(x_train, l_train)
-        
-        train_loader  = DataLoader(train_data,
-                                   batch_size=batch_size,
-                                   shuffle=True,
-                                   pin_memory=True,
-                                   drop_last=True)
-        
-        return train_loader
+    def get_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last, meta_path, label_path):
+        if labels:
+            dataset = SimClrDataset(meta_path, label_file=label_path, transform=transform, n_views=n_views)
+        else:
+            dataset = SimClrDataset(meta_path, transform=transform, n_views=n_views)
     
-    def get_val_loader(self, batch_size):
-        x_val = torch.Tensor(self.df_x_val.to_numpy())
-        l_val = torch.Tensor(self.df_l_val.to_numpy())
+        loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                                                      num_workers=self.__num_workers, pin_memory=True, drop_last=drop_last)
         
-        val_data = torch.utils.data.TensorDataset(x_val, l_val)
+        return loader
         
-        val_loader  = DataLoader(val_data,
-                                 batch_size=batch_size,
-                                 shuffle=True,
-                                 pin_memory=True,
-                                 drop_last=True)
-        
-        return val_loader
+    def get_train_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, transform, n_views, shuffle, drop_last, c.dataset_path + 'm_train.csv', c.dataset_path + 'x_train.csv')
     
-    def get_test_loader(self, batch_size):
-        x_test = torch.Tensor(self.df_x_test.to_numpy())
-        l_test = torch.Tensor(self.df_l_test.to_numpy())
-        
-        test_data = torch.utils.data.TensorDataset(x_test, l_test)
-        
-        test_loader  = DataLoader(test_data,
-                                  batch_size=batch_size,
-                                  shuffle=True,
-                                  pin_memory=True,
-                                  drop_last=True)
-        
-        return test_loader
-        
+    def get_val_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, transform, n_views, shuffle, drop_last, c.dataset_path + 'm_val.csv', c.dataset_path + 'x_val.csv')
+    
+    def get_test_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, transform, n_views, shuffle, drop_last, c.dataset_path + 'm_test.csv', c.dataset_path + 'x_test.csv')
 
 #When importing this module, the module is replaced by an instance of the class Data
 # => the class is transparent to the outside 

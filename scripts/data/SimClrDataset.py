@@ -28,7 +28,6 @@ class SimClrDataset(Dataset):
         else:
             self.df_label = pd.read_csv(label_file)
             assert len(self.df) == len(self.df_label), "Error: Number of rows in the image and label csv have to be equal!"
-            
         
         self.transform = transform
         self.n_views = n_views
@@ -38,6 +37,10 @@ class SimClrDataset(Dataset):
         self.image_size = data_params["IMAGE_SIZE"]
         
         assert n_views >= 1
+        
+        #If we want to return labels assure that only one image is returned per label
+        if label_file is not None:
+            assert n_views == 1
 
     def __len__(self):
         return len(self.df)
@@ -123,8 +126,7 @@ class SimClrDataset(Dataset):
         if self.df_label is None:
             return samples
         else:
-            label = np.array(self.df_label.iloc[idx, :].to_numpy())
-            
+            label = torch.tensor(self.df_label.iloc[idx, :].to_numpy())
             return samples, label
         
     
@@ -135,14 +137,17 @@ if __name__ == "__main__":
     from .transforms import get_transforms
     
     n_galaxies=20
-    n_views=1
+    n_views=2
     
     for i in range(n_galaxies):
     
-        dataset = SimClrDataset("./dataset/m_train.csv")
+        dataset = SimClrDataset("./dataset/m_train.csv", label_file="./dataset/x_train.csv")
         print(dataset[i])
-        image = dataset[i][0]
+        image = dataset[i][0][0]
+        label = dataset[i][1]
+        print(label)
         print(image.shape)
+        image = np.swapaxes(image, 0, 2)
         plt.imshow(image)
         plt.savefig('./temp/SimClrDataset_' + str(i) + '.png')
 

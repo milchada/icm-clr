@@ -52,5 +52,10 @@ normalized_label_dict = {"fraction_disk_stars": "Fraction of Disk Stars",
                          "mass_last_maj_merger": "Last Major Merger Mass"
                          }
 
-#List of quantites which are in log but should be not treated as log in some of the plots (especially regarding relative errors)
-logged_quantities = ["mass_last_maj_merger"]
+#Datasets
+import scripts.data.datasets as datasets
+
+dataset_dict = {"TNG": datasets.TNGDataset,
+                "TNG_Ideal": datasets.TNGIdealDataset}
+
+

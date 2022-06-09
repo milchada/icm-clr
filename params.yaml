@@ -47,6 +47,8 @@ data:
       - [7., 11.5]
       #- [0., 13.7]
       - None
+    #Choose the Datasetobjects which determines how the images are loaded and streched
+    DATASET: 'TNG_Ideal' 
     #Edge size of the images
     IMAGE_SIZE: 128
     #Number of data loading workers
@@ -60,7 +62,7 @@ train_simclr:
     #Size of batches used for the training and evaluation
     BATCH_SIZE: 64
     #Maximum number of training epochs
-    NUM_EPOCHS: 40
+    NUM_EPOCHS: 20
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 5
 

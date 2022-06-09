@@ -13,8 +13,6 @@ Note that an import of this file returns an instance of the class Data
 import torch
 from torch.utils.data import DataLoader
 
-from scripts.data.SimClrDataset import SimClrDataset
-
 import pandas as pd
 from pickle import load
 import numpy as np
@@ -34,7 +32,7 @@ class Data():
         self.__valid_range = data_params['VALID_RANGE']
         self.__num_workers = data_params['NUM_WORKERS']
         self.__image_size = data_params['IMAGE_SIZE']
-        
+        self.__dataset = data_params['DATASET'] 
     
     @property
     def valid_range(self):
@@ -209,10 +207,13 @@ class Data():
     #Pytorch data loader for batch-wise multithreaded loading of images
     #-----------------------------------------------------
     def get_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last, meta_path, label_path):
+        
+        dataset_func = c.dataset_dict[self.__dataset]
+        
         if labels:
-            dataset = SimClrDataset(meta_path, label_file=label_path, transform=transform, n_views=n_views)
+            dataset = dataset_func(meta_path, label_file=label_path, transform=transform, n_views=n_views)
         else:
-            dataset = SimClrDataset(meta_path, transform=transform, n_views=n_views)
+            dataset = dataset_func(meta_path, transform=transform, n_views=n_views)
     
         loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
                                                       num_workers=self.__num_workers, pin_memory=True, drop_last=drop_last)

@@ -18,6 +18,7 @@ class GaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 def get_transforms(size, random_crop_scale=(0.2, 1.0), gaussian_blur_sigma=(0.1, 1.0)):
+    '''Get transforms with augmentations for the training'''
     
     random_affine = transforms.RandomAffine((-10,10), translate=(0.1,0.1), scale=(1,3))
     resize = transforms.Resize(size)
@@ -37,6 +38,7 @@ def get_transforms(size, random_crop_scale=(0.2, 1.0), gaussian_blur_sigma=(0.1,
     return data_transforms
 
 def get_default_transforms(size):
+    '''Get transforms to prepare the images for the network (validation and testing)'''
  
     data_transforms = transforms.Compose([transforms.ToPILImage(),
                                           transforms.Resize(size),

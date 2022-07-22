@@ -32,7 +32,7 @@ class Data():
         self.__valid_range = data_params['VALID_RANGE']
         self.__num_workers = data_params['NUM_WORKERS']
         self.__image_size = data_params['IMAGE_SIZE']
-        self.__dataset = data_params['DATASET'] 
+        self.__dataset_classname = data_params['DATASET'] 
     
     @property
     def valid_range(self):
@@ -206,28 +206,29 @@ class Data():
 
     #Pytorch data loader for batch-wise multithreaded loading of images
     #-----------------------------------------------------
-    def get_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last, meta_path, label_path):
+    def get_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last, meta_path, label_path):
         
-        dataset_func = c.dataset_dict[self.__dataset]
+        module = __import__("scripts.data.datasets", globals(), locals(), self.__dataset_classname)
+        dataset_object = getattr(module, self.__dataset_classname)
         
         if labels:
-            dataset = dataset_func(meta_path, label_file=label_path, transform=transform, n_views=n_views)
+            dataset = dataset_object(meta_path, label_file=label_path, augmentation=augmentation, n_views=n_views)
         else:
-            dataset = dataset_func(meta_path, transform=transform, n_views=n_views)
+            dataset = dataset_object(meta_path, augmentation=augmentation, n_views=n_views)
     
         loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
                                                       num_workers=self.__num_workers, pin_memory=True, drop_last=drop_last)
         
         return loader
         
-    def get_train_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last):
-        return self.get_loader(batch_size, labels, transform, n_views, shuffle, drop_last, c.dataset_path + 'm_train.csv', c.dataset_path + 'x_train.csv')
+    def get_train_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, augmentation, n_views, shuffle, drop_last, c.dataset_path + 'm_train.csv', c.dataset_path + 'x_train.csv')
     
-    def get_val_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last):
-        return self.get_loader(batch_size, labels, transform, n_views, shuffle, drop_last, c.dataset_path + 'm_val.csv', c.dataset_path + 'x_val.csv')
+    def get_val_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, augmentation, n_views, shuffle, drop_last, c.dataset_path + 'm_val.csv', c.dataset_path + 'x_val.csv')
     
-    def get_test_loader(self, batch_size, labels, transform, n_views, shuffle, drop_last):
-        return self.get_loader(batch_size, labels, transform, n_views, shuffle, drop_last, c.dataset_path + 'm_test.csv', c.dataset_path + 'x_test.csv')
+    def get_test_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, augmentation, n_views, shuffle, drop_last, c.dataset_path + 'm_test.csv', c.dataset_path + 'x_test.csv')
 
 #When importing this module, the module is replaced by an instance of the class Data
 # => the class is transparent to the outside 

@@ -38,7 +38,7 @@ def forward():
     z_list = []
     
     #Get test loader
-    test_loader = data.get_test_loader(256, labels=True, transform=False, n_views=1, shuffle=False, drop_last=False)
+    test_loader = data.get_test_loader(256, labels=True, augmentation=None, n_views=1, shuffle=False, drop_last=False)
     
     for i, (image, x) in enumerate(test_loader):
         image = torch.cat(image, dim=0)

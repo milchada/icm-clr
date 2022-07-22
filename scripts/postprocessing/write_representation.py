@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 
 #Prepare data
-test_loader = data.get_test_loader(batch_size=128, labels=False, transform=False, n_views=1, shuffle=False, drop_last=False)
+test_loader = data.get_test_loader(batch_size=128, labels=False, augmentation=None, n_views=1, shuffle=False, drop_last=False)
 
 #Load model
 model = load_resnet_model()

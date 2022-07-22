@@ -60,7 +60,7 @@ def sample_all_posteriors(N, cinn):
     
     #Get dataloader
     BATCHSIZE = 1
-    test_loader = data.get_test_loader(BATCHSIZE, labels=False, transform=False, n_views=1, shuffle=False, drop_last=False) 
+    test_loader = data.get_test_loader(BATCHSIZE, labels=False, augmentation=None, n_views=1, shuffle=False, drop_last=False) 
     posterior = np.zeros([len(test_loader), N, data.NUM_DIM])
     
     with torch.no_grad(), autocast(enabled=True):

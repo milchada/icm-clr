@@ -5,12 +5,17 @@ import numpy as np
 import torch
 
 from scripts.data import data
+from scripts.data.augmentations import SimCLRAugmentation
 
+import yaml
 
 class TestDataloader(unittest.TestCase):
     '''Consistency test for the dataset class'''
     
     def setUp(self):
+        
+        params = yaml.safe_load(open('params.yaml'))
+        self.AUGMENTATION_PARAMS = params['train_simclr']["AUGMENTATION_PARAMS"]
         
         self.N_GALAXIES=20
         self.BATCH_SIZE=128
@@ -19,8 +24,8 @@ class TestDataloader(unittest.TestCase):
 
     def test_image_label(self):
         '''Test if the label and image loading is working'''
-
-        dataloader = data.get_train_loader(batch_size=self.BATCH_SIZE, labels=True, transform=False, n_views=1, shuffle=True, drop_last=True)
+        
+        dataloader = data.get_train_loader(batch_size=self.BATCH_SIZE, labels=True, augmentation=None, n_views=1, shuffle=False, drop_last=True)
     
         for i, (images, labels) in enumerate(dataloader):
             
@@ -45,7 +50,8 @@ class TestDataloader(unittest.TestCase):
     def test_views(self):
         '''Test if the view generation is working'''
         
-        dataloader = data.get_train_loader(batch_size=self.BATCH_SIZE, labels=False, transform=True, n_views=self.N_VIEWS, shuffle=True, drop_last=True)
+        augmentation = SimCLRAugmentation(self.AUGMENTATION_PARAMS)
+        dataloader = data.get_train_loader(batch_size=self.BATCH_SIZE, labels=False, augmentation=augmentation, n_views=self.N_VIEWS, shuffle=False, drop_last=True)
     
         for i, images in enumerate(dataloader):
             
@@ -60,7 +66,7 @@ class TestDataloader(unittest.TestCase):
             #self.assertTrue(torch.min(images) >= 0.0, 'image value smaller than 0')
             
             for j in range(self.N_VIEWS):
-                image = np.swapaxes(images[j], 0, 2)
+                image = np.swapaxes(images[j*self.BATCH_SIZE], 0, 2)
                 plt.imshow(image)
                 plt.savefig('./temp/Dataset_' + str(i) + '_' + str(j) + '.png')
                 

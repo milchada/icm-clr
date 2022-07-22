@@ -8,6 +8,7 @@ stages:
     - ./scripts/extract/
     outs:
     - ./dataset_raw/TNG50-1/labels/
+    
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     params:

@@ -1,11 +1,12 @@
 import torch
 import torch.backends.cudnn as cudnn
-from torch.cuda.amp import GradScaler, autocast
-from scripts.data.SimClrDataset import SimClrDataset
+from torch.cuda.amp import autocast
 from scripts.model.resnet_simclr import ResNetSimCLR
 from scripts.model.losses import loss_simclr
+from scripts.model.optimizer import Optimizer
 import config as c
 from scripts.data import data
+from scripts.data.augmentations import SimCLRAugmentation
 from tqdm import tqdm
 import numpy as np
 import os
@@ -76,17 +77,16 @@ def train_simclr(params={},
             experiment_tracking = False
     
     #Prepare the data 
-    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, transform=True, n_views=N_VIEWS, shuffle=True, drop_last=True) 
-    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=False, transform=True, n_views=N_VIEWS, shuffle=True, drop_last=True)
+    augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])
+    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True) 
+    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
 
     #Load the model
     model = ResNetSimCLR(params)
     model.to(c.device)
     
-    optimizer = torch.optim.Adam(model.parameters(), params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
-
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
-                                                           last_epoch=-1)
+    #Init the optimizer
+    optimizer = Optimizer(cinn, params)
 
     #Start the training
     with torch.cuda.device(c.device):
@@ -107,19 +107,14 @@ def train_simclr(params={},
                     features = model(images)
                     loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
 
-                optimizer.zero_grad()
-
-                scaler.scale(loss).backward()
-
-                scaler.step(optimizer)
-                scaler.update()
+                optimizer.backward()
                 
                 if experiment_tracking:
                     top1, top5 = accuracy(logits, labels, topk=(1, 5))
                     experiment.log_metric('training_loss', loss)
                     experiment.log_metric('training_acc/top1', top1[0])
                     experiment.log_metric('training_acc/top5', top5[0])
-                    experiment.log_metric('learning_rate', scheduler.get_last_lr()[0])
+                    experiment.log_metric('learning_rate', optimizer.lr)
                     
                 
             #Validation
@@ -157,19 +152,16 @@ def train_simclr(params={},
             if (epoch_counter + 1) > epoch_min_val + params["PATIENCE"]:
                 break
             
-            
-            # warmup for the first 10 epochs
-            if epoch_counter >= 10:
-                scheduler.step()
-            
+            #Update the learning rate
+            optimizer.lr_step(loss)
 
-            # save model
-            if save_model:
+        # save model
+        if save_model:
 
-                if not os.path.exists(c.model_path):
-                    os.makedirs(c.model_path)
+            if not os.path.exists(c.model_path):
+                os.makedirs(c.model_path)
 
-                torch.save(model.state_dict(), c.resnet_path)
+            torch.save(model.state_dict(), c.resnet_path)
                 
         
         return [loss, top1[0], top5[0]]

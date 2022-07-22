@@ -12,6 +12,7 @@ from scripts.util.redshifts import load_redshift
 
 import numpy as np
 from astropy.cosmology import Planck15 as cosmo
+from astropy import units as u
 import h5py
 import glob
 
@@ -41,6 +42,7 @@ class Subhalos:
         self.__assembly_path = base_path + "/postprocessing/StellarAssembly/galaxies_%03d.hdf5" % (snapshot_id)
         self.__circularity_path = base_path + "/postprocessing/circularities/circularities_aligned_10Re_" + self.__full_qualifier + "%03d.hdf5" % (snapshot_id)
         self.__stellar_ages_path = base_path + "/postprocessing/stellar_ages/stellar_ages_%03d.hdf5" % (snapshot_id)
+        self.__stellar_phot_base_path = base_path + "/postprocessing/stellar_light/StellarPhot_C_%03d.hdf5" % (snapshot_id)
         
         auxcat_path = base_path + "/postprocessing/dnelson/auxCat"
         self.__stellar_phot_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_z_2rhalf_%03d.hdf5" % (snapshot_id)
@@ -123,10 +125,15 @@ class Subhalos:
             result = f[field][self.__subhalo_ids]
         return result
     
+    def load_stellar_phot(self, field):
+        with h5py.File(self.__stellar_phot_base_path, 'r') as f:
+            result = f[field][self.__subhalo_ids]
+        return result
+    
     #Merger and Assembly Data
     #-------------------------------------------------------------------------
     @property
-    def mass_ex_situ(self):
+    def mass_exsitu(self):
         return self.load_stellar_assembly("StellarMassExSitu") * 1e10 / self.__H
 
     @property
@@ -307,21 +314,61 @@ class Subhalos:
         return 1.0/(1.0 + self.z)
     
     @property
+    def luminosity_distance(self):
+        return cosmo.luminosity_distance(self.z).to(u.pc).value
+    
+    @property
+    def distance_modulus(self):
+        return 5*np.log10(self.luminosity_distance/10.0)
+    
+    @property
     def lookback(self):
         zeros = [0]*len(self.__subhalo_ids)
         return np.array(cosmo.age(zeros) - cosmo.age(self.z))
     
     @property
-    def stellar_subhalo_mass(self):
+    def stellar_mass(self):
         return self.load_groupcat("SubhaloMassType")[:,4] * 1e10 / self.__H
 
     @property
-    def r_band_mag(self):
+    def r_band_mag_dust(self):
         return self.load_auxcat(self.__stellar_phot_path, "Subhalo_StellarPhot_p07c_cf00dust_z_2rhalf")[:,2]
 
     @property
-    def g_band_mag(self):
+    def g_band_mag_dust(self):
         return self.load_auxcat(self.__stellar_phot_path, "Subhalo_StellarPhot_p07c_cf00dust_z_2rhalf")[:,1]
+    
+    @property
+    def i_band_mag_dust(self):
+        return np.median(self.load_stellar_phot("StellarPhot")[:,3,:], axis=1)
+    
+    @property
+    def i_band_mag_dust_apparent(self):
+        return self.i_band_mag_dust + self.distance_modulus
+    
+    @property
+    def i_band_mag_apparent(self):
+        return self.i_band_mag + self.distance_modulus
+    
+    @property
+    def color_dust(self):
+        return self.g_band_mag_dust - self.r_band_mag_dust
+
+    @property
+    def z_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,7]
+    
+    @property
+    def i_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,6]
+    
+    @property
+    def r_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,5]
+
+    @property
+    def g_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,4]
     
     @property
     def color(self):

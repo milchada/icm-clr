@@ -5,37 +5,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from astropy.io import fits
-from .transforms import get_default_transforms, get_transforms
 import yaml
 
-class FitsDataset(Dataset):
-    """Dataset to load and transform images given as .fits in a multithreaded and batched way"""
+from scripts.data.augmentations import DefaultAugmentation
 
-    def __init__(self, image_file, label_file=None, transform=False, n_views=1):
+class SimClrDataset(Dataset):
+    """Dataset to load and transform images with multiple transformed views in a multithreaded and batched way"""
+
+    def __init__(self, image_file, label_file=None, augmentation=None, n_views=1):
         """
         Args:
             image_file (string): Path to the csv file with "image_path" as field.
             label_file (string, optional): Path to the csv file with labels to return (If not set, only images are returned).
-            transform (boolean, optional): Apply random transformations at each call (Default: False).
+            augmentation (Augmentation, optional): use the augmenations (Default: None i.e. Default Augmentation).
             n_views (integer, optional): Number of views to return for each image (Default: 1).
         """
         
         self.df = pd.read_csv(image_file)
         self.image_paths = self.df['image_path']
         
+        #Load labels if given
         if label_file is None:
             self.df_label = None
         else:
             self.df_label = pd.read_csv(label_file)
             assert len(self.df) == len(self.df_label), "Error: Number of rows in the image and label csv have to be equal!"
         
-        self.transform = transform
+        #Load the transforms from the augmentation object
+        if augmentation is None or augmentation is False:
+            self.transform = DefaultAugmentation().get_transforms()
+        else:
+            self.transform = augmentation.get_transforms()
+        
+        #Number of views to return
         self.n_views = n_views
-        
-        #Load desired image size from the parameter file (pixel per side)
-        data_params = yaml.safe_load(open('params.yaml'))['data']
-        self.image_size = data_params["IMAGE_SIZE"]
-        
         assert n_views >= 1
         
         #If we want to return labels assure that only one image is returned per label
@@ -44,20 +47,13 @@ class FitsDataset(Dataset):
 
     def __len__(self):
         return len(self.df)
-        
-    def _get_single_image(self, idx):
-        '''Return one single image with the id given as idx'''
-        pass
     
     def __getitem__(self, idx):
         '''Return an item with index idx'''
 
         image = self._get_single_image(idx)
     
-        if self.transform:
-            samples = [get_transforms(self.image_size)(image) for i in range(self.n_views)]
-        else:
-            samples = [get_default_transforms(self.image_size)(image) for i in range(self.n_views)]
+        samples = [self.transform(image) for i in range(self.n_views)]
             
         if self.df_label is None:
             return samples
@@ -65,7 +61,38 @@ class FitsDataset(Dataset):
             label = torch.tensor(self.df_label.iloc[idx, :].to_numpy())
             return samples, label
         
+    def _get_single_image(self, idx):
+        '''Return one single image with the id given as idx'''
+        raise NotImplementedError("This function is supposed to be overwritten!")
+        
+class FitsDataset(SimClrDataset):
+    """Dataset to load and transform .fits images with multiple transformed views in a multithreaded and batched way"""
+    
+    def _get_single_image(self, idx):
+        
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        with fits.open(self.image_paths[idx]) as hdul:
+            
+            G = hdul['SUBARU_HSC.G'].data
+            R = hdul['SUBARU_HSC.R'].data
+            I = hdul['SUBARU_HSC.I'].data
+        
+        I, R, G = self._rgbstretch(I,R,G)
+
+        G = np.array(G*(2**8 - 1), dtype=np.uint8)
+        R = np.array(R*(2**8 - 1), dtype=np.uint8)
+        I = np.array(I*(2**8 - 1), dtype=np.uint8)
+        
+        return np.concatenate((I[...,np.newaxis],R[...,np.newaxis],G[...,np.newaxis]), axis=2)
+    
+    def _rgbstretch(self, r, g, b):
+        """Stretch rgb channels"""
+        raise NotImplementedError("This function is supposed to be overwritten!")
+        
 class TNGDataset(FitsDataset):
+    '''Dataset for the HSC Realistic TNG Images'''
     
     def _get_central_crop(self, img, num_pixel=20):
         size = img.shape[0]
@@ -116,35 +143,16 @@ class TNGDataset(FitsDataset):
         b[max_mask] /= max_value[max_mask]
         
         return r, g, b
-        
-    def _get_single_image(self, idx):
-        
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        with fits.open(self.image_paths[idx]) as hdul:
-            
-            G = hdul['SUBARU_HSC.G'].data
-            R = hdul['SUBARU_HSC.R'].data
-            I = hdul['SUBARU_HSC.I'].data
-        
-        I, R, G = self._rgbstretch(I,R,G)
-
-        G = np.array(G*(2**8 - 1), dtype=np.uint8)
-        R = np.array(R*(2**8 - 1), dtype=np.uint8)
-        I = np.array(I*(2**8 - 1), dtype=np.uint8)
-        
-        return np.concatenate((I[...,np.newaxis],R[...,np.newaxis],G[...,np.newaxis]), axis=2)
     
 class TNGIdealDataset(TNGDataset):
+    '''Dataset for the ideal TNG Images'''
     
     def _stretch(self, x):
-        """Perform a log stretch on x and normalize""" 
-        a_min = np.nanmedian(x)
-        a_max = np.nanquantile(self._get_central_crop(x), 0.99)
+        """Perform a linear stretch""" 
+        x = np.clip(x, -32, None)
         
-        x = np.nan_to_num(x, nan=a_min, posinf=a_min, neginf=a_min)
-        x = np.clip(x, a_min, a_max)
+        a_min = np.min(x)
+        a_max = np.max(x)
         
         x -= a_min
         x /= (a_max - a_min)
@@ -152,26 +160,13 @@ class TNGIdealDataset(TNGDataset):
         return x
     
     def _rgbstretch(self, r, g, b):
-        """Stretch rgb together to preserve the color"""
     
-        r = -r + np.max(r)
-        g = -g + np.max(g)
-        b = -b + np.max(b)
+        r = -r
+        g = -g
+        b = -b
         
-        i = (r + g + b)/3
-        
-        factor = self._stretch(i)/i
-        factor = np.nan_to_num(factor, posinf=0.0)
-        
-        r *= factor
-        g *= factor
-        b *= factor
-        
-        max_value = np.max([r,g,b], axis=0)
-        max_mask = max_value > 1
-        
-        r[max_mask] /= max_value[max_mask]
-        g[max_mask] /= max_value[max_mask]
-        b[max_mask] /= max_value[max_mask]
+        r = self._stretch(r)
+        g = self._stretch(g)
+        b = self._stretch(b)
         
         return r, g, b

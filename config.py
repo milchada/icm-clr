@@ -10,6 +10,7 @@ Parameters for scripts which have to be traced by DVC are stored in params.yaml
 """
 
 #Paths
+image_cache_path = "../ptmp_link/"
 illustris_path = "../IllustrisTNG/"
 dataset_raw_path = "./dataset_raw/"
 dataset_path = "./dataset/"
@@ -52,10 +53,5 @@ normalized_label_dict = {"fraction_disk_stars": "Fraction of Disk Stars",
                          "mass_last_maj_merger": "Last Major Merger Mass"
                          }
 
-#Datasets
-import scripts.data.datasets as datasets
-
-dataset_dict = {"TNG": datasets.TNGDataset,
-                "TNG_Ideal": datasets.TNGIdealDataset}
 
 

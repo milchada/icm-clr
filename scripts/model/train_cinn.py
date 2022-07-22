@@ -1,14 +1,15 @@
 import torch
 import torch.nn
 import torch.optim
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import autocast
 import numpy as np
 from tqdm import tqdm
 
 from . import combined_model
 from . import losses
 from scripts.model.optimizer import Optimizer
-import scripts.data.data as data
+from scripts.data import data
+from scripts.data.augmentations import SimCLRAugmentation
 
 import config as c
 
@@ -80,9 +81,10 @@ def train_cinn(params={},
     #Init the optimizer
     optimizer = Optimizer(cinn, params)
     
-    #Prepare the data 
-    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=True, transform=True, n_views=1, shuffle=True, drop_last=True) 
-    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=True, transform=False, n_views=1, shuffle=True, drop_last=True)
+    #Prepare the data
+    augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])
+    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=True, augmentation=augmentation, n_views=1, shuffle=True, drop_last=True) 
+    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=True, augmentation=None, n_views=1, shuffle=True, drop_last=True)
     
     #Training/Evaluation Loop
     #-----------------------------------------------------------------------------

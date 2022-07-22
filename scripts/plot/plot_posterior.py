@@ -184,7 +184,7 @@ def plot_random_posteriors(n_plots):
 
     #Get ground truth 
     x_gt = data.gt
-    l_gt_loader = data.get_test_loader(n_plots, labels=False, transform=False, n_views=1, shuffle=False, drop_last=False)
+    l_gt_loader = data.get_test_loader(n_plots, labels=False, augmentation=False, n_views=1, shuffle=False, drop_last=False)
     sub_id = data.df_m_test["subhalo_id"]
     z = data.df_m_test["z"]
     

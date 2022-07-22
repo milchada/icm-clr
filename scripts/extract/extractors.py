@@ -223,24 +223,25 @@ class HSCDataExtractor(DataExtractor):
         '''Extract information from fits files filename'''
         vsplit = np.vectorize(lambda x: os.path.split(x)[1])
         filenames = vsplit(filelist)
-        id_list = [int(i[:17]) for i in filenames]
-        filter_list = [i[28:34] for i in filenames]
+        id_list = np.array([int(i[:17]) for i in filenames])
+        filter_list = np.array([i[28:33] for i in filenames])
         
         return id_list, filter_list
     
     def _group_filters(self, id_list, filter_list, filelist):
         '''
             Choose the filters asked for and group them together according to the id
-            I.e. return a list whichcountains lists with the files for each filter belonging to the 
+            I.e. return a list which contains lists with the files for each filter belonging to the 
             same image given in unique_ids
         '''
 
         unique_ids = np.unique(id_list)
         filelist_grouped = []
+        mask = []
         
         for i in unique_ids:
-            index = np.argwhere(id_list == i)
-            
+            index = np.argwhere(id_list == i)[:,0]
+        
             file_cutout = filelist[index]
             filter_cutout = filter_list[index]
             
@@ -248,44 +249,59 @@ class HSCDataExtractor(DataExtractor):
             
             for f in self._filters:
                 index = np.argwhere(filter_cutout == f)
-                filter_index_ordered.append(index)
                 
-                if len(index) != 1:
-                    print("Warning: HSC index " + str(i) + " has a filter missing. Galaxy dropped.")
-                    continue
+                if len(index) == 1:
+                    filter_index_ordered.append(index[0,0])
                     
-            filelist_grouped.append(filelist[filter_index_ordered])
+            if len(filter_index_ordered) == len(self._filters):
+                filelist_grouped.append(file_cutout[filter_index_ordered])
+                mask.append(True)
+            else:
+                print("Warning: HSC index " + str(i) + " has a filter missing. Galaxy dropped...")   
+                mask.append(False)
             
-        return unique_ids, filelist_grouped
+        return unique_ids[mask], filelist_grouped
     
     def _get_new_image_path(self, unique_id):
         return self._image_path + "%017d.fits" % (unique_id)
             
     def _resized_copy(self, filedirs):
         '''Copy a resized version to save space and memory'''
+    
+        id_list, filter_list = self._get_data_from_fits(filedirs)
+        new_path = self._get_new_image_path(id_list[0])
+
+        #Test if file is already existing, in that case: skip
+        if os.path.exists(new_path):
+            return
         
-        for filedir in filedirs:
-            _, filename = os.path.split(filedir)
+        hdu_copy = [fits.PrimaryHDU()]
+        
+        for filedir, f in zip(filedirs, filter_list): 
 
-            #Test if file is already existing, in that case: skip
-            if os.path.exists(new_path):
-                return
-
-        #Resize images and copy only needed filters
-        with fits.open(filedir) as hdul:
-            try:
-                
-                hdu_copy = [fits.PrimaryHDU()]
-                
-                for f in self._filters:
-                    header = hdul[f].header
-                    image = hdul[f].data
-                    resized_image = resize(image, (self._image_size, self._image_size))
-                    hdu_copy.append(fits.ImageHDU(resized_image, name=f, header=header))
+            #Resize images and copy only needed filters
+            with fits.open(filedir) as hdul:
+                try:
+                    header = hdul[1].header
+                    image = hdul[1].data
+                    shape = image.shape
+                    min_edge = np.min(shape)
+                    min_edge_half = min_edge//2
+                    center_x = shape[0]//2
+                    center_y = shape[0]//2
+                    min_x = center_x - min_edge_half
+                    max_x = center_x + min_edge_half
+                    min_y = center_y - min_edge_half
+                    max_y = center_y + min_edge_half
                     
-            except:
-                print("Loading failed for " + filedir)
-                return
+                    
+                    cropped_image = image[min_x:max_x, min_y:max_y]
+                    resized_image = resize(cropped_image, (self._image_size, self._image_size))
+                    hdu_copy.append(fits.ImageHDU(resized_image, name=f, header=header))
+
+                except:
+                    print("Loading failed for " + filedir)
+                    return
 
         hdul_copy = fits.HDUList(hdu_copy)
 
@@ -298,13 +314,15 @@ class HSCDataExtractor(DataExtractor):
                 pass
     
     def _extract_labels(self, unique_ids):
-        CSV_PATH = os.join(c.image_cache_path, self._dataset, "s20a_hsc-wide_gridet_sdss-dr16_petr20_gswlc2.csv")
+        CSV_PATH = os.path.join(c.image_cache_path, self._dataset, "s20a_hsc-wide_gridet_sdss-dr16_petr20_gswlc2.csv")
         df = pd.read_csv(CSV_PATH)
-        df_cutout = df[self._fields]
         
+        fields = self._fields + ['object_id']
+        
+        df_cutout = pd.DataFrame(df[fields], columns=fields)   
         df_unique_ids = pd.DataFrame(unique_ids, columns=['object_id'])
         
-        df = pd.merge('left', df_unique_ids, df_cutout, on=['object_id'])
+        df = pd.merge(df_unique_ids, df_cutout, on=['object_id'])
         
         v_get_new_image_path = np.vectorize(self._get_new_image_path)
         df['image_path'] = v_get_new_image_path(unique_ids)
@@ -314,6 +332,7 @@ class HSCDataExtractor(DataExtractor):
     def extract(self):
         
         filelist = glob.glob(c.image_cache_path + self._dataset + '/**/*.fits', recursive=True)
+        filelist = np.array(filelist)
         
         if len(filelist) == 0:
             print("Error: no images found!")
@@ -324,4 +343,4 @@ class HSCDataExtractor(DataExtractor):
         unique_ids, filelist_grouped = self._group_filters(id_list, filter_list, filelist)
         
         self._extract_labels(unique_ids)
-        #self._multi_resized_copy(filelist_grouped)
+        self._multi_resized_copy(filelist_grouped)

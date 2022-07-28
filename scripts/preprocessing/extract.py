@@ -2,8 +2,7 @@
 """
 Created on Wed Jan 29 22:28:57 2020
 
-Get the data from the various files and
-store them all in a csv file per snapshot
+Get the data from the various sources, process and store them in the dataset_raw folder
 
 @author: Lukas Eisert
 """
@@ -15,7 +14,7 @@ import config as c
 from tqdm import tqdm
 
 from scripts.util.str2None import str2None
-from scripts.extract.extractors import DataExtractor
+from scripts.preprocessing.extractors import DataExtractor
 
 import yaml
 

@@ -1,4 +1,4 @@
-from scripts.extract.TNG.Catalogue import Catalogue
+from scripts.preprocessing.TNG.Catalogue import Catalogue
 
 from skimage.transform import resize
 import os
@@ -24,6 +24,7 @@ class DataExtractor(object):
         self._fields = fields
         self._image_size = image_size
         self._filters = filters
+        self._filters_keys = self.get_filter_keys(filters)
         self._simulation = simulation
         
         self.create_paths()
@@ -44,9 +45,14 @@ class DataExtractor(object):
         '''Create paths if not already existing'''
         if not os.path.exists(self._image_path):
             os.makedirs(self._image_path)
-    
+            
     def save_labels(self, df):
+        df["dataset"] = self._dataset
         df.to_csv(self._label_path, index=False)
+            
+    def get_filter_keys(self, filters):
+        '''Return the catalogue/survey specific filter keys'''
+        return None
     
     def extract(self):
         raise NotImplementedError("This function is supposed to be overwritten!")
@@ -135,12 +141,14 @@ class TNGHSCExtractor(TNGDataExtractor):
                 mask.append(False)
 
         print(str(np.sum(mask)) + " images assigned to simulation data.")
-        print(str(np.sum(~mask)) + " images dropped.")
+        print(str(np.sum(np.logical_not(mask))) + " images dropped.")
         df_matched = pd.DataFrame(np.array(target)[:,0,:], columns=df.columns)
         df_matched['image_path'] = np.array(filelist)[mask]
 
         return df_matched
     
+    #Old implementation to also add stuff from the image headers, not needed at the moment.
+    '''
     def _add_header(self, image_path):
         """Add aditional information from the fits headers"""
         
@@ -162,7 +170,15 @@ class TNGHSCExtractor(TNGDataExtractor):
         dicts = p.map(self._add_header, image_paths)
          
         return pd.concat([df, pd.DataFrame.from_dict(dicts)], axis=1)
-
+    '''
+    
+    def get_filter_keys(self, filters):
+        
+        filter_dict = {'G': 'SUBARU_HSC.G',
+                       'R': 'SUBARU_HSC.R',
+                       'I': 'SUBARU_HSC.I'} 
+        
+        return [filter_dict[f] for f in filters] 
     
     def _resized_copy(self, filedir):
         '''Copy a resized version to save space and memory'''
@@ -180,9 +196,9 @@ class TNGHSCExtractor(TNGDataExtractor):
                 
                 hdu_copy = [fits.PrimaryHDU()]
                 
-                for f in self._filters:
-                    header = hdul[f].header
-                    image = hdul[f].data
+                for fk, f in zip(self._filters_keys, self._filters):
+                    header = hdul[fk].header
+                    image = hdul[fk].data
                     resized_image = resize(image, (self._image_size, self._image_size))
                     hdu_copy.append(fits.ImageHDU(resized_image, name=f, header=header))
                     
@@ -218,6 +234,22 @@ class TNGHSCExtractor(TNGDataExtractor):
     
 class HSCDataExtractor(DataExtractor):
     """Class to get the HSC images, because there is no exact snapshot all data is copied"""
+    
+    def get_filter_keys(self, filters):
+        
+        filter_dict = {'G': 'HSC-G',
+                       'R': 'HSC-R',
+                       'I': 'HSC-I'} 
+        
+        return [filter_dict[f] for f in filters] 
+    
+    def get_filter(self, filter_key):
+        filter_dict = {'HSC-G': 'G',
+                       'HSC-R': 'R',
+                       'HSC-I': 'I'} 
+        
+        return filter_dict[filter_key]
+        
 
     def _get_data_from_fits(self, filelist):
         '''Extract information from fits files filename'''
@@ -247,13 +279,13 @@ class HSCDataExtractor(DataExtractor):
             
             filter_index_ordered = []
             
-            for f in self._filters:
+            for f in self._filters_keys:
                 index = np.argwhere(filter_cutout == f)
                 
                 if len(index) == 1:
                     filter_index_ordered.append(index[0,0])
                     
-            if len(filter_index_ordered) == len(self._filters):
+            if len(filter_index_ordered) == len(self._filters_keys):
                 filelist_grouped.append(file_cutout[filter_index_ordered])
                 mask.append(True)
             else:
@@ -297,7 +329,7 @@ class HSCDataExtractor(DataExtractor):
                     
                     cropped_image = image[min_x:max_x, min_y:max_y]
                     resized_image = resize(cropped_image, (self._image_size, self._image_size))
-                    hdu_copy.append(fits.ImageHDU(resized_image, name=f, header=header))
+                    hdu_copy.append(fits.ImageHDU(resized_image, name=self.get_filter(f), header=header))
 
                 except:
                     print("Loading failed for " + filedir)

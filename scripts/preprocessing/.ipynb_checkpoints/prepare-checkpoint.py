@@ -71,70 +71,6 @@ ROOT_DESCENDANT_SPLIT = prepare_params['ROOT_DESCENDANT_SPLIT']
 
 # General Functions
 #-----------------------------------------------------------------------------
-def read_all(path):
-    filelist = glob.glob(path + "/*.csv")
-    
-    assert len(filelist) > 0, "No files to read!"
-
-    #Get header
-    df = pd.read_csv(filelist[0]).head(0)
-
-    #Get data
-    for i, filepath in enumerate(filelist):
-
-        path, file = os.path.split(filepath)
-        df = df.append(pd.read_csv(filepath))
-
-    return df.reset_index(drop=True)
-
-def add_image_path(df, image_path):
-    '''Add the path to the respective image for each entry in df. Multiply if there are multiple images for the same galaxy and delete if there is no image'''
-    
-    #Get list of all available images
-    filelist = glob.glob(image_path + '**/*.fits', recursive=True) 
-    
-    #Get snapshot and id
-    print("Get image snapshots and ids")
-    #~/simclr/dataset_raw/TNG50-1/images/059/shalo_059-101_v3_HSC_GRIZY.fits
-    splitlist = list(map(lambda x: os.path.split(x), filelist))
-    #shalo_059-101_v3_HSC_GRIZY.fits
-    snap_ids = list(map(lambda x: x[1].split("_")[1], splitlist))
-    #059-101
-    snapnums = list(map(lambda x: x.split("-")[0], snap_ids))
-    sub_ids  = list(map(lambda x: x.split("-")[1], snap_ids))
-    
-    snapnums = np.array(snapnums, dtype=np.int32)
-    sub_ids  = np.array(sub_ids, dtype=np.int32)
-            
-      
-    print("Matching")
-    #Match the images with the data read from the csv (contained in df)
-    origin = df.to_numpy()
-    target = []
-    mask = [] #Mask to sort out images with not avail data
-
-    snapshot_ids = df["snapshot_id"].to_numpy(dtype=np.int32)
-    subhalo_ids = df["subhalo_id"].to_numpy(dtype=np.int32)
-
-    #Loop over all images
-    for j, (snap, i, filepath) in enumerate(zip(snapnums, sub_ids, filelist)):
-        #Get matched df index for the image
-        index = np.argwhere(np.logical_and(snapshot_ids==snap, subhalo_ids==i))
-        assert len(index)<=1, "Multiple Data for one Image"
-
-        #Check if there is data in df available for the given image
-        if len(index) == 1:
-            index = index[0]
-            target.append(origin[index])
-            mask.append(True)
-        else:
-            mask.append(False)
-
-    df_matched = pd.DataFrame(np.array(target)[:,0,:], columns=df.columns)
-    df_matched['image_path'] = np.array(filelist)[mask]
-        
-    return df_matched
-
 
 #Helper function to log the sfr
 #Replace 0 by minimum
@@ -280,9 +216,8 @@ if __name__ == "__main__":
     for s in SETS:
         
         #Load and prepare set
-        df = read_all(c.dataset_raw_path + s[0] + "/labels/")
+        df = pd.read_csv(c.dataset_raw_path + s[0] + "/labels.csv")
         df = prepare_df(df)
-        df = add_image_path(df, c.dataset_raw_path + s[0] + "/images/")
         
         #Scale
         df_x, x_scaler = scale(df, UNOBSERVABLES, x_scaler)

@@ -42,7 +42,7 @@ class Subhalos:
         self.__assembly_path = base_path + "/postprocessing/StellarAssembly/galaxies_%03d.hdf5" % (snapshot_id)
         self.__circularity_path = base_path + "/postprocessing/circularities/circularities_aligned_10Re_" + self.__full_qualifier + "%03d.hdf5" % (snapshot_id)
         self.__stellar_ages_path = base_path + "/postprocessing/stellar_ages/stellar_ages_%03d.hdf5" % (snapshot_id)
-        self.__stellar_phot_base_path = base_path + "/postprocessing/stellar_light/StellarPhot_C_%03d.hdf5" % (snapshot_id)
+        self.__stellar_phot_base_path = base_path + "/postprocessing/stellar_light/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (snapshot_id)
         
         auxcat_path = base_path + "/postprocessing/dnelson/auxCat"
         self.__stellar_phot_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_z_2rhalf_%03d.hdf5" % (snapshot_id)
@@ -340,7 +340,7 @@ class Subhalos:
     
     @property
     def i_band_mag_dust(self):
-        return np.median(self.load_stellar_phot("StellarPhot")[:,3,:], axis=1)
+        return self.load_stellar_phot("Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc")[:,3]
     
     @property
     def i_band_mag_dust_apparent(self):

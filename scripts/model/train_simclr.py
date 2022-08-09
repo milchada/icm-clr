@@ -86,14 +86,11 @@ def train_simclr(params={},
     model.to(c.device)
     
     #Init the optimizer
-    optimizer = Optimizer(cinn, params)
+    optimizer = Optimizer(model, params)
 
     #Start the training
     with torch.cuda.device(c.device):
         
-        #Use 16bit precision
-        scaler = GradScaler(enabled=True)
-
         loss_memory = []
 
         for epoch_counter in range(params["NUM_EPOCHS"]):
@@ -107,7 +104,7 @@ def train_simclr(params={},
                     features = model(images)
                     loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
 
-                optimizer.backward()
+                optimizer.backward(loss)
                 
                 if experiment_tracking:
                     top1, top5 = accuracy(logits, labels, topk=(1, 5))

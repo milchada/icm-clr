@@ -41,6 +41,13 @@ class ResNetSimCLR(nn.Module):
         
         #summary(self.projection.cuda(), (params["RESNET_NUM_CHANNELS"], 128, 128))
         
+    @property
+    def trainable_parameters(self):
+        """Return trainable parameters"""
+        trainable_parameters = [p for p in self.projection.parameters() if p.requires_grad]
+        
+        return trainable_parameters
+        
     def forward(self, x, projection_head=True):
         
         if projection_head:

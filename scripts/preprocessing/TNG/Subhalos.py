@@ -340,11 +340,11 @@ class Subhalos:
     
     @property
     def i_band_mag_dust(self):
-        return self.load_stellar_phot("Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc")[:,3]
+        return self.i_band_mag_dust - self.distance_modulus
     
     @property
     def i_band_mag_dust_apparent(self):
-        return self.i_band_mag_dust + self.distance_modulus
+        return self.load_stellar_phot("Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc")[:,3]
     
     @property
     def i_band_mag_apparent(self):

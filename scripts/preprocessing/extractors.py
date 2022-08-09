@@ -1,6 +1,5 @@
 from scripts.preprocessing.TNG.Catalogue import Catalogue
 
-from skimage.transform import resize
 import os
 from multiprocessing import Pool
 from tqdm import tqdm
@@ -309,38 +308,47 @@ class HSCDataExtractor(DataExtractor):
         
         hdu_copy = [fits.PrimaryHDU()]
         
-        for filedir, f in zip(filedirs, filter_list): 
+        for filedir, f, i in zip(filedirs, filter_list, id_list): 
 
             #Resize images and copy only needed filters
             with fits.open(filedir) as hdul:
-                try:
-                    header = hdul[1].header
-                    image = hdul[1].data
-                    shape = image.shape
-                    min_edge = np.min(shape)
-                    min_edge_half = min_edge//2
-                    center_x = shape[0]//2
-                    center_y = shape[0]//2
-                    min_x = center_x - min_edge_half
-                    max_x = center_x + min_edge_half
-                    min_y = center_y - min_edge_half
-                    max_y = center_y + min_edge_half
-                    
-                    
-                    cropped_image = image[min_x:max_x, min_y:max_y]
-                    resized_image = resize(cropped_image, (self._image_size, self._image_size))
-                    hdu_copy.append(fits.ImageHDU(resized_image, name=self.get_filter(f), header=header))
+                header = hdul[1].header
+                image = hdul[1].data
 
-                except:
-                    print("Loading failed for " + filedir)
-                    return
+                #Bring the image to AB standard 
+                fluxmag0 = hdul[0].header["FLUXMAG0"]
+                image *= 1e9 / fluxmag0
+                    
+                #Retrict to a multiple of the petro90 radius
+                PETRO_MULTI = 4
+                target_size = np.min([PETRO_MULTI*self._petroR90_r[i], 50])
+                crop_fraction = target_size/50
+                    
+                #Get a central crop
+                shape = image.shape
+                min_edge = int(np.min(shape)*crop_fraction)
+                min_edge_half = min_edge//2
+                center_x = shape[0]//2
+                center_y = shape[0]//2
+                min_x = center_x - min_edge_half
+                max_x = center_x + min_edge_half
+                min_y = center_y - min_edge_half
+                max_y = center_y + min_edge_half
+                    
+                    
+                cropped_image = image[min_x:max_x, min_y:max_y]
+                resized_image = resize(cropped_image, (self._image_size, self._image_size))
+                hdu_copy.append(fits.ImageHDU(resized_image, name=self.get_filter(f), header=header))
 
         hdul_copy = fits.HDUList(hdu_copy)
 
         #Save
         hdul_copy.writeto(new_path)
         
-    def _multi_resized_copy(self, filelist, num_threads=18):
+    def _multi_resized_copy(self, filelist, df, num_threads=18):
+        
+        self._petroR90_r = dict(zip(df.object_id, df.petroR90_r))    
+        
         with Pool(num_threads) as p:
             for _ in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
                 pass
@@ -361,6 +369,8 @@ class HSCDataExtractor(DataExtractor):
         
         self.save_labels(df)
         
+        return df
+        
     def extract(self):
         
         filelist = glob.glob(c.image_cache_path + self._dataset + '/**/*.fits', recursive=True)
@@ -374,5 +384,5 @@ class HSCDataExtractor(DataExtractor):
         
         unique_ids, filelist_grouped = self._group_filters(id_list, filter_list, filelist)
         
-        self._extract_labels(unique_ids)
-        self._multi_resized_copy(filelist_grouped)
+        df = self._extract_labels(unique_ids)
+        self._multi_resized_copy(filelist_grouped, df)

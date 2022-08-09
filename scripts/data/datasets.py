@@ -75,9 +75,9 @@ class FitsDataset(SimClrDataset):
 
         with fits.open(self.image_paths[idx]) as hdul:
             
-            G = hdul['SUBARU_HSC.G'].data
-            R = hdul['SUBARU_HSC.R'].data
-            I = hdul['SUBARU_HSC.I'].data
+            G = hdul['G'].data
+            R = hdul['R'].data
+            I = hdul['I'].data
         
         I, R, G = self._rgbstretch(I,R,G)
 

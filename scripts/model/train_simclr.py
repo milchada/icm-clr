@@ -1,21 +1,21 @@
 import torch
-import torch.backends.cudnn as cudnn
-from torch.cuda.amp import autocast
+
 from scripts.model.resnet_simclr import ResNetSimCLR
-from scripts.model.losses import loss_simclr
+from scripts.model.losses import loss_simclr, loss_mmd, loss_kld, loss_huber_kld, loss_huber_linear_mmd
 from scripts.model.optimizer import Optimizer
+from scripts.model.training import Trainer
+from scripts.model.experiment_tracking import NeptuneExperimentTracking, VoidExperimentTracking
+
 import config as c
+
 from scripts.data import data
-from scripts.data.augmentations import SimCLRAugmentation
+from scripts.data.augmentations import SimCLRAugmentation, FlipAugmentation
+
 from tqdm import tqdm
-import numpy as np
-import os
 
 #Load Parameters
 import yaml
 params = yaml.safe_load(open('params.yaml'))
-
-neptune_params = params['neptune']
 train_default_params = params['train_simclr']
 
 #At this point we hardcode the number of simclr views to be 2
@@ -37,9 +37,19 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
+def images_2_device(x):
+    x = torch.cat(x, dim=0)
+    return x.to(c.device)
+
+def loss_2_host(x):
+    return x.cpu().detach().numpy()
+
+def loss_dict_2_host(d):
+    return dict(map(lambda x: (x[0], loss_2_host(x[1])), d.items()))
+    
 def train_simclr(params={},
                  save_model=True,
-                 experiment_tracking=True):
+                 experiment_tracking=False):
     """
     Function to set up and train the resnet with simclr
 
@@ -52,118 +62,113 @@ def train_simclr(params={},
     #Use default parameters if not set
     params = dict(train_default_params, **params)
     
-    #Init neptune tracking
+    #Init experiment tracking
     if experiment_tracking:
-        
-        try:
-
-            import neptune
-            project = neptune.init(project_qualified_name=neptune_params["project_name"],
-                                   api_token=neptune_params["api"])
-            
-            #Use name of branch as experiment name
-            from git import Repo
-            experiment_name = Repo('./').active_branch.name
-            
-            #Create neptune experiment and save all parameters in the parameter file
-            from pandas.io.json._normalize import nested_to_record
-            experiment = project.create_experiment(name=experiment_name, 
-                                                   params=nested_to_record(params),
-                                                   tags=neptune_params["tags"] + ["simclr"])
-            
-        except:
-            
-            print("WARNING: Neptune init failed. Experiment tracking deactivated")
-            experiment_tracking = False
+        experiment_tracker = NeptuneExperimentTracking(tags=['simclr'])
+    else: 
+        experiment_tracker = VoidExperimentTracking()
     
-    #Prepare the data 
-    augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])
-    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True) 
-    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
-
     #Load the model
     model = ResNetSimCLR(params)
     model.to(c.device)
     
     #Init the optimizer
     optimizer = Optimizer(model, params)
+    
+    #Set the save path of the model
+    if save_model:
+        save_path = c.resnet_path
+    else:
+        save_path = None
 
-    #Start the training
-    with torch.cuda.device(c.device):
+    #Init the trainer
+    trainer = Trainer(model,
+                      optimizer,
+                      experiment_tracker,
+                      params["PATIENCE"],
+                      params["NUM_EPOCHS"],
+                      save_path)
+    
+    
+    #Prepare training data 
+    augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])
+    flip_augmentation = FlipAugmentation(params["AUGMENTATION_PARAMS"])
+    train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
+    domain_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
+    train_mmd_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
+    domain_mmd_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
+    
+    #Prepare validation data
+    val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
+
+    #Add the datasets together
+    training_data = [train_loader, domain_loader, train_mmd_loader, domain_mmd_loader]
+    validation_data = [val_loader]
+    
+    #Prepare Training Lossfunction
+    def training_lossfunction(model, batch):
+        train_images = images_2_device(batch[0])
+        domain_images = images_2_device(batch[1])
+        train_adaption_images = images_2_device(batch[2])
+        domain_adaption_images = images_2_device(batch[3])
+
+        #Loss for the training set
+        features = model(train_images)
+        train_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
+        train_top1, train_top5 = accuracy(logits, labels, topk=(1, 5))
+
+        #Loss for the domain set
+        features = model(domain_images)
+        domain_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
+        domain_top1, domain_top5 = accuracy(logits, labels, topk=(1, 5))
+
+        #Loss for the training - domain representation distance
+        train_rep = model(train_adaption_images, projection_head=False)
+        domain_rep = model(domain_adaption_images, projection_head=False)
+        adaption_loss = loss_huber_linear_mmd(train_rep, domain_rep)
+
+        #Calculate total loss
+        loss = train_loss + domain_loss + adaption_loss
+
+        loss_dict = {'training_loss': train_loss,
+                     'training_acc/top1': train_top1[0],
+                     'training_acc/top5': train_top5[0],
+                     'domain_loss': domain_loss,
+                     'domain_acc/top1': domain_top1[0],
+                     'domain_acc/top5': domain_top5[0],
+                     'adaption_loss': adaption_loss,
+                     'total_loss': loss}
+
+        loss_dict = loss_dict_2_host(loss_dict)
         
-        loss_memory = []
+        return loss, loss_dict
 
-        for epoch_counter in range(params["NUM_EPOCHS"]):
-            
-            #Training
-            for images in tqdm(train_loader):
-                images = torch.cat(images, dim=0)
-                images = images.to(c.device)
+    #Prepare Validation Lossfunction
+    def validation_lossfunction(model, batch):
+        val_images = images_2_device(batch[0])
 
-                with autocast(enabled=True):
-                    features = model(images)
-                    loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
+        #Loss for validation set
+        features = model(val_images)
+        val_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
+        val_top1, val_top5 = accuracy(logits, labels, topk=(1, 5))
 
-                optimizer.backward(loss)
-                
-                if experiment_tracking:
-                    top1, top5 = accuracy(logits, labels, topk=(1, 5))
-                    experiment.log_metric('training_loss', loss)
-                    experiment.log_metric('training_acc/top1', top1[0])
-                    experiment.log_metric('training_acc/top5', top5[0])
-                    experiment.log_metric('learning_rate', optimizer.lr)
-                    
-                
-            #Validation
-            val_loss = []
-            val_logits, val_labels = None, None
-            
-            for images in tqdm(val_loader):
-                images = torch.cat(images, dim=0)
-                images = images.to(c.device)
+        loss_dict = {'validation_loss': val_loss,
+                     'validation_acc/top1': val_top1[0],
+                     'validation_acc/top5': val_top5[0]}
 
-                with autocast(enabled=True), torch.no_grad():
-                    features = model(images)
-                    loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
-                    val_loss.append(loss.cpu().detach().numpy())
-                    
-                    if val_logits is None or val_labels is None:
-                        val_logits = logits
-                        val_labels = labels
-                    else:
-                        val_logits = torch.cat((val_logits, logits), 0)
-                        val_labels = torch.cat((val_labels, labels), 0)
-                
-            loss = np.mean(val_loss)
-            top1, top5 = accuracy(val_logits, val_labels, topk=(1, 5))
-                
-            if experiment_tracking:
-                experiment.log_metric('validation_loss', loss)
-                experiment.log_metric('validation_acc/top1', top1[0])
-                experiment.log_metric('validation_acc/top5', top5[0])
-                
-            #Early stopping
-            loss_memory.append(loss)
+        loss_dict = loss_dict_2_host(loss_dict)
+        val_loss = loss_2_host(val_loss)
+
+        return val_loss, loss_dict
+
+    #Perform training
+    for epoch_counter in tqdm(trainer):
         
-            epoch_min_val =  np.argmin(loss_memory)
-            if (epoch_counter + 1) > epoch_min_val + params["PATIENCE"]:
-                break
-            
-            #Update the learning rate
-            optimizer.lr_step(loss)
-
-        # save model
-        if save_model:
-
-            if not os.path.exists(c.model_path):
-                os.makedirs(c.model_path)
-
-            torch.save(model.state_dict(), c.resnet_path)
-                
+        trainer.perform_training_step(training_lossfunction, training_data)
+        val_loss, _ = trainer.perform_validation_step(validation_lossfunction, validation_data)        
         
-        return [loss, top1[0], top5[0]]
+    return val_loss
             
-
 
 if __name__ == "__main__":
     train_simclr()

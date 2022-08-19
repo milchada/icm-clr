@@ -88,6 +88,14 @@ class DefaultAugmentation(Augmentation):
         self._resize()
         self._to_tensor()
         
+class FlipAugmentation(Augmentation):
+    def _set_up(self, params):
+        '''Augmentations for the simclr training'''
+        self._to_image()
+        self._resize()
+        self._random_flip(params["FLIP"])
+        self._to_tensor()
+        
 class SimCLRAugmentation(Augmentation):
     def _set_up(self, params):
         '''Augmentations for the simclr training'''

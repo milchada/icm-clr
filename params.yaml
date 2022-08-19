@@ -18,17 +18,17 @@ extract:
       #- ["snapshot_id", "subhalo_id", "root_descendant_id",
       #   "lookback", "z",
       #   "stellar_age_2rhalf_lumw", "fraction_disk_stars",
-      #   "stellar_mass", "mass_in_rad", "mass_exsitu",
+      #   "stellar_mass", "mass_in_rad", "mass_exsitu", "half_mass_rad_physical",
       #   "snap_num_last_maj_merger", "mass_last_maj_merger",
       #   "mean_merger_lookback_time", "mean_merger_mass_ratio",
-      #   "color", "i_band_mag_apparent"]
-      - ["photoz", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
+      #   "color", "i_band_mag_apparent", "i_band_mag_dust_apparent"]
+      - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     IMAGE_SIZE: 
       #- 256
       - 256
     FILTERS:
-      #- ['SUBARU_HSC.G', 'SUBARU_HSC.R', 'SUBARU_HSC.I']
-      - ['HSC-G', 'HSC-R', 'HSC-I']
+      #- ['G', 'R', 'I']
+      - ['G', 'R', 'I']
       
 
 prepare:
@@ -37,18 +37,21 @@ prepare:
     #Simulation to use with the split fractions: Training, Validation, Testing
     #Note, that feature scaling is determined by the first set
     SETS:
-      - ["HSC", [0.8, 0.1, 0.1]]
-      - ["HSC_TNG50", [0.8, 0.1, 0.1]]
+      - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
+      - ["HSC", [0.0, 0.8, 0.1, 0.1]]
+    MATCHING_MAX_ITER: 200
+    MATCHING_MAX_DIST: 0.05
+    MATCHING_FIELDS:
+      - ['z', 'i_band_mag_dust_apparent']
+      - ["photoz", "i_cmodel_mag_ge"]
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py is modifying the fields
-    OBSEVABLES:
-      - 'mass'
-      - 'lookback'
+    OBSERVABLES: None
     UNOBSERVABLES:
       - 'lookback'
       - 'mass'
       - 'fraction_disk_stars'
-      - 'stellar_age'
+      - 'stellar_age_2rhalf_lumw'
       - 'mass_last_maj_merger'
       - 'exsitu'
     #Split According to root descendant
@@ -74,30 +77,30 @@ data:
 
 train_simclr:
     #Learning Rate for the SIMCLR training
-    LEARNING_RATE: 0.0003
+    LEARNING_RATE: 0.001
     #Weight decay for the simclr training
     L2_DECAY: 0.0001
     #Betas for the ADAM optimizer
     BETA_1: 0.9
     BETA_2: 0.999
     #Reduce the Learning rate if the validation loss has not improved for this number of epochs
-    LR_PATIENCE: 5 
+    LR_PATIENCE: 2
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.5
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 64
+    BATCH_SIZE: 32
     #Maximum number of training epochs
-    NUM_EPOCHS: 20
+    NUM_EPOCHS: 10
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 5
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 10
-        TRANSLATE: 0.1
-        SCALE: 3
+        TRANSLATE: 0.2
+        SCALE: 2.0
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.1, 1.0]
-        NOISE_STD: [0.0, 0.02]
+        GAUSSIAN_BLUR_SIGMA: [0.001, 4.0]
+        NOISE_STD: [0.0, 0.05]
     
 train_cinn:
     #Parameters of the Adam Optimizer
@@ -170,11 +173,11 @@ model:
     
     #Parameters for the resnet 
     RESNET_DEPTH: 16
-    RESNET_WIDTH: 4
+    RESNET_WIDTH: 2
     RESNET_DROPOUT: 0.3
     RESNET_REPRESENTATION_DIM: 128
     RESNET_PROJECTION_DIM: 128
-    RESNET_PROJECTION_DEPTH: 2
+    RESNET_PROJECTION_DEPTH: 3
     RESNET_NUM_CHANNELS: 3
     
     #The Number of discrete rotations the RESNET is initially equivariant
@@ -195,8 +198,10 @@ model:
 
 losses:
     #Kernel vor forward and backward maximum mean discrepancy loss
+    mmd_kernel_type: "inverse_multiquadratic"
     mmd_forw_kernels: [[0.2, 2], [1.5, 2], [3.0, 2]]
     mmd_back_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
+    mmd_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2], [1.5, 2], [3.0, 2], [0.2, 3]]
     
     #Prefactor for the cINN losses
     #i.e. the overall loss is given as weighted sum with the weights given as prefactors

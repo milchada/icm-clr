@@ -224,6 +224,9 @@ class Data():
     def get_train_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last):
         return self.get_loader(batch_size, labels, augmentation, n_views, shuffle, drop_last, c.dataset_path + 'm_train.csv', c.dataset_path + 'x_train.csv')
     
+    def get_domain_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last):
+        return self.get_loader(batch_size, labels, augmentation, n_views, shuffle, drop_last, c.dataset_path + 'm_domain.csv', c.dataset_path + 'x_domain.csv')
+    
     def get_val_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last):
         return self.get_loader(batch_size, labels, augmentation, n_views, shuffle, drop_last, c.dataset_path + 'm_val.csv', c.dataset_path + 'x_val.csv')
     

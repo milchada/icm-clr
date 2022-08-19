@@ -1,4 +1,5 @@
 from scripts.preprocessing.TNG.Catalogue import Catalogue
+from scripts.preprocessing.cropper import FractionalCropper, PetrosianCropper
 
 import os
 from multiprocessing import Pool
@@ -27,6 +28,7 @@ class DataExtractor(object):
         self._simulation = simulation
         
         self.create_paths()
+        self.extract()
         
     def get_extractor(dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None):
         '''Static factory method to get the correct DataExtractor object based on the dataset asked for'''
@@ -185,51 +187,55 @@ class TNGHSCExtractor(TNGDataExtractor):
         _, filename = os.path.split(filedir)
         new_path = self._image_path + filename
 
-        #Test if file is already existing, in that case: skip
+        #Test if file is already existing, in that case: overwrite
         if os.path.exists(new_path):
-            return
-
+            os.remove(new_path)
+        
         #Resize images and copy only needed filters
         with fits.open(filedir) as hdul:
-            try:
-                
-                hdu_copy = [fits.PrimaryHDU()]
-                
-                for fk, f in zip(self._filters_keys, self._filters):
-                    header = hdul[fk].header
-                    image = hdul[fk].data
-                    resized_image = resize(image, (self._image_size, self._image_size))
-                    hdu_copy.append(fits.ImageHDU(resized_image, name=f, header=header))
+
+            cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=4)
+            cropper.fit(hdul["SUBARU_HSC.R"].data)
+
+            hdu_copy = [fits.PrimaryHDU()]
+
+            for fk, f in zip(self._filters_keys, self._filters):
+                header = hdul[fk].header
+                image = hdul[fk].data                            
+                image = cropper(image)
+                hdu_copy.append(fits.ImageHDU(image, name=f, header=header))
                     
-            except:
-                print("Loading failed for " + filedir)
-                return
-
-        hdul_copy = fits.HDUList(hdu_copy)
-
-        #Save
-        hdul_copy.writeto(new_path)
+            hdul_copy = fits.HDUList(hdu_copy)
+            hdul_copy.writeto(new_path)
+        
+        return [new_path, cropper.r_half_light, cropper.r_90_light]
         
     def _multi_resized_copy(self, filelist, num_threads=18):
+        output = []
+        
         with Pool(num_threads) as p:
-            for _ in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
-                pass
+            for i in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
+                output.append(i)
+                
+        output = np.array(output)
+        return pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
         
     def _extract_images(self):
         image_path_wildcard = os.path.join(c.image_cache_path, self._dataset) + '/**/*.fits'
         filelist = glob.glob(image_path_wildcard, recursive=True)
         print(str(len(filelist)) + " images found. Start loading...")
-        self._multi_resized_copy(filelist)
+        return self._multi_resized_copy(filelist)
     
-    def _extract_labels(self):
+    def _extract_labels(self, df_aux):
         print("Load labels...")
         df = self._load_TNG_labels(self._fields)
         df = self._add_image_path(df)
+        df = pd.merge(df, df_aux, on=["image_path"])
         self.save_labels(df)
         
     def extract(self):
-        self._extract_images()
-        self._extract_labels()
+        df = self._extract_images()
+        self._extract_labels(df)
     
 class HSCDataExtractor(DataExtractor):
     """Class to get the HSC images, because there is no exact snapshot all data is copied"""
@@ -302,9 +308,15 @@ class HSCDataExtractor(DataExtractor):
         id_list, filter_list = self._get_data_from_fits(filedirs)
         new_path = self._get_new_image_path(id_list[0])
 
-        #Test if file is already existing, in that case: skip
+        #Test if file is already existing, in that case: overwrite
         if os.path.exists(new_path):
-            return
+            os.remove(new_path)
+        
+        #Init a PetrosianCropper and fit the red channel
+        cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=4)
+        file_r = filedirs[filter_list == 'HSC-R']
+        with fits.open(file_r[0]) as hdul:
+            cropper.fit(hdul[1].data)
         
         hdu_copy = [fits.PrimaryHDU()]
         
@@ -320,40 +332,37 @@ class HSCDataExtractor(DataExtractor):
                 image *= 1e9 / fluxmag0
                     
                 #Retrict to a multiple of the petro90 radius
-                PETRO_MULTI = 4
-                target_size = np.min([PETRO_MULTI*self._petroR90_r[i], 50])
-                crop_fraction = target_size/50
-                    
-                #Get a central crop
-                shape = image.shape
-                min_edge = int(np.min(shape)*crop_fraction)
-                min_edge_half = min_edge//2
-                center_x = shape[0]//2
-                center_y = shape[0]//2
-                min_x = center_x - min_edge_half
-                max_x = center_x + min_edge_half
-                min_y = center_y - min_edge_half
-                max_y = center_y + min_edge_half
-                    
-                    
-                cropped_image = image[min_x:max_x, min_y:max_y]
-                resized_image = resize(cropped_image, (self._image_size, self._image_size))
-                hdu_copy.append(fits.ImageHDU(resized_image, name=self.get_filter(f), header=header))
+                #PETRO_MULTI = 4
+                #target_size = np.min([PETRO_MULTI*self._petroR90_r[i], 50])
+                #crop_fraction = target_size/50
+                #cropper = FractionalCropper(image_target_size=self._image_size, crop_fraction=crop_fraction)
+                image = cropper(image)
+                
+                hdu_copy.append(fits.ImageHDU(image, name=self.get_filter(f), header=header))
 
         hdul_copy = fits.HDUList(hdu_copy)
 
         #Save
         hdul_copy.writeto(new_path)
         
-    def _multi_resized_copy(self, filelist, df, num_threads=18):
+        return [new_path, cropper.r_half_light, cropper.r_90_light]
+    
         
-        self._petroR90_r = dict(zip(df.object_id, df.petroR90_r))    
+    def _multi_resized_copy(self, filelist, num_threads=18):
+        
+        #self._petroR90_r = dict(zip(df.object_id, df.petroR90_r))
+        
+        output = []
         
         with Pool(num_threads) as p:
-            for _ in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
-                pass
+            for i in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
+                output.append(i)
+                
+        output = np.array(output)
+        return pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
     
-    def _extract_labels(self, unique_ids):
+    
+    def _extract_labels(self, unique_ids, df_aux):
         CSV_PATH = os.path.join(c.image_cache_path, self._dataset, "s20a_hsc-wide_gridet_sdss-dr16_petr20_gswlc2.csv")
         df = pd.read_csv(CSV_PATH)
         
@@ -366,10 +375,12 @@ class HSCDataExtractor(DataExtractor):
         
         v_get_new_image_path = np.vectorize(self._get_new_image_path)
         df['image_path'] = v_get_new_image_path(unique_ids)
+        df = pd.merge(df, df_aux, on=['image_path'])
         
         self.save_labels(df)
         
         return df
+
         
     def extract(self):
         
@@ -384,5 +395,7 @@ class HSCDataExtractor(DataExtractor):
         
         unique_ids, filelist_grouped = self._group_filters(id_list, filter_list, filelist)
         
-        df = self._extract_labels(unique_ids)
-        self._multi_resized_copy(filelist_grouped, df)
+        
+        df_aux = self._multi_resized_copy(filelist_grouped)
+        self._extract_labels(unique_ids, df_aux)
+        

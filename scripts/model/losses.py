@@ -17,6 +17,8 @@ params = yaml.safe_load(open('params.yaml'))
 losses_params = params['losses']
 mmd_forw_kernels = losses_params['mmd_forw_kernels']
 mmd_back_kernels = losses_params['mmd_back_kernels']
+mmd_kernels = losses_params['mmd_kernels']
+mmd_kernel_type = losses_params['mmd_kernel_type']
 
 lambd_max_likelihood = losses_params['lambd_max_likelihood']
 lambd_mmd_forw = losses_params['lambd_mmd_forw']
@@ -26,34 +28,45 @@ lambd_mae = losses_params['lambd_mae']
 
 nce_temperature = losses_params['nce_temperature']
 
-def MMD_matrix_multiscale(x, y, widths_exponents):
-    xx, yy, xy = torch.mm(x,x.t()), torch.mm(y,y.t()), torch.mm(x,y.t())
-
-    rx = (xx.diag().unsqueeze(0).expand_as(xx))
-    ry = (yy.diag().unsqueeze(0).expand_as(yy))
-
-    dxx = torch.clamp(rx.t() + rx - 2.*xx, 0, np.inf)
-    dyy = torch.clamp(ry.t() + ry - 2.*yy, 0, np.inf)
-    dxy = torch.clamp(rx.t() + ry - 2.*xy, 0, np.inf)
-
-    XX, YY, XY = (torch.zeros(xx.shape).cuda(),
-                  torch.zeros(xx.shape).cuda(),
-                  torch.zeros(xx.shape).cuda())
-
-    for C,a in widths_exponents:
-        XX += C**a * ((C + dxx) / a)**-a
-        YY += C**a * ((C + dyy) / a)**-a
-        XY += C**a * ((C + dxy) / a)**-a
-
-    return XX + YY - 2.*XY
+def MMD_kernel(x, exponents):
+    if mmd_kernel_type == 'inverse_multiquadratic':
+        C = exponents[0]
+        a = exponents[1]
+        return C**a * ((C + x) / a)**-a
+    elif mmd_kernel_type == 'multiscale':
+        a = exponents
+        return a**2 * (a**2 + x)**-1
+    elif mmd_kernel_type == 'gaussian_rbf':
+        a = exponents
+        return torch.exp(-(x/a)**2)
+    else:
+        raise ValueError("MMD Kernel Unknown!")
 
 def l2_dist_matrix(x, y):
     xx, yy, xy = torch.mm(x,x.t()), torch.mm(y,y.t()), torch.mm(x,y.t())
 
     rx = (xx.diag().unsqueeze(0).expand_as(xx))
     ry = (yy.diag().unsqueeze(0).expand_as(yy))
+    
+    dxx = torch.clamp(rx.t() + rx - 2.*xx, 0, np.inf)
+    dyy = torch.clamp(ry.t() + ry - 2.*yy, 0, np.inf)
+    dxy = torch.clamp(rx.t() + ry - 2.*xy, 0, np.inf)
 
-    return torch.clamp(rx.t() + ry - 2.*xy, 0, np.inf)
+    return dxx, dyy, dxy          
+        
+def MMD_matrix(x, y, exponents):
+    dxx, dyy, dxy = l2_dist_matrix(x, y)
+
+    XX, YY, XY = (torch.zeros(dxx.shape).cuda(),
+                  torch.zeros(dyy.shape).cuda(),
+                  torch.zeros(dxy.shape).cuda())
+
+    for e in exponents:
+        XX += MMD_kernel(dxx, e)
+        YY += MMD_kernel(dyy, e)
+        XY += MMD_kernel(dxy, e)
+
+    return XX + YY - 2.*XY
 
 def info_nce_loss(features, n_views, batch_size):
 
@@ -84,13 +97,17 @@ def info_nce_loss(features, n_views, batch_size):
 
 def loss_simclr(x, n_views, batch_size):
     logits, labels = info_nce_loss(x, n_views, batch_size)
-    return torch.nn.CrossEntropyLoss().to(c.device)(logits, labels), logits, labels 
+    loss = torch.nn.CrossEntropyLoss().to(c.device)(logits, labels)
+    return loss, logits, labels 
 
 def forward_mmd(y0, y1):
-    return MMD_matrix_multiscale(y0, y1, mmd_forw_kernels)
+    return MMD_matrix(y0, y1, mmd_forw_kernels)
 
 def backward_mmd(x0, x1):
-    return MMD_matrix_multiscale(x0, x1, mmd_back_kernels)
+    return MMD_matrix(x0, x1, mmd_back_kernels)
+
+def mmd(x0, x1):
+    return MMD_matrix(x0, x1, mmd_kernels)
 
 def loss_mse(x0, x1):
     return torch.mean((x0 - x1)**2)
@@ -106,3 +123,52 @@ def loss_forward_mmd(z):
 
 def loss_backward_mmd(x, x_samples):
     return torch.mean(backward_mmd(x, x_samples))
+
+def loss_mmd(x, y):
+    return torch.mean(mmd(x, y))
+
+def loss_kld(x, y):
+    kl_loss = torch.nn.KLDivLoss(reduction="sum", log_target=True)
+    log_x = F.log_softmax(x)
+    log_y = F.log_softmax(y)
+    return kl_loss(log_x, log_y)
+
+
+def loss_huber_kld(x, y):
+    kl_loss = 1e2 * loss_kld(x, y)
+    
+    delta = 1.0
+    
+    if torch.abs(kl_loss) < delta:
+        return 0.5*kl_loss**2
+    else:
+        return delta * (torch.abs(kl_loss) - 0.5*delta)
+    
+
+def loss_linear_mmd(x, y):
+    dxx = torch.cdist(x, x, p=1)
+    dyy = torch.cdist(y, y, p=1)
+    dxy = torch.cdist(x, y, p=1)
+    
+    XX, YY, XY = (torch.zeros(dxx.shape).cuda(),
+                  torch.zeros(dyy.shape).cuda(),
+                  torch.zeros(dxy.shape).cuda())
+
+    for e in mmd_kernels:
+        XX += MMD_kernel(dxx, e)
+        YY += MMD_kernel(dyy, e)
+        XY += MMD_kernel(dxy, e)
+    
+    return torch.mean(XX + YY - 2.*XY)
+
+def loss_huber_linear_mmd(x, y):
+    loss = 10 * loss_linear_mmd(x, y)
+    
+    delta = 1.0
+    
+    if torch.abs(loss) < delta:
+        return 0.5*loss**2
+    else:
+        return delta * (torch.abs(loss) - 0.5*delta)
+        
+    

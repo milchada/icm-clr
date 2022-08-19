@@ -1,10 +1,11 @@
 '''
 
-Classes to crop a galaxy image in various ways
+Classes to crop the galaxy images
 
 '''
 
 import numpy as np
+from copy import copy
 
 from skimage.transform import resize
 
@@ -16,22 +17,42 @@ from petrofit.petrosian import Petrosian
 
 class ImageCropper(object):
     
-    def __init__(self, image_target_size=256):
+    def __init__(self, image_target_size=256, enlarge_image=False):
         self._image_target_size = image_target_size
+        self._enlarge_image = enlarge_image
         
     def _get_center(self, image):
+        '''Get center coordinates of image'''
         shape = image.shape
         center_x = shape[0]//2
         center_y = shape[1]//2
         return center_x, center_y
     
-    def _get_crop_size(self, image)
+    def _get_min_edge_size(self, image):
+        '''Get smaller edge size of image (in case it is not a square image)'''
         shape = image.shape
         return np.min(shape)
     
-    def _get_central_square_crop(image, num_pixel):
+    def _get_crop_size(self, image):
+        '''Return the size in pixel to crop to (main function to be overwritten)'''
+        return self._get_min_edge_size(image)
+    
+    def _check_crop_size(self, image, crop_size):
+        '''Check if crop size is larger than the image itself; in that case either enlarge or use the max size'''
+        img_edge_size = self._get_min_edge_size(image)
+        
+        if crop_size <= img_edge_size:
+            return crop_size
+        elif self._enlarge_image:
+            raise NotImplementedError("The enlargement of images has still to be implemented.")
+        else:
+            return img_edge_size
+    
+    def _get_central_square_crop(self, image, num_pixel):
+        '''Get a central square crop of the image with a edge size of "num_pixel"'''
+        assert num_pixel > 0, "Crop sizes must be positive"
 
-        num_pixel_half = num_pixel//2
+        num_pixel_half = int(num_pixel//2)
         
         center_x, center_y = self._get_center(image)
         min_x = center_x - num_pixel_half
@@ -42,20 +63,24 @@ class ImageCropper(object):
         return image[min_x:max_x, min_y:max_y]
         
     def _resize(self, image):
+        '''Resize the image to the target size'''
         return resize(image, (self._image_target_size, self._image_target_size))
         
-    def __call__(self, image)
+    def __call__(self, image):
+        '''Apply the crop to an image'''
         crop_size = self._get_crop_size(image)
-        image = self._central_square_crop(image, crop_size)
+        crop_size = self._check_crop_size(image, crop_size)
+        image = self._get_central_square_crop(image, crop_size)
         image = self._resize(image)
         return image
     
 class FractionalCropper(ImageCropper):
+    '''Class to crop according to a fraction of the sidelength of the images'''
     
-    def __init__(self, crop_fraction=1.0, enlarge_image=False, **kwargs):
+    def __init__(self, crop_fraction=1.0, **kwargs):
         super().__init__(**kwargs)
+        
         self.crop_fraction = crop_fraction
-        self._enlarge_image = enlarge_image
         
     @property
     def crop_fraction(self):
@@ -66,19 +91,12 @@ class FractionalCropper(ImageCropper):
         assert value > 0.
         self._crop_fraction = value
         
-    def _get_crop_size(self, image)
-        target_size = super()._get_crop_size(image)
-        fraction_size = self.crop_fraction * target_size
-        
-        if self.crop_fraction <= 1.0:
-            return fraction_size
-        elif self._enlarge_image:
-            raise NotImplementedError("The enlargement of images has still to be implemented.")
-        else:
-            return target_size
-    
-    
+    def _get_crop_size(self, image):
+        return self.crop_fraction * self._get_min_edge_size(image)
+
+       
 class PetrosianCropper(ImageCropper):
+    '''Class to crop according to a multiple of the petrosian 90% radius'''
 
     def __init__(self, petro_multiplier=4, **kwargs):
         super().__init__(**kwargs)
@@ -89,12 +107,26 @@ class PetrosianCropper(ImageCropper):
         
     @property
     def r_half_light(self):
-        return self._r_half_light
+        '''Half light radius in pixel'''
+        if self._r_half_light > 0:
+            return self._r_half_light
+        else:
+            return np.nan
             
     @property
     def r_90_light(self):
-        return self._r_90_light
-        
+        '''Radius containing 90% of the light in pixel'''
+        if self._r_90_light > 0:
+            return self._r_90_light
+        else:
+            return np.nan
+    
+    @property
+    def valid(self):
+        '''Flag if the fit was successful'''
+        not_nan = not np.any(np.isnan((self.r_half_light, self.r_90_light)))
+        return not_nan
+    
     @property
     def petro_multiplier(self):
         return self._petro_multiplier
@@ -120,7 +152,9 @@ class PetrosianCropper(ImageCropper):
 
         return x
     
-    def fit(self, image, mode='most_central'):
+    
+    def _fit_core(self, image, selection_mode='most_central', num_radii=20):
+        '''Fit a petrosian model to the given image to determine the crop size'''
         
         #Clip and normalize image before fitting
         image = self._stretch(image)
@@ -133,14 +167,16 @@ class PetrosianCropper(ImageCropper):
                                                deblend=True,  # Deblend sources?
                                                kernel_size=3,  # Smoothing kernel size in pixels
                                                fwhm=3,  # FWHM in pixels
-                                               npixels=4**2  # Minimum number of pixels that make up a source)
+                                               npixels=4**2,  # Minimum number of pixels that make up a source
+                                               plot=False
+                                              )
         
         #Get as source the object with the highest flux or the most central one
-        if mode == 'max_flux':
+        if selection_mode == 'max_flux':
                                                
             i = np.argmax(cat.kron_flux)
                                                
-        elif mode == 'most_central':
+        elif selection_mode == 'most_central':
         
             source_x = cat.xcentroid
             source_y = cat.ycentroid
@@ -150,16 +186,21 @@ class PetrosianCropper(ImageCropper):
             i = np.argmin(distance)
                                                
         else:
+            
             raise ValueError("Unknown fit selection mode")
                                                
         source = cat[i]
         
-        #Choose the aperature to look at (choose from source bbox)
-        bbox_size = np.min((source.bbox_xmax - source.bbox_xmin,
+        #Choose the aperature to look at
+        bbox_size = np.max((source.bbox_xmax - source.bbox_xmin,
                             source.bbox_ymax - source.bbox_ymin))                                
-                                               
-        r_list = make_radius_list(max_pix=bbox_size//2, # Max pixel to go up to
-                                  n=bbox_size//2 # the number of radii to produce)
+        
+        max_radius = np.min((self._get_min_edge_size(image)//2, int(bbox_size*2)))
+        num_radii = np.min((int(max_radius), num_radii))
+        
+        r_list = make_radius_list(max_pix=max_radius, # Max pixel to go up to
+                                  n=num_radii # the number of radii to produce
+                                 )
 
         #Perform Photometry
         flux_arr, area_arr, error_arr = source_photometry(
@@ -173,16 +214,31 @@ class PetrosianCropper(ImageCropper):
                                                 # Options
                                                 cutout_size=max(r_list)*2, # Cutout out size, set to double the max radius
                                                 bkg_sub=True, # Subtract background
-                                                sigma=3, sigma_type='clip' # Fit a 2D plane to pixels within 3 sigma of the mean)
+                                                sigma=3, sigma_type='clip', # Fit a 2D plane to pixels within 3 sigma of the mean                             
+                                                plot=False
+            
+                                                )
         
         #Do Petrosian stuff
         p = Petrosian(r_list, area_arr, flux_arr)
             
         self._r_half_light = p.r_half_light
         self._r_90_light = p.fraction_flux_to_r(fraction=0.9)
+        
+        
+    def fit(self, image):
+        '''Wrapper function as the fitting sometimes gives an error which has to be handled'''
+        try:
+            image = copy(image)
+            self._fit_core(image)
+        except (TypeError, ValueError):
+            print("Warning: Petrosian Fit failed...")
+            self._r_half_light = np.nan
+            self._r_90_light = np.nan
             
-        return self._r_half_light, self._r_90_light
-            
-            
-        def _get_crop_size(self, image)
+                    
+    def _get_crop_size(self, image):
+        if self.valid:
             return self.r_90_light * self.petro_multiplier
+        else:
+            return self._get_min_edge_size(image)

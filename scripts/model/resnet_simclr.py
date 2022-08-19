@@ -16,7 +16,7 @@ class ResNetSimCLR(nn.Module):
         #Use default parameter if not set
         params = dict(model_default_params, **params)
         
-        # get main equivariant cnn model
+        #Get equivariant CNN model
         self.resnet = Wide_ResNet(params["RESNET_DEPTH"],
                                   params["RESNET_WIDTH"],
                                   params["RESNET_DROPOUT"],
@@ -27,7 +27,14 @@ class ResNetSimCLR(nn.Module):
                                   r=params["RESNET_ROTATION_RESTRICTION"],
                                   initial_stride=params["RESNET_INITIAL_STRIDE"])
         
-
+        #Add Linear layer for the representation
+        self.resnet.add_module("ResNet_ReLU_Representation_1", nn.ReLU())
+        self.resnet.add_module("ResNet_Linear_Representation_1", nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"]))
+        self.resnet.add_module("ResNet_ReLU_Representation_2", nn.ReLU())
+        self.resnet.add_module("ResNet_Linear_Representation_2", nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"]))
+        self.resnet.add_module("ResNet_ReLU_Representation_3", nn.ReLU())
+        self.resnet.add_module("ResNet_Linear_Representation_3", nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"]))
+        
         # add mlp projection head
         self.projection = nn.Sequential()
         self.projection.add_module("ResNet", self.resnet)

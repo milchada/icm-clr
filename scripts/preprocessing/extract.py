@@ -48,9 +48,7 @@ if __name__ == "__main__":
     
     for i, dataset in enumerate(DATASETS):
         print("Load " + dataset)
-        
-        ext = DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS, FIELDS[i], IMAGE_SIZE[i], FILTERS[i])
-        ext.extract()
+        DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS, FIELDS[i], IMAGE_SIZE[i], FILTERS[i])
             
             
 

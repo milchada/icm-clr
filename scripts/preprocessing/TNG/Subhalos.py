@@ -375,11 +375,11 @@ class Subhalos:
         return self.g_band_mag - self.r_band_mag
 
     @property
-    def metalicity_star(self):
+    def metallicity_star(self):
         return self.load_auxcat(self.__stellar_metalicity_path, "Subhalo_StellarZ_2rhalf_rBandLumWt")
     
     @property
-    def metalicity_gas(self):
+    def metallicity_gas(self):
         return self.load_groupcat("SubhaloStarMetallicityHalfRad")
 
     @property

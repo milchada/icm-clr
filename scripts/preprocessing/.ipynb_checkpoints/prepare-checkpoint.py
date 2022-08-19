@@ -146,32 +146,39 @@ class DatasetPreparator(object):
         return df
 
 
-    def train_val_test_split(self, x, y, m, fractions):
+    def split(self, x, fractions, root_descendant_ids=None):
         '''
         Split x and y randomly into train, val and test set according to fractions tuple
         e.g (0.7, 0.2, 0.1) If fractions dont sum up to 1: drop the remaining dataset
         => (0.,0.,0.1) uses random 10% of the sample for testing
         '''
 
-        assert np.sum(fractions) <= 1.0, "Sum of fractions should be <= 1"
-
+        def get_random_fraction_mask(fractions, size):
+            '''Create masks (of length 'size') according to the given fractions'''
+            
+            assert np.sum(fractions) <= 1.0, "Sum of fractions should be <= 1"
+            
+            rng = np.random.default_rng(SPLIT_SEED)
+            u = rng.uniform(0.0, 1.0, size=size)
+            cumulative_fractions = np.cumsum([0.] + fractions)
+            
+            assert np.max(cumulative_fractions) <= 1.0
+            
+            mask_list = []
+            
+            for i in range(len(fractions)):
+                mask = np.logical_and(u > cumulative_fractions[i], u < cumulative_fractions[i+1])
+                mask_list.append(mask)
+                    
+            assert len(mask_list) == len(fractions)
+            
+            return mask_list
+        
         #Shuffle data
         x = shuffle(x, random_state=SPLIT_SEED)
-        y = shuffle(y, random_state=SPLIT_SEED)
-        m = shuffle(m, random_state=SPLIT_SEED)
 
-        #Get masks according to fraction to split the sample:
-        if not "root_descendant_ids" in self.df.head(0) or not ROOT_DESCENDANT_SPLIT:
-
-            rng = np.random.default_rng(SPLIT_SEED)
-            u = rng.uniform(0.0, 1.0, size=len(x))
-            train = u < fractions[0]
-            val = np.logical_and(u > fractions[0], u < fractions[0] + fractions[1])
-            test = u > (1. - fractions[2]) 
-
-        else: 
-            #Get root descendant_ids
-            root_descendant_ids = m["root_descendant_id"]
+        #Split according to root descendant ids if given
+        if root_descendant_ids is not None and ROOT_DESCENDANT_SPLIT:
 
             #Shuffle also the rd_ids
             root_descendant_ids = shuffle(root_descendant_ids, random_state=SPLIT_SEED)
@@ -179,39 +186,26 @@ class DatasetPreparator(object):
             #Get unique rd_ids and shuffle them
             rd = np.unique(root_descendant_ids)
             rd = shuffle(rd, random_state=SPLIT_SEED+1)
-
-            #Split the unique ids according to fraction
-            #(Assume that the number of subhalos for each unique rd differs not too much)
-            rng = np.random.default_rng(SPLIT_SEED)
-            u = rng.uniform(0.0, 1.0, size=len(rd))
-            train = u < fractions[0]
-            val = np.logical_and(u > fractions[0], u < fractions[0] + fractions[1])
-            test = u > (1. - fractions[2]) 
-
-            rd_train = rd[train]
-            rd_val = rd[val]
-            rd_test = rd[test]
-
-            #Include all subhalos where the rd is equal
-            train = np.isin(root_descendant_ids, rd_train)
-            val = np.isin(root_descendant_ids, rd_val)
-            test = np.isin(root_descendant_ids, rd_test)
-
+            
+            #Get random split masks
+            fraction_masks = get_random_fraction_mask(fractions, len(rd))
+            
+            #Transfer from root descendant split to a split of the actual data
+            for i, m in enumerate(fraction_masks):
+                rd_masked = rd[m]
+                fraction_masks[i] = np.isin(root_descendant_ids, rd_masked)
+            
+        else:
+            #Get random split masks
+            fraction_masks = get_random_fraction_mask(fractions, len(x))
             
         #Apply masks
-        x_train = x[train]
-        y_train = y[train]
-        m_train = m[train]
+        split_x = []
+        for m in fraction_masks:
+            x_masked = x[m]
+            split_x.append(x_masked)
 
-        x_val = x[val]
-        y_val = y[val]
-        m_val = m[val]
-
-        x_test = x[test]
-        y_test = y[test]
-        m_test = m[test]
-
-        return (x_train, y_train, m_train), (x_val, y_val, m_val), (x_test, y_test, m_test)
+        return split_x
 
     def scale(self, df, fields, scaler=None):
         '''Scale the input, if avail with a given scaler otherwise create a new one based on the given data'''
@@ -246,10 +240,18 @@ class DatasetPreparator(object):
         #Keep all fields also as unscaled metadata
         df_m = self.df
         
-        #Split this set according to the fractions given by s[1]
-        train, val, test =  self.train_val_test_split(df_x, df_y, df_m, fractions)
+        #Check for the rd ids
+        if "root_descendant_ids" in df_m.head(0):
+            root_descendant_ids = df_m['root_descendant_ids']
+        else:
+            root_descendant_ids = None
         
-        return train, val, test
+        #Split the set
+        x_split =  self.split(df_x, fractions, root_descendant_ids)
+        y_split =  self.split(df_y, fractions, root_descendant_ids)
+        m_split =  self.split(df_m, fractions, root_descendant_ids)
+        
+        return x_split, y_split, m_split
         
 
 class DatasetMatcher(object):
@@ -276,8 +278,14 @@ class DatasetMatcher(object):
             self._datasets.append(DatasetPreparator(title))
         
     def match_datasets(self):
+        '''
+        Match the given datasets according to the Matching Fields.
+        Atm it supports only the matching of 2 datasets; otherwise the handling 
+        of the matching masks has to be fixed: maybe get the matched_mask for all datasets first
+        and then match again for target[matched_mask]
+        '''
         
-        if MATCHING_FIELDS is not None and len(self._datasets)>1:
+        if MATCHING_FIELDS is not None and len(self._datasets)==2:
             target_dataset = self._datasets[0]
             target_fields = MATCHING_FIELDS[0]
             target = target_dataset.df[target_fields]
@@ -291,9 +299,12 @@ class DatasetMatcher(object):
                 source = source_dataset.df[fields]
 
                 #Match the source to the target
-                matched_indexes = self._get_matched_indexes(target, source)
+                matched_indexes, matched_mask = self._get_matched_indexes(target, source)
                 source_dataset.df = source_dataset.df.iloc[matched_indexes]
         
+            #Remove target galaxies which have no analogue in the source
+            target_dataset.df = target_dataset.df[matched_mask]
+            
     
     def _get_matched_indexes(self, target, source):
         '''
@@ -301,15 +312,25 @@ class DatasetMatcher(object):
         Returns the index which will sort the source dataset to match the distribution of the target for the columns given 
         '''
         
-        def plot(target, source):
-            bins = 50
-            for th, sh in zip(target.head(0), source.head(0)):
-                fig = plt.Figure()
-                plt.hist(target[th], density=True, label="target", bins=bins)
-                plt.hist(source[sh], density=True, alpha=0.5, label="source", bins=bins)
-                plt.xlabel(th)
-                plt.legend()
-                fig.savefig(c.plots_path + "matching_" + th + ".pdf")
+        #def plot(target, source):
+        #    bins = 50
+        #    for th, sh in zip(target.head(0), source.head(0)):
+        #        fig = plt.Figure()
+        #        plt.hist(target[th], density=True, label="target", bins=bins)
+        #        plt.hist(source[sh], density=True, alpha=0.5, label="source", bins=bins)
+        #        plt.xlabel(th)
+        #        plt.legend()
+        #        fig.savefig(c.plots_path + "matching_" + th + ".pdf")
+        
+        #Scale source and target to ensure a fair treatment of the variouse matching fields
+        source = np.array(source)
+        target = np.array(target)
+        
+        scaler = StandardScaler()
+        scaler.fit(target)
+
+        source = scaler.transform(source)
+        target = scaler.transform(target)
         
         #Create a KDTree to search for the nearest galaxy in the sample to match
         kdt = KDTree(source, metric='euclidean')
@@ -319,25 +340,39 @@ class DatasetMatcher(object):
         
         #Output list containing the matched 
         matched_indexes = []
-
-        for x in target.to_numpy():
+        
+        #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
+        matched_mask = []
+        
+        for x in target:
             for i in range(MATCHING_MAX_ITER): 
                 distance, index = kdt.query([x], k=i+1, return_distance=True)
                 distance = distance[0,-1]
                 index = index[0,-1]
-                if index not in index_set or distance>MATCHING_MAX_DIST:
-                    break            
+                    
+                if distance>MATCHING_MAX_DIST or i == MATCHING_MAX_ITER-1:
+                    matched_mask.append(False)
+                    break
+        
+                if index not in index_set:
+                    matched_mask.append(True)
+                    index_set.add(index)
+                    matched_indexes.append(index)
+                    break
 
-            index_set.add(index)
-            matched_indexes.append(index)
-
+        #Ensure that there are no double matched galaxies
         ux, counts = np.unique(matched_indexes, return_counts=True)
-        print("Number of double matched galaxies: " + str(np.sum(counts > 1)))
+        assert(np.sum(counts > 1) == 0)
+        
+        #Print numer of matched galaxies
+        num_matched = str(np.sum(matched_mask))
+        num_target = str(len(matched_mask))
+        print("Number of matched galaxies: " + num_matched + " / " + num_target)
         
         #Plot
-        plot(target, source.iloc[matched_indexes])
+        #plot(target[matched_mask], source[matched_indexes])
         
-        return matched_indexes
+        return matched_indexes, matched_mask
     
     def scale_split_save(self):
         
@@ -365,18 +400,23 @@ class DatasetMatcher(object):
 
         #Split the sets and concat them
         train = []
+        domain = []
         val = []
         test = []
         
         for s, frac in zip(self._datasets, self._dataset_fractions):
             s.x_scaler = x_scaler
-            s.y_scaler = x_scaler
-            split = s.scale_split(frac)
-            train.append(split[0])
-            val.append(split[1])
-            test.append(split[2])
+            s.y_scaler = y_scaler
+            x_split, y_split, m_split = s.scale_split(frac)
+            
+            #Go through each of the splits for x, y and m
+            train.append([x_split[0], y_split[0], m_split[0]])
+            domain.append([x_split[1], y_split[1], m_split[1]])
+            val.append([x_split[2], y_split[2], m_split[2]])
+            test.append([x_split[3], y_split[3], m_split[3]])
             
         save(train, 'train')
+        save(domain, 'domain')
         save(val, 'val')
         save(test, 'test')
                       

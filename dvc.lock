@@ -3,10 +3,10 @@ stages:
   extract:
     cmd: python3 -m scripts.extract.extract
     deps:
-    - path: ./scripts/extract/
-      md5: 2594fe97c7cc4a8fdea65444fd09bd98.dir
-      size: 57623
-      nfiles: 12
+    - path: ./scripts/preprocessing/
+      md5: 2793a4271eb3a17dbcd8a6cd4be0d835.dir
+      size: 47615023
+      nfiles: 34
     params:
       params.yaml:
         extract:
@@ -17,47 +17,96 @@ stages:
           - 78
           - 84
           - 91
-          SIMULATIONS:
-          - TNG50-1
+          DATASETS:
+          - HSC_TNG50
+          - HSC
+          FIELDS:
+          - - snapshot_id
+            - subhalo_id
+            - root_descendant_id
+            - lookback
+            - z
+            - stellar_age_2rhalf_lumw
+            - fraction_disk_stars
+            - stellar_mass
+            - mass_in_rad
+            - mass_exsitu
+            - half_mass_rad_physical
+            - snap_num_last_maj_merger
+            - mass_last_maj_merger
+            - mean_merger_lookback_time
+            - mean_merger_mass_ratio
+            - color
+            - i_band_mag_apparent
+            - i_band_mag_dust_apparent
+          - - photoz
+            - petroR90_r
+            - r_cmodel_mag_ge
+            - g_cmodel_mag_ge
+            - i_cmodel_mag_ge
+            - z_cmodel_mag_ge
+          IMAGE_SIZE:
+          - 256
+          - 256
+          FILTERS:
+          - - G
+            - R
+            - I
+          - - G
+            - R
+            - I
     outs:
     - path: ./dataset_raw/
-      md5: 7b8fc82f4e03313def9232c2feaaa1c5.dir
-      size: 426259
-      nfiles: 4
+      md5: 7b56d4f107766f91d27e69505d0de4dc.dir
+      size: 152908517930
+      nfiles: 164355
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./dataset_raw/
-      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
-      size: 223191428819
-      nfiles: 77181
-    - path: ./scripts/preprocessing/prepare.py
-      md5: 9d2455b0d2644d1606608620abb95eac
-      size: 11084
+      md5: b5c34e74d732ffda8401c09985de2fda.dir
+      size: 186919518373
+      nfiles: 185596
+    - path: ./scripts/preprocessing/
+      md5: dedc5316524bc8ed6f4ccae756e7650a.dir
+      size: 47615023
+      nfiles: 34
     params:
       params.yaml:
         prepare:
           SPLIT_SEED: 0
           SETS:
-          - - TNG50-1
+          - - HSC_TNG50
             - - 0.8
+              - 0.0
+              - 0.0
+              - 0.1
+          - - HSC
+            - - 0.0
+              - 0.8
               - 0.1
               - 0.1
-          OBSEVABLES:
-          - mass
-          - lookback
+          MATCHING_MAX_ITER: 200
+          MATCHING_MAX_DIST: 0.05
+          MATCHING_FIELDS:
+          - - z
+            - i_band_mag_dust_apparent
+          - - photoz
+            - i_cmodel_mag_ge
+          OBSERVABLES: None
           UNOBSERVABLES:
-          - mean_merger_lookback_time
-          - mean_merger_mass_ratio
+          - lookback
+          - mass
+          - fraction_disk_stars
+          - stellar_age_2rhalf_lumw
           - mass_last_maj_merger
-          - lookback_time_last_maj_merger
           - exsitu
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
-      size: 12452383
-      nfiles: 11
+      md5: afd5a76082f3daf4dcd865235516505e.dir
+      size: 4362196
+      nfiles: 14
   train:
     cmd: python3 -m scripts.model.train
     deps:
@@ -82,80 +131,344 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
-      size: 12452383
-      nfiles: 11
+      md5: afd5a76082f3daf4dcd865235516505e.dir
+      size: 4362196
+      nfiles: 14
     - path: ./dataset_raw/
-      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
-      size: 223191428819
-      nfiles: 77181
-    - path: ./runs/
-      md5: 9d109710960e471ce5e6cd056b966e25.dir
-      size: 1542397643
-      nfiles: 15
+      md5: b5c34e74d732ffda8401c09985de2fda.dir
+      size: 186919518373
+      nfiles: 185596
+    - path: ./model/resnet.pt
+      md5: eb975df3d3e27eac8b33783ff8ba5ed3
+      size: 137983416
     - path: ./scripts/postprocessing/write_representation.py
-      md5: 79f7c52cbd003968abe1984f8d937f4e
-      size: 1491
+      md5: 9920287255e7a4ce6bb6b3c2f67bbdba
+      size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 5bdb49d1b1d5a17735fb94a1cc8a2996
-      size: 1437312
+      md5: ad8c42d17a8f6fd3e5ed5dd90a21c01f
+      size: 322176
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
     deps:
     - path: ./postprocessing/representation.npy
-      md5: 5bdb49d1b1d5a17735fb94a1cc8a2996
-      size: 1437312
+      md5: ad8c42d17a8f6fd3e5ed5dd90a21c01f
+      size: 322176
     - path: ./scripts/postprocessing/create_UMAP.py
       md5: 7363fe1725f4d34a9eb7a9e1f43b5c8d
       size: 748
     outs:
     - path: ./postprocessing/umap.npy
-      md5: 232f7ce8ab5361bc44e02c2d60b0bda4
-      size: 22584
+      md5: d7c1a3cc340dc8a9e9b3c038078e9b19
+      size: 10192
   train_simclr:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: 21f9cb8ae407c1ab5ed7eecfcd941651.dir
-      size: 12452383
-      nfiles: 11
+      md5: afd5a76082f3daf4dcd865235516505e.dir
+      size: 4362196
+      nfiles: 14
     - path: ./dataset_raw/
-      md5: 5e73000d0963057fc7fd0cd91bcee7a8.dir
-      size: 223191428819
-      nfiles: 77181
+      md5: b5c34e74d732ffda8401c09985de2fda.dir
+      size: 186919518373
+      nfiles: 185596
     - path: ./scripts/model/losses.py
-      md5: baeadb85948b485147af65a17c14cc5a
-      size: 3599
+      md5: 4845cef4ddb46388345b7ea1e9369ae5
+      size: 5780
     - path: ./scripts/model/resnet.py
-      md5: 119eb97321e303a901b5f1430e516b07
-      size: 16441
+      md5: 2d1f58e5bd0840260085beb44437dbf9
+      size: 16257
     - path: ./scripts/model/resnet_simclr.py
-      md5: c1700e6ae2825ec5e0755aa8317135e7
-      size: 1748
+      md5: 707d3b5c44ed780a26662cf30a2cdfae
+      size: 2592
     - path: ./scripts/model/train_simclr.py
-      md5: ae336127d29cbcc64263b0135007fb9d
-      size: 6915
+      md5: 0a4b02cfe02805ded5aee7605a42f9bd
+      size: 6772
+    - path: ./scripts/model/training.py
+      md5: 286fb757ed94bdda89e3a98d4cf5b7d1
+      size: 4633
     params:
       params.yaml:
         data:
           VALID_RANGE:
           - None
           - None
+          - None
+          - None
           - - 7.0
             - 11.5
-          - - 0.0
-            - 13.7
           - None
+          DATASET: TNGDataset
           IMAGE_SIZE: 128
-        train_simclr:
           NUM_WORKERS: 18
-          LEARNING_RATE: 0.0003
-          WEIGHT_DECAY: 0.0001
-          BATCH_SIZE: 64
-          NUM_EPOCHS: 30
-          PATIENCE: 5
+        losses:
+          mmd_kernel_type: inverse_multiquadratic
+          mmd_forw_kernels:
+          - - 0.2
+            - 2
+          - - 1.5
+            - 2
+          - - 3.0
+            - 2
+          mmd_back_kernels:
+          - - 0.2
+            - 0.1
+          - - 0.2
+            - 0.5
+          - - 0.2
+            - 2
+          mmd_kernels:
+          - - 0.2
+            - 0.1
+          - - 0.2
+            - 0.5
+          - - 0.2
+            - 2
+          - - 1.5
+            - 2
+          - - 3.0
+            - 2
+          - - 0.2
+            - 3
+          adaption_type: huber_kld
+          lambd_simclr_train: 1.0
+          lambd_simclr_domain: 1.0
+          lambd_simclr_adaption: 0.1
+          lambd_max_likelihood: 1.0
+          lambd_mmd_forw: 0.0
+          lambd_mmd_back: 0.0
+          lambd_mae: 0.0
+          lambd_mse: 0.0
+          nce_temperature: 0.07
+        model:
+          CLAMP: 1.0
+          NUM_COUPLING_LAYERS: 12
+          NUM_COND_NODES: 128
+          NUM_HIDDEN_NODES: 128
+          NUM_HIDDEN_LAYERS: 2
+          DROPOUT: 0.0
+          BATCH_NORM: false
+          NUM_HIDDEN_NODES_COND: 128
+          NUM_HIDDEN_LAYERS_COND: 2
+          DROPOUT_COND: 0.0
+          BATCH_NORM_COND: false
+          RESNET_DEPTH: 16
+          RESNET_WIDTH: 2
+          RESNET_DROPOUT: 0.2
+          RESNET_REPRESENTATION_DIM: 128
+          RESNET_REPRESENTATION_DEPTH: 2
+          RESNET_PROJECTION_DIM: 128
+          RESNET_PROJECTION_DEPTH: 3
+          RESNET_NUM_CHANNELS: 3
+          RESNET_ROTATION_EQUIVARIANCE: 8
+          RESNET_ROTATION_RESTRICTION: 0
+          RESNET_REFLECTION_EQUIVARIANCE: true
+          RESNET_INITIAL_STRIDE: 2
+        train_simclr:
+          LEARNING_RATE: 0.001
+          L2_DECAY: 0.0001
+          BETA_1: 0.9
+          BETA_2: 0.999
+          LR_PATIENCE: 5
+          LR_DECAY: 0.5
+          BATCH_SIZE: 32
+          NUM_EPOCHS: 50
+          PATIENCE: 50
+          AUGMENTATION_PARAMS:
+            ROTATION: 15
+            TRANSLATE: 0.2
+            SCALE: 2
+            FLIP: true
+            GAUSSIAN_BLUR_SIGMA:
+            - 0.001
+            - 2.0
+            NOISE_STD:
+            - 0.0
+            - 0.04
     outs:
     - path: ./model/resnet.pt
-      md5: 14b3c3b7b5768a54f12a4f000e2a416d
-      size: 125136030
+      md5: eb975df3d3e27eac8b33783ff8ba5ed3
+      size: 137983416
+  sample_posterior:
+    cmd: python3 -m scripts.postprocessing.sample_posterior
+    deps:
+    - path: ./dataset/
+      md5: ef180115e0735a64e2bf5d80515e9cee.dir
+      size: 4649551
+      nfiles: 14
+    - path: ./model/
+      md5: e6124d809142746f809b3037115ac141.dir
+      size: 1874732734
+      nfiles: 4
+    - path: ./scripts/postprocessing/sample_posterior.py
+      md5: a0997d8359fa5618acfa9be7e926e95f
+      size: 3281
+    params:
+      params.yaml:
+        sample_posterior:
+          NUM_SAMPLES: 400
+    outs:
+    - path: ./postprocessing/posterior.npy
+      md5: 51303c3031de7398d3c3f8556257ef6e
+      size: 17414528
+  train_cinn:
+    cmd: python3 -m scripts.model.train_cinn
+    deps:
+    - path: ./dataset/
+      md5: ef180115e0735a64e2bf5d80515e9cee.dir
+      size: 4649551
+      nfiles: 14
+    - path: ./dataset_raw/
+      md5: 7b56d4f107766f91d27e69505d0de4dc.dir
+      size: 152908517930
+      nfiles: 164355
+    - path: ./scripts/model/
+      md5: 795f187e68c72dd52cca44f761654c48.dir
+      size: 195869
+      nfiles: 36
+    params:
+      params.yaml:
+        data:
+          VALID_RANGE:
+          - None
+          - None
+          - None
+          - None
+          - - 7.0
+            - 11.5
+          - None
+          DATASET: TNGDataset
+          IMAGE_SIZE: 128
+          NUM_WORKERS: 18
+        train_cinn:
+          L2_DECAY: 0.0002
+          BETA_1: 0.9
+          BETA_2: 0.999
+          LEARNING_RATE: 0.002
+          LR_PATIENCE: 5
+          LR_DECAY: 0.5
+          NUM_EPOCHS: 200
+          PATIENCE: 20
+          USE_PRETRAINED_RESNET: true
+          FIX_RESNET_PARAMS: true
+          RESNET_LR_THRESHOLD: 5e-05
+          BATCH_SIZE: 128
+          NOISE: 0.75
+          NUM_MODELS: 1
+          AUGMENTATION_PARAMS:
+            ROTATION: 10
+            TRANSLATE: 0.2
+            SCALE: 2.0
+            FLIP: true
+            GAUSSIAN_BLUR_SIGMA:
+            - 0.1
+            - 1.0
+            NOISE_STD:
+            - 0.0
+            - 0.04
+    outs:
+    - path: ./model/cinn_0.pt
+      md5: 48c5f691604747be0910c89fbb85e7e6
+      size: 527258850
+  plot_map:
+    cmd: python3 -m scripts.plot.plot_map
+    deps:
+    - path: ./dataset/
+      md5: afd5a76082f3daf4dcd865235516505e.dir
+      size: 4362196
+      nfiles: 14
+    - path: ./postprocessing/map.npy
+      md5: 752eb75184b93c82784502d86b509c31
+      size: 43664
+    - path: ./postprocessing/peak_number.npy
+      md5: f8940be97f9d0a2236afc9b12d8ccf3f
+      size: 43664
+    - path: ./postprocessing/peak_position.npy
+      md5: 146e62c7d7be08ab185ad16b6fc51231
+      size: 381014
+    - path: ./scripts/plot/plot_map.py
+      md5: a6c5953224b1a69ecdfe212d02ad1749
+      size: 17053
+    outs:
+    - path: ./metrics/plot_map.json
+      md5: c7174c7e7b92300ce6a2b18741eda898
+      size: 82
+    - path: ./plots/map/
+      md5: 47934647f63768c3c86f4aa45201644c.dir
+      size: 13246226
+      nfiles: 18
+  peak_detection:
+    cmd: python3 -m scripts.postprocessing.peak_detection
+    deps:
+    - path: ./postprocessing/posterior.npy
+      md5: 51303c3031de7398d3c3f8556257ef6e
+      size: 17414528
+    - path: ./scripts/postprocessing/peak_detection.py
+      md5: ac7b25c08b4229242f058ee416e9b4cd
+      size: 3853
+    params:
+      params.yaml:
+        peak_detection:
+          EVAL_BINS: 512
+          MIN_PEAK_DISTANCE: 32
+          MIN_PEAK_PROMINENCE: 0.02
+          MIN_PEAK_HEIGHT: 0.05
+    outs:
+    - path: ./metrics/peak_detection.json
+      md5: b1486613c0eec2114fc0e9c10dfa4e08
+      size: 42
+    - path: ./postprocessing/map.npy
+      md5: 752eb75184b93c82784502d86b509c31
+      size: 43664
+    - path: ./postprocessing/peak_number.npy
+      md5: f8940be97f9d0a2236afc9b12d8ccf3f
+      size: 43664
+    - path: ./postprocessing/peak_position.npy
+      md5: 146e62c7d7be08ab185ad16b6fc51231
+      size: 381014
+    - path: ./postprocessing/peak_prominence.npy
+      md5: 9d2d2f52d6c49fb0aab7f5f05b91bd09
+      size: 424550
+  plot_posterior:
+    cmd: python3 -m scripts.plot.plot_posterior
+    deps:
+    - path: ./dataset/
+      md5: afd5a76082f3daf4dcd865235516505e.dir
+      size: 4362196
+      nfiles: 14
+    - path: ./model/
+      md5: f82dfa86091adad25ad5659ee06d260c.dir
+      size: 1874732734
+      nfiles: 4
+    - path: ./scripts/plot/plot_posterior.py
+      md5: fd48226646b152681c872deca1cea841
+      size: 8131
+    outs:
+    - path: ./plots/posterior_example.pdf
+      md5: d819fe67be6c0adf268bf8e869baa0f0
+      size: 184916
+  test_z:
+    cmd: python3 -m scripts.postprocessing.test_z
+    deps:
+    - path: ./dataset/
+      md5: afd5a76082f3daf4dcd865235516505e.dir
+      size: 4362196
+      nfiles: 14
+    - path: ./model/
+      md5: bdd73cb4f2b6c15288344e75a4a8b22b.dir
+      size: 1714532286
+      nfiles: 4
+    - path: ./scripts/postprocessing/test_z.py
+      md5: 2e6e70e15ebe12d2be148b232023d05c
+      size: 3817
+    outs:
+    - path: ./metrics/test_z.json
+      md5: 0036ce2617d0e26699dd74fd0d0491f3
+      size: 114
+    - path: ./plots/test_z/
+      md5: 187de2d6469295fd0ce15f16bfc355be.dir
+      size: 64015
+      nfiles: 4
+    - path: ./postprocessing/z_norm.npy
+      md5: 583fcc76993625a4b431a43e66668ff4
+      size: 3776

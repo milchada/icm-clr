@@ -13,31 +13,35 @@ extract:
     SNAPSHOTS: [72, 78, 84, 91]
     DATASETS:
       #- "HSC_TNG50"
-      - "HSC"
+      - "HSC_TNG100"
+      #- "HSC"
     FIELDS: 
-      #- ["snapshot_id", "subhalo_id", "root_descendant_id",
-      #   "lookback", "z",
-      #   "stellar_age_2rhalf_lumw", "fraction_disk_stars",
-      #   "stellar_mass", "mass_in_rad", "mass_exsitu", "half_mass_rad_physical",
-      #   "snap_num_last_maj_merger", "mass_last_maj_merger",
-      #   "mean_merger_lookback_time", "mean_merger_mass_ratio",
-      #   "color", "i_band_mag_apparent", "i_band_mag_dust_apparent"]
-      - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
+      - ["snapshot_id", "subhalo_id", "root_descendant_id",
+         "lookback", "z",
+         "stellar_age_2rhalf_lumw", "fraction_disk_stars",
+         "stellar_mass", "mass_in_rad", "mass_exsitu", "half_mass_rad_physical",
+         "snap_num_last_maj_merger", "mass_last_maj_merger",
+         "mean_merger_lookback_time", "mean_merger_mass_ratio",
+         "color", "i_band_mag_apparent", "i_band_mag_dust_apparent"]
+         # - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     IMAGE_SIZE: 
-      #- 256
       - 256
+      #- 256
+      #- 256
     FILTERS:
-      #- ['G', 'R', 'I']
       - ['G', 'R', 'I']
+      #- ['G', 'R', 'I']
+        #- ['G', 'R', 'I']
       
 
 prepare:
     #Seed for the random split algorithm
     SPLIT_SEED: 0
-    #Simulation to use with the split fractions: Training, Validation, Testing
+    #Datasets to use with the split fractions: Training, Validation, Testing
     #Note, that feature scaling is determined by the first set
     SETS:
-      - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
+      - ["HSC_TNG100", [0.9, 0.0, 0.0, 0.1]] 
+      - ["HSC_TNG50", [0.9, 0.0, 0.0, 0.1]]  
       - ["HSC", [0.0, 0.8, 0.1, 0.1]]
     MATCHING_MAX_ITER: 200
     MATCHING_MAX_DIST: 0.05
@@ -66,7 +70,6 @@ data:
       - None
       - None
       - [7., 11.5]
-      #- [0., 13.7]
       - None
     #Choose the Dataset Object which determines how the images are loaded and streched
     DATASET: 'TNGDataset' 
@@ -84,23 +87,23 @@ train_simclr:
     BETA_1: 0.9
     BETA_2: 0.999
     #Reduce the Learning rate if the validation loss has not improved for this number of epochs
-    LR_PATIENCE: 2
+    LR_PATIENCE: 10
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.5
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 32
+    BATCH_SIZE: 16
     #Maximum number of training epochs
-    NUM_EPOCHS: 10
+    NUM_EPOCHS: 100
     #Stop the training after validation loss has not improved for PATIENCE epochs
-    PATIENCE: 5
+    PATIENCE: 25
     #Augmentation parameters
     AUGMENTATION_PARAMS:
-        ROTATION: 10
+        ROTATION: 15
         TRANSLATE: 0.2
-        SCALE: 2.0
+        SCALE: 2
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.001, 4.0]
-        NOISE_STD: [0.0, 0.05]
+        GAUSSIAN_BLUR_SIGMA: [0.001, 2.0]
+        NOISE_STD: [0.0, 0.04]
     
 train_cinn:
     #Parameters of the Adam Optimizer
@@ -139,10 +142,10 @@ train_cinn:
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 10
-        TRANSLATE: 0.1
-        SCALE: 1.5
+        TRANSLATE: 0.2
+        SCALE: 2.0
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.1, 2.0]
+        GAUSSIAN_BLUR_SIGMA: [0.1, 1.0]
         NOISE_STD: [0.0, 0.04]
 
 model:
@@ -173,9 +176,10 @@ model:
     
     #Parameters for the resnet 
     RESNET_DEPTH: 16
-    RESNET_WIDTH: 2
-    RESNET_DROPOUT: 0.3
+    RESNET_WIDTH: 3
+    RESNET_DROPOUT: 0.2
     RESNET_REPRESENTATION_DIM: 128
+    RESNET_REPRESENTATION_DEPTH: 2
     RESNET_PROJECTION_DIM: 128
     RESNET_PROJECTION_DEPTH: 3
     RESNET_NUM_CHANNELS: 3
@@ -202,6 +206,14 @@ losses:
     mmd_forw_kernels: [[0.2, 2], [1.5, 2], [3.0, 2]]
     mmd_back_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
     mmd_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2], [1.5, 2], [3.0, 2], [0.2, 3]]
+    
+    #Loss type for the adaption
+    adaption_type: "huber_kld"
+    
+    #Prefactor for the simclr losses
+    lambd_simclr_train: 1.
+    lambd_simclr_domain: 1.
+    lambd_simclr_adaption: 0.1
     
     #Prefactor for the cINN losses
     #i.e. the overall loss is given as weighted sum with the weights given as prefactors

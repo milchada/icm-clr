@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 stages:
-  extract:
-    cmd: python3 -m scripts.extract.extract
-    params:
-    - extract
-    deps:
-    - ./scripts/extract/
-    outs:
-    - ./dataset_raw/TNG50-1/labels/
+
+#  extract:
+#    cmd: python3 -m scripts.extract.extract
+#    params:
+#    - extract
+#    deps:
+#    - ./scripts/preprocessing/
+#    outs:
+#    - ./dataset_raw/:
+#        cache: false
+#    frozen: true
+    
     
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
@@ -15,7 +19,7 @@ stages:
     - prepare
     deps:
     - ./dataset_raw/
-    - ./scripts/preprocessing/prepare.py
+    - ./scripts/preprocessing/
     outs:
     - ./dataset/
 
@@ -23,11 +27,14 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     params:
     - data
+    - model
     - train_simclr
+    - losses
     deps:
     - ./dataset/
     - ./dataset_raw/
     - ./scripts/model/losses.py
+    - ./scripts/model/training.py
     - ./scripts/model/resnet.py
     - ./scripts/model/resnet_simclr.py
     - ./scripts/model/train_simclr.py
@@ -44,7 +51,8 @@ stages:
     - ./dataset_raw/
     - ./scripts/model/
     outs:
-    - ./model/cinn_*
+    - ./model/cinn_0.pt
+    frozen: true
 
   #Resnet Analysis
   #---------------------------------------------------------
@@ -76,12 +84,11 @@ stages:
     deps:
     - ./dataset/
     - ./model/
-    - data.py
     - ./scripts/postprocessing/sample_posterior.py
     outs:
     - ./postprocessing/posterior.npy:
         cache: false
-        
+
     frozen: true
 
   test_z:
@@ -95,6 +102,7 @@ stages:
     - ./postprocessing/z_norm.npy
     metrics:
     - ./metrics/test_z.json
+    frozen: true
 
   peak_detection:
     cmd: python3 -m scripts.postprocessing.peak_detection
@@ -110,7 +118,7 @@ stages:
     - ./postprocessing/peak_prominence.npy
     metrics:
     - ./metrics/peak_detection.json
-    
+
     frozen: true
 
   #Plots
@@ -123,7 +131,8 @@ stages:
     - ./dataset/
     outs:
     - ./plots/posterior_example.pdf
-  
+    frozen: true
+
   plot_map:
     cmd: python3 -m scripts.plot.plot_map
     deps:
@@ -136,3 +145,4 @@ stages:
     - ./plots/map/
     metrics:
     - ./metrics/plot_map.json
+    frozen: true

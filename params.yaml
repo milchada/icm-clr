@@ -24,15 +24,13 @@ extract:
          "mean_merger_lookback_time", "mean_merger_mass_ratio",
          "color", "i_band_mag_apparent", "i_band_mag_dust_apparent"]
          # - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
-    IMAGE_SIZE: 
-      - 256
-      #- 256
-      #- 256
-    FILTERS:
-      - ['G', 'R', 'I']
-      #- ['G', 'R', 'I']
-        #- ['G', 'R', 'I']
-      
+    IMAGE_SIZE: 256
+    FILTERS: ['G', 'R', 'I']
+    #Get Cutouts which are multiple of the petrosian radius
+    PETRO_RADIUS_FACTOR: 4
+    #Use cached data, useful if images are added to a dataset later on or if there was a minor bug while running
+    #Set this to False if there are any problems during the loading
+    USE_CACHE: True
 
 prepare:
     #Seed for the random split algorithm

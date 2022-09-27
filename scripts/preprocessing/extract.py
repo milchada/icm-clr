@@ -24,7 +24,7 @@ MIN_STELLAR_MASS = float(extract_params["MIN_STELLAR_MASS"])
 MAX_STELLAR_MASS = float(extract_params["MAX_STELLAR_MASS"])
 DATASETS = extract_params["DATASETS"]
 FIELDS = [str2None(i) for i in extract_params["FIELDS"]]
-IMAGE_SIZE = [int(str2None(i)) for i in extract_params["IMAGE_SIZE"]]
+IMAGE_SIZE = int(str2None(extract_params["IMAGE_SIZE"]))
 FILTERS = extract_params["FILTERS"]
 
 try:
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     
     for i, dataset in enumerate(DATASETS):
         print("Load " + dataset)
-        DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS, FIELDS[i], IMAGE_SIZE[i], FILTERS[i])
+        DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS, FIELDS[i], IMAGE_SIZE, FILTERS)
             
             
 

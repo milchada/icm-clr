@@ -11,6 +11,13 @@ import pandas as pd
 
 import config as c
 
+import yaml
+
+params = yaml.safe_load(open('params.yaml'))
+extract_params = params['extract']
+PETRO_RADIUS_FACTOR = extract_params['PETRO_RADIUS_FACTOR']
+USE_CACHE = extract_params['USE_CACHE']
+
 class DataExtractor(object):
     def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None):
         self._dataset = dataset
@@ -20,6 +27,7 @@ class DataExtractor(object):
         
         self._label_path = os.path.join(c.dataset_raw_path, self._dataset, "label.csv")
         self._image_path = os.path.join(c.dataset_raw_path, self._dataset, "images/")
+        self._cache_path = os.path.join(c.dataset_raw_path, self._dataset, "cache.csv")
         
         self._fields = fields
         self._image_size = image_size
@@ -37,10 +45,16 @@ class DataExtractor(object):
             return TNGDataExtractor(dataset, min_mass, max_mass, snapshots, fields)
         elif dataset in {"HSC_TNG50", "HSC_TNG50_Ideal"}:
             return TNGHSCExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation="TNG50-1")
+        elif dataset in {"HSC_TNG100"}:
+            return TNGHSCExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation="TNG100-1")
         elif dataset in {"HSC"}:
             return HSCDataExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters)
         else:
             raise NotImplementedError(dataset + " has not been implemented yet!")
+    
+    
+    # Stuff to handle creation of paths and files 
+    #--------------------------------------------------------------------------  
     
     def create_paths(self):        
         '''Create paths if not already existing'''
@@ -50,11 +64,48 @@ class DataExtractor(object):
     def save_labels(self, df):
         df["dataset"] = self._dataset
         df.to_csv(self._label_path, index=False)
+        
+        
+    # Caching 
+    #--------------------------------------------------------------------------     
+    @proptery
+    def use_cache(self):
+        return USE_CACHE
+        
+    def push_to_cache(self, df, merge_column = None):
+        '''If caching is activated, match new data to the one already in the cache'''
+        if self.use_cache and merge_column is not None:
+            df_cache = self.pull_from_cache()
+            df = pd.merge(df, df_cache, on=merge_column)
             
-    def get_filter_keys(self, filters):
-        '''Return the catalogue/survey specific filter keys'''
-        return None
+        df.to_csv(self._cache_path, index=False)
+        
+    def pull_from_cache(self):
+        return pd.read_csv(self._cache_path)
+        
+        
+    # Stuff to handle filter keys/names correctly
+    #--------------------------------------------------------------------------    
+    @property
+    def filter_dict(self):
+        '''Return a dictionary with the filter key mapping e.g. G -> HSC_G'''
+        raise NotImplementedError("This function is supposed to be overwritten!")
     
+    @property
+    def inv_filter_dict(self):
+        return {v: k for k, v in self.filter_dict.items()}
+        
+    def get_filter_keys(self, filters):
+        '''Return the catalogue/survey specific filter keys'''        
+        return [self.filter_dict[f] for f in filters] 
+    
+    def get_filter(self, filter_key):
+        '''Return the filter from catalogue/survey specific filter names'''
+        return self.inv_filter_dict[filter_key]
+    
+    
+    # Call which executes the whole loading process
+    #---------------------------------------------------------------------------
     def extract(self):
         raise NotImplementedError("This function is supposed to be overwritten!")
     
@@ -94,6 +145,10 @@ class TNGDataExtractor(DataExtractor):
      
 class TNGHSCExtractor(TNGDataExtractor):
     '''Class to load the TNG data incl the HSC Mocks'''
+    
+    @property
+    def filter_dict(self):
+        return {'G': 'SUBARU_HSC.G', 'R': 'SUBARU_HSC.R', 'I': 'SUBARU_HSC.I'}
         
     def _add_image_path(self, df):
         '''Add the path to the respective image for each entry in df. Multiply entrys if there are multiple images for the same galaxy and delete if there is no image'''
@@ -148,68 +203,53 @@ class TNGHSCExtractor(TNGDataExtractor):
 
         return df_matched
     
-    #Old implementation to also add stuff from the image headers, not needed at the moment.
-    '''
-    def _add_header(self, image_path):
-        """Add aditional information from the fits headers"""
-        
-        label_dict = {}
-        
-        with fits.open(image_path) as hdul:
-            for hdu in hdul:
-                header = hdu.header()
-                f = header["FILTER"]
-                amag = header["APMAG"]
-                label_dict['amag_' + str(f)] = amag
-                
-
-    def _multi_add_header(self, df, num_threads=18):
-        
-        print("Add entrys from fits files to label")
-        
-        image_paths = df["image_path"]
-        dicts = p.map(self._add_header, image_paths)
-         
-        return pd.concat([df, pd.DataFrame.from_dict(dicts)], axis=1)
-    '''
-    
-    def get_filter_keys(self, filters):
-        
-        filter_dict = {'G': 'SUBARU_HSC.G',
-                       'R': 'SUBARU_HSC.R',
-                       'I': 'SUBARU_HSC.I'} 
-        
-        return [filter_dict[f] for f in filters] 
-    
     def _resized_copy(self, filedir):
         '''Copy a resized version to save space and memory'''
         
         _, filename = os.path.split(filedir)
         new_path = self._image_path + filename
 
-        #Test if file is already existing, in that case: overwrite
+        #Test if file is already existing; either skip and use the cached data or delete and reload 
         if os.path.exists(new_path):
-            os.remove(new_path)
+            if self.use_cache:
+                return
+            else:
+                os.remove(new_path)
         
-        #Resize images and copy only needed filters
-        with fits.open(filedir) as hdul:
-
-            cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=4)
-            cropper.fit(hdul["SUBARU_HSC.R"].data)
-
-            hdu_copy = [fits.PrimaryHDU()]
-
-            for fk, f in zip(self._filters_keys, self._filters):
-                header = hdul[fk].header
-                image = hdul[fk].data                            
-                image = cropper(image)
-                hdu_copy.append(fits.ImageHDU(image, name=f, header=header))
-                    
-            hdul_copy = fits.HDUList(hdu_copy)
-            hdul_copy.writeto(new_path)
+        try:
         
-        return [new_path, cropper.r_half_light, cropper.r_90_light]
+            #Resize images and copy only needed filters
+            with fits.open(filedir) as hdul:
+
+                cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
+                cropper.fit(hdul["SUBARU_HSC.R"].data)
+
+                hdu_copy = [fits.PrimaryHDU()]
+
+                for fk, f in zip(self._filters_keys, self._filters):
+                    header = hdul[fk].header
+                    image = hdul[fk].data                            
+                    image = cropper(image)
+                    hdu_copy.append(fits.ImageHDU(image, name=f, header=header))
+
+                hdul_copy = fits.HDUList(hdu_copy)
+                hdul_copy.writeto(new_path)
         
+            return [new_path, cropper.r_half_light, cropper.r_90_light]
+        
+        except KeyError:
+            
+            print("Filter missing: skip image!")
+            
+            return ['', np.nan, np.nan]
+        
+        except TypeError:
+            
+            print("Weird type error: skip image!")
+            
+            return ['', np.nan, np.nan]
+            
+            
     def _multi_resized_copy(self, filelist, num_threads=18):
         output = []
         
@@ -218,43 +258,33 @@ class TNGHSCExtractor(TNGDataExtractor):
                 output.append(i)
                 
         output = np.array(output)
-        return pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
+        df = pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
+        self.push_to_cache(df, "image_path")
         
     def _extract_images(self):
         image_path_wildcard = os.path.join(c.image_cache_path, self._dataset) + '/**/*.fits'
         filelist = glob.glob(image_path_wildcard, recursive=True)
         print(str(len(filelist)) + " images found. Start loading...")
-        return self._multi_resized_copy(filelist)
+        self._multi_resized_copy(filelist)
     
-    def _extract_labels(self, df_aux):
+    def _extract_labels(self):
         print("Load labels...")
         df = self._load_TNG_labels(self._fields)
         df = self._add_image_path(df)
-        df = pd.merge(df, df_aux, on=["image_path"])
+        df_cache = self.pull_from_cache()
+        df = pd.merge(df, df_cache, on=["image_path"])
         self.save_labels(df)
         
     def extract(self):
-        df = self._extract_images()
-        self._extract_labels(df)
+        self._extract_images()
+        self._extract_labels()
     
 class HSCDataExtractor(DataExtractor):
     """Class to get the HSC images, because there is no exact snapshot all data is copied"""
     
-    def get_filter_keys(self, filters):
-        
-        filter_dict = {'G': 'HSC-G',
-                       'R': 'HSC-R',
-                       'I': 'HSC-I'} 
-        
-        return [filter_dict[f] for f in filters] 
-    
-    def get_filter(self, filter_key):
-        filter_dict = {'HSC-G': 'G',
-                       'HSC-R': 'R',
-                       'HSC-I': 'I'} 
-        
-        return filter_dict[filter_key]
-        
+    @property
+    def filter_dict(self):
+        return {'G': 'HSC-G', 'R': 'HSC-R', 'I': 'HSC-I'}
 
     def _get_data_from_fits(self, filelist):
         '''Extract information from fits files filename'''
@@ -308,12 +338,15 @@ class HSCDataExtractor(DataExtractor):
         id_list, filter_list = self._get_data_from_fits(filedirs)
         new_path = self._get_new_image_path(id_list[0])
 
-        #Test if file is already existing, in that case: overwrite
+        #Test if file is already existing; either skip and use the cached data or delete and reload 
         if os.path.exists(new_path):
-            os.remove(new_path)
+            if self.use_cache:
+                return
+            else:
+                os.remove(new_path)
         
         #Init a PetrosianCropper and fit the red channel
-        cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=4)
+        cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
         file_r = filedirs[filter_list == 'HSC-R']
         with fits.open(file_r[0]) as hdul:
             cropper.fit(hdul[1].data)
@@ -332,10 +365,6 @@ class HSCDataExtractor(DataExtractor):
                 image *= 1e9 / fluxmag0
                     
                 #Retrict to a multiple of the petro90 radius
-                #PETRO_MULTI = 4
-                #target_size = np.min([PETRO_MULTI*self._petroR90_r[i], 50])
-                #crop_fraction = target_size/50
-                #cropper = FractionalCropper(image_target_size=self._image_size, crop_fraction=crop_fraction)
                 image = cropper(image)
                 
                 hdu_copy.append(fits.ImageHDU(image, name=self.get_filter(f), header=header))
@@ -350,19 +379,17 @@ class HSCDataExtractor(DataExtractor):
         
     def _multi_resized_copy(self, filelist, num_threads=18):
         
-        #self._petroR90_r = dict(zip(df.object_id, df.petroR90_r))
-        
         output = []
         
         with Pool(num_threads) as p:
             for i in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
                 output.append(i)
                 
-        output = np.array(output)
-        return pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
+        df = pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
+        self.push_to_cache(df, "image_path")
     
     
-    def _extract_labels(self, unique_ids, df_aux):
+    def _extract_labels(self, unique_ids):
         CSV_PATH = os.path.join(c.image_cache_path, self._dataset, "s20a_hsc-wide_gridet_sdss-dr16_petr20_gswlc2.csv")
         df = pd.read_csv(CSV_PATH)
         
@@ -375,7 +402,9 @@ class HSCDataExtractor(DataExtractor):
         
         v_get_new_image_path = np.vectorize(self._get_new_image_path)
         df['image_path'] = v_get_new_image_path(unique_ids)
-        df = pd.merge(df, df_aux, on=['image_path'])
+        
+        df_cache = self.pull_from_cache()
+        df = pd.merge(df, df_cache, on=["image_path"])
         
         self.save_labels(df)
         
@@ -396,6 +425,6 @@ class HSCDataExtractor(DataExtractor):
         unique_ids, filelist_grouped = self._group_filters(id_list, filter_list, filelist)
         
         
-        df_aux = self._multi_resized_copy(filelist_grouped)
-        self._extract_labels(unique_ids, df_aux)
+        self._multi_resized_copy(filelist_grouped)
+        self._extract_labels(unique_ids)
         

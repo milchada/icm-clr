@@ -20,6 +20,12 @@ mmd_back_kernels = losses_params['mmd_back_kernels']
 mmd_kernels = losses_params['mmd_kernels']
 mmd_kernel_type = losses_params['mmd_kernel_type']
 
+adaption_type = losses_params['adaption_type']
+
+lambd_simclr_train = losses_params['lambd_simclr_train']
+lambd_simclr_domain = losses_params['lambd_simclr_domain']
+lambd_simclr_adaption = losses_params['lambd_simclr_adaption']
+
 lambd_max_likelihood = losses_params['lambd_max_likelihood']
 lambd_mmd_forw = losses_params['lambd_mmd_forw']
 lambd_mmd_back = losses_params['lambd_mmd_back']
@@ -127,24 +133,6 @@ def loss_backward_mmd(x, x_samples):
 def loss_mmd(x, y):
     return torch.mean(mmd(x, y))
 
-def loss_kld(x, y):
-    kl_loss = torch.nn.KLDivLoss(reduction="sum", log_target=True)
-    log_x = F.log_softmax(x)
-    log_y = F.log_softmax(y)
-    return kl_loss(log_x, log_y)
-
-
-def loss_huber_kld(x, y):
-    kl_loss = 1e2 * loss_kld(x, y)
-    
-    delta = 1.0
-    
-    if torch.abs(kl_loss) < delta:
-        return 0.5*kl_loss**2
-    else:
-        return delta * (torch.abs(kl_loss) - 0.5*delta)
-    
-
 def loss_linear_mmd(x, y):
     dxx = torch.cdist(x, x, p=1)
     dyy = torch.cdist(y, y, p=1)
@@ -161,14 +149,37 @@ def loss_linear_mmd(x, y):
     
     return torch.mean(XX + YY - 2.*XY)
 
-def loss_huber_linear_mmd(x, y):
-    loss = 10 * loss_linear_mmd(x, y)
+def loss_kld(x, y):
+    kl_loss = torch.nn.KLDivLoss(reduction="sum", log_target=True)
+    log_x = F.log_softmax(x)
+    log_y = F.log_softmax(y)
+    return kl_loss(log_x, log_y)
     
-    delta = 1.0
-    
+def loss_huber(loss, delta=1):
     if torch.abs(loss) < delta:
         return 0.5*loss**2
     else:
         return delta * (torch.abs(loss) - 0.5*delta)
+    
+def loss_adaption(x, y):
+    if adaption_type == 'mmd':
+        return loss_mmd(x, y)
+    elif adaption_type == 'linear_mmd':
+        return loss_linear_mmd(x, y)
+    elif adaption_type == 'kld':
+        return loss_kld(x, y)
+    elif adaption_type == 'huber_mmd':
+        loss = loss_mmd(x, y)
+        return loss_huber(loss)
+    elif adaption_type == 'huber_linear_mmd':
+        loss = loss_linear_mmd(x, y)
+        return loss_huber(loss)
+    elif adaption_type == 'huber_kld':
+        loss = loss_kld(x, y)
+        return loss_huber(loss)
+    else:
+        raise ValueError("Adaption Loss Unknown!") 
+        
+    
         
     

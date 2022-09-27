@@ -28,25 +28,20 @@ class ResNetSimCLR(nn.Module):
                                   initial_stride=params["RESNET_INITIAL_STRIDE"])
         
         #Add Linear layer for the representation
-        self.resnet.add_module("ResNet_ReLU_Representation_1", nn.ReLU())
-        self.resnet.add_module("ResNet_Linear_Representation_1", nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"]))
-        self.resnet.add_module("ResNet_ReLU_Representation_2", nn.ReLU())
-        self.resnet.add_module("ResNet_Linear_Representation_2", nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"]))
-        self.resnet.add_module("ResNet_ReLU_Representation_3", nn.ReLU())
-        self.resnet.add_module("ResNet_Linear_Representation_3", nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"]))
-        
+        for i in range(params["RESNET_REPRESENTATION_DEPTH"]):
+            self.resnet.add_module("ResNet_ReLU_Representation_" + str(i), nn.ReLU())
+            self.resnet.add_module("ResNet_Linear_Representation_" + str(i), nn.Linear(params["RESNET_PROJECTION_DIM"], params["RESNET_PROJECTION_DIM"]))
+    
         # add mlp projection head
         self.projection = nn.Sequential()
         self.projection.add_module("ResNet", self.resnet)
         
         for i in range(params["RESNET_PROJECTION_DEPTH"]):
-            self.projection.add_module("ResNet_ReLU_" + str(i), nn.ReLU())
+            self.projection.add_module("ResNet_ReLU_Projection_" + str(i), nn.ReLU())
             if i == 0:
-                self.projection.add_module("ResNet_Linear_" + str(i), nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_PROJECTION_DIM"]))
+                self.projection.add_module("ResNet_Linear_Projection_" + str(i), nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_PROJECTION_DIM"]))
             else:
-                self.projection.add_module("ResNet_Linear_" + str(i), nn.Linear(params["RESNET_PROJECTION_DIM"], params["RESNET_PROJECTION_DIM"]))
-        
-        #summary(self.projection.cuda(), (params["RESNET_NUM_CHANNELS"], 128, 128))
+                self.projection.add_module("ResNet_Linear_Projection_" + str(i), nn.Linear(params["RESNET_PROJECTION_DIM"], params["RESNET_PROJECTION_DIM"]))
         
     @property
     def trainable_parameters(self):

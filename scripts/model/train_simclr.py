@@ -1,7 +1,7 @@
 import torch
 
 from scripts.model.resnet_simclr import ResNetSimCLR
-from scripts.model.losses import loss_simclr, loss_mmd, loss_kld, loss_huber_kld, loss_huber_linear_mmd
+from scripts.model.losses import loss_simclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
 from scripts.model.optimizer import Optimizer
 from scripts.model.training import Trainer
 from scripts.model.experiment_tracking import NeptuneExperimentTracking, VoidExperimentTracking
@@ -49,7 +49,7 @@ def loss_dict_2_host(d):
     
 def train_simclr(params={},
                  save_model=True,
-                 experiment_tracking=False):
+                 experiment_tracking=True):
     """
     Function to set up and train the resnet with simclr
 
@@ -111,7 +111,7 @@ def train_simclr(params={},
         domain_images = images_2_device(batch[1])
         train_adaption_images = images_2_device(batch[2])
         domain_adaption_images = images_2_device(batch[3])
-
+        
         #Loss for the training set
         features = model(train_images)
         train_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
@@ -125,10 +125,10 @@ def train_simclr(params={},
         #Loss for the training - domain representation distance
         train_rep = model(train_adaption_images, projection_head=False)
         domain_rep = model(domain_adaption_images, projection_head=False)
-        adaption_loss = loss_huber_linear_mmd(train_rep, domain_rep)
+        adaption_loss = loss_adaption(train_rep, domain_rep)
 
         #Calculate total loss
-        loss = train_loss + domain_loss + adaption_loss
+        loss = lambd_simclr_train * train_loss + lambd_simclr_domain * domain_loss + lambd_simclr_adaption * adaption_loss
 
         loss_dict = {'training_loss': train_loss,
                      'training_acc/top1': train_top1[0],

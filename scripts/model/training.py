@@ -96,8 +96,8 @@ class Trainer(object):
         lossdict_mean = self._dict_mean(lossdict_list)
          
         self.experiment_tracker.log_metric(lossdict_mean) 
-        self._val_loss_memory.append(loss)
-        self.optimizer.lr_step(loss)
+        self._val_loss_memory.append(loss_mean)
+        self.optimizer.lr_step(loss_mean)
         
         return loss_mean, lossdict_mean
     

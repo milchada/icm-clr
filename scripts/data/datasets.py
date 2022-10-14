@@ -90,6 +90,23 @@ class FitsDataset(SimClrDataset):
     def _rgbstretch(self, r, g, b):
         """Stretch rgb channels"""
         raise NotImplementedError("This function is supposed to be overwritten!")
+
+class HSCDataset(FitsDataset):
+    
+    def _stretch(self, x):
+        u_min = -0.05
+        u_max = 2. / 3.
+        u_a = np.exp(10.)
+        x = np.arcsinh(u_a*x) / np.arcsinh(u_a)
+        x = (x - u_min) / (u_max - u_min)
+        return x
+    
+    def _rgbstretch(self, r, g, b, ref_mag=26):
+        r *= 10**(0.4*(22.5-ref_mag))
+        g *= 10**(0.4*(22.5-ref_mag))
+        b *= 10**(0.4*(22.5-ref_mag))
+        return self._stretch(r), self._stretch(g), self._stretch(b)
+
         
 class TNGDataset(FitsDataset):
     '''Dataset for the HSC Realistic TNG Images'''

@@ -1,8 +1,17 @@
+'''
+Extractor objects
+
+As soon as __init__ is called, they should load, prepare and store the respective
+dataset (labels and images) into the dataset_raw folder. 
+
+Each dataset type has its own object; depending on the special structure of the data or the source of the data
+'''
+
 from scripts.preprocessing.TNG.Catalogue import Catalogue
 from scripts.preprocessing.cropper import FractionalCropper, PetrosianCropper
+from scripts.util.chunked_pool import ChunkedPool
 
 import os
-from multiprocessing import Pool
 from tqdm import tqdm
 import glob
 from astropy.io import fits
@@ -17,6 +26,8 @@ params = yaml.safe_load(open('params.yaml'))
 extract_params = params['extract']
 PETRO_RADIUS_FACTOR = extract_params['PETRO_RADIUS_FACTOR']
 USE_CACHE = extract_params['USE_CACHE']
+NUM_WORKERS = extract_params['NUM_WORKERS']
+SIZE_CHUNKS = extract_params['SIZE_CHUNKS']
 
 class DataExtractor(object):
     def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None):
@@ -67,21 +78,44 @@ class DataExtractor(object):
         
         
     # Caching 
+    # During the image handling we do some costly measurements on the images (galaxy radius)
+    # So lets keep them if we add more images later on
     #--------------------------------------------------------------------------     
-    @proptery
+    @property
     def use_cache(self):
-        return USE_CACHE
+        if os.path.exists(self._cache_path):
+            return USE_CACHE
+        else:
+            return False
         
-    def push_to_cache(self, df, merge_column = None):
+    def push_to_cache(self, df):
         '''If caching is activated, match new data to the one already in the cache'''
-        if self.use_cache and merge_column is not None:
+        if self.use_cache is not None:
             df_cache = self.pull_from_cache()
-            df = pd.merge(df, df_cache, on=merge_column)
+            df = pd.concat([df_cache, df])
+            df = df.drop_duplicates()
             
         df.to_csv(self._cache_path, index=False)
         
     def pull_from_cache(self):
-        return pd.read_csv(self._cache_path)
+        if self.use_cache:
+            return pd.read_csv(self._cache_path)
+    
+    def skip_image(self, path):
+        """
+        Test if target image is already existing and can be skipped
+        
+        Return True if the image exists and caching is activated
+        Return False if the image is not exsisting and/or caching is deactivated
+        """
+        
+        if os.path.exists(path):
+            if self.use_cache:
+                return True
+            else:
+                os.remove(path)
+        
+        return False
         
         
     # Stuff to handle filter keys/names correctly
@@ -135,9 +169,9 @@ class TNGDataExtractor(DataExtractor):
                 labels.append(field_values)
 
             out.append(np.transpose(labels))
-            
+
         return pd.DataFrame(np.concatenate(out), columns=fields)
-        
+
     def extract(self):
         df = self._load_TNG_labels(self._fields)
         self.save_labels(df)
@@ -149,6 +183,20 @@ class TNGHSCExtractor(TNGDataExtractor):
     @property
     def filter_dict(self):
         return {'G': 'SUBARU_HSC.G', 'R': 'SUBARU_HSC.R', 'I': 'SUBARU_HSC.I'}
+    
+    def _split_filenames(self, filelist):
+        #~/simclr/dataset_raw/TNG50-1/images/059/shalo_059-101_v3_HSC_GRIZY.fits
+        splitlist = list(map(lambda x: os.path.split(x), filelist))
+        #shalo_059-101_v3_HSC_GRIZY.fits
+        snap_ids = list(map(lambda x: x[1].split("_")[1], splitlist))
+        #059-101
+        snapnums = list(map(lambda x: x.split("-")[0], snap_ids))
+        sub_ids  = list(map(lambda x: x.split("-")[1], snap_ids))
+
+        snapnums = np.array(snapnums, dtype=np.int32)
+        sub_ids  = np.array(sub_ids, dtype=np.int32)
+        
+        return snapnums, sub_ids
         
     def _add_image_path(self, df):
         '''Add the path to the respective image for each entry in df. Multiply entrys if there are multiple images for the same galaxy and delete if there is no image'''
@@ -160,18 +208,7 @@ class TNGHSCExtractor(TNGDataExtractor):
             print("No images available, extract images first!")
 
         #Get snapshot and id
-        print("Get image snapshot and ids from filenames")
-        #~/simclr/dataset_raw/TNG50-1/images/059/shalo_059-101_v3_HSC_GRIZY.fits
-        splitlist = list(map(lambda x: os.path.split(x), filelist))
-        #shalo_059-101_v3_HSC_GRIZY.fits
-        snap_ids = list(map(lambda x: x[1].split("_")[1], splitlist))
-        #059-101
-        snapnums = list(map(lambda x: x.split("-")[0], snap_ids))
-        sub_ids  = list(map(lambda x: x.split("-")[1], snap_ids))
-
-        snapnums = np.array(snapnums, dtype=np.int32)
-        sub_ids  = np.array(sub_ids, dtype=np.int32)
-
+        snapnums, sub_ids = self._split_filenames(filelist)
 
         print("Assign Images to Labels")
         #Match the images with the data read from the csv (contained in df)
@@ -210,11 +247,8 @@ class TNGHSCExtractor(TNGDataExtractor):
         new_path = self._image_path + filename
 
         #Test if file is already existing; either skip and use the cached data or delete and reload 
-        if os.path.exists(new_path):
-            if self.use_cache:
-                return
-            else:
-                os.remove(new_path)
+        if self.skip_image(new_path):
+            return ['', np.nan, np.nan]
         
         try:
         
@@ -248,24 +282,19 @@ class TNGHSCExtractor(TNGDataExtractor):
             print("Weird type error: skip image!")
             
             return ['', np.nan, np.nan]
-            
-            
-    def _multi_resized_copy(self, filelist, num_threads=18):
-        output = []
-        
-        with Pool(num_threads) as p:
-            for i in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
-                output.append(i)
-                
-        output = np.array(output)
-        df = pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
-        self.push_to_cache(df, "image_path")
         
     def _extract_images(self):
         image_path_wildcard = os.path.join(c.image_cache_path, self._dataset) + '/**/*.fits'
         filelist = glob.glob(image_path_wildcard, recursive=True)
         print(str(len(filelist)) + " images found. Start loading...")
-        self._multi_resized_copy(filelist)
+        
+        def checkpoint(x):
+            x = np.array(x)
+            df = pd.DataFrame(x, columns=["image_path", "petro_half_light", "petro_90_light"])
+            self.push_to_cache(df)
+            
+        multi_resized_copy = ChunkedPool(self._resized_copy, checkpoint, SIZE_CHUNKS, NUM_WORKERS)
+        multi_resized_copy(filelist)
     
     def _extract_labels(self):
         print("Load labels...")
@@ -339,11 +368,8 @@ class HSCDataExtractor(DataExtractor):
         new_path = self._get_new_image_path(id_list[0])
 
         #Test if file is already existing; either skip and use the cached data or delete and reload 
-        if os.path.exists(new_path):
-            if self.use_cache:
-                return
-            else:
-                os.remove(new_path)
+        if self.skip_image(new_path):
+            return ['', np.nan, np.nan]
         
         #Init a PetrosianCropper and fit the red channel
         cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
@@ -376,18 +402,12 @@ class HSCDataExtractor(DataExtractor):
         
         return [new_path, cropper.r_half_light, cropper.r_90_light]
     
-        
-    def _multi_resized_copy(self, filelist, num_threads=18):
-        
-        output = []
-        
-        with Pool(num_threads) as p:
-            for i in tqdm(p.imap_unordered(self._resized_copy, filelist), total=len(filelist)):
-                output.append(i)
-                
-        df = pd.DataFrame(output, columns=["image_path", "petro_half_light", "petro_90_light"])
-        self.push_to_cache(df, "image_path")
-    
+    def _resized_copy_exceptions(self, filedirs):
+        try:
+            return self._resized_copy(filedirs)
+        except OSError:
+            print("Faulty fits file: skip image!")
+            return ['', np.nan, np.nan]
     
     def _extract_labels(self, unique_ids):
         CSV_PATH = os.path.join(c.image_cache_path, self._dataset, "s20a_hsc-wide_gridet_sdss-dr16_petr20_gswlc2.csv")
@@ -409,7 +429,7 @@ class HSCDataExtractor(DataExtractor):
         self.save_labels(df)
         
         return df
-
+        
         
     def extract(self):
         
@@ -425,6 +445,13 @@ class HSCDataExtractor(DataExtractor):
         unique_ids, filelist_grouped = self._group_filters(id_list, filter_list, filelist)
         
         
-        self._multi_resized_copy(filelist_grouped)
+        def checkpoint(x):
+            x = np.array(x)
+            df = pd.DataFrame(x, columns=["image_path", "petro_half_light", "petro_90_light"])
+            self.push_to_cache(df)
+            
+        multi_resized_copy = ChunkedPool(self._resized_copy_exceptions, checkpoint, SIZE_CHUNKS, NUM_WORKERS)
+        multi_resized_copy(filelist_grouped)
+        
         self._extract_labels(unique_ids)
         

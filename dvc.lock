@@ -63,21 +63,22 @@ stages:
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
-    - path: ./dataset_raw/
-      md5: b5c34e74d732ffda8401c09985de2fda.dir
-      size: 186919518373
-      nfiles: 185596
     - path: ./scripts/preprocessing/
-      md5: dedc5316524bc8ed6f4ccae756e7650a.dir
-      size: 47615023
-      nfiles: 34
+      md5: 020f4e2f874558328c7450c250b02299.dir
+      size: 47642121
+      nfiles: 36
     params:
       params.yaml:
         prepare:
-          SPLIT_SEED: 0
+          SPLIT_SEED: 42
           SETS:
           - - HSC_TNG50
-            - - 0.8
+            - - 0.9
+              - 0.0
+              - 0.0
+              - 0.1
+          - - HSC_TNG100
+            - - 0.9
               - 0.0
               - 0.0
               - 0.1
@@ -91,8 +92,15 @@ stages:
           MATCHING_FIELDS:
           - - z
             - i_band_mag_dust_apparent
+          - - z
+            - i_band_mag_dust_apparent
           - - photoz
             - i_cmodel_mag_ge
+          MATCHING_SOURCE_SETS:
+          - HSC
+          MATCHING_TARGET_SETS:
+          - HSC_TNG50
+          - HSC_TNG100
           OBSERVABLES: None
           UNOBSERVABLES:
           - lookback
@@ -104,9 +112,13 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: afd5a76082f3daf4dcd865235516505e.dir
-      size: 4362196
+      md5: 044462efe229a089dbec397b35a2f035.dir
+      size: 26936870
       nfiles: 14
+    - path: ./plots/preprocessing/
+      md5: a61cd3a3ac31c550034a5db8348f9441.dir
+      size: 81239
+      nfiles: 6
   train:
     cmd: python3 -m scripts.model.train
     deps:
@@ -165,13 +177,9 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: afd5a76082f3daf4dcd865235516505e.dir
-      size: 4362196
+      md5: 044462efe229a089dbec397b35a2f035.dir
+      size: 26936870
       nfiles: 14
-    - path: ./dataset_raw/
-      md5: b5c34e74d732ffda8401c09985de2fda.dir
-      size: 186919518373
-      nfiles: 185596
     - path: ./scripts/model/losses.py
       md5: 4845cef4ddb46388345b7ea1e9369ae5
       size: 5780
@@ -199,6 +207,10 @@ stages:
             - 11.5
           - None
           DATASET: TNGDataset
+          FILTERS:
+          - I
+          - R
+          - G
           IMAGE_SIZE: 128
           NUM_WORKERS: 18
         losses:
@@ -253,7 +265,7 @@ stages:
           DROPOUT_COND: 0.0
           BATCH_NORM_COND: false
           RESNET_DEPTH: 16
-          RESNET_WIDTH: 2
+          RESNET_WIDTH: 3
           RESNET_DROPOUT: 0.2
           RESNET_REPRESENTATION_DIM: 128
           RESNET_REPRESENTATION_DEPTH: 2
@@ -269,15 +281,15 @@ stages:
           L2_DECAY: 0.0001
           BETA_1: 0.9
           BETA_2: 0.999
-          LR_PATIENCE: 5
+          LR_PATIENCE: 2
           LR_DECAY: 0.5
-          BATCH_SIZE: 32
-          NUM_EPOCHS: 50
-          PATIENCE: 50
+          BATCH_SIZE: 16
+          NUM_EPOCHS: 20
+          PATIENCE: 5
           AUGMENTATION_PARAMS:
             ROTATION: 15
             TRANSLATE: 0.2
-            SCALE: 2
+            SCALE: 1.5
             FLIP: true
             GAUSSIAN_BLUR_SIGMA:
             - 0.001
@@ -287,8 +299,8 @@ stages:
             - 0.04
     outs:
     - path: ./model/resnet.pt
-      md5: eb975df3d3e27eac8b33783ff8ba5ed3
-      size: 137983416
+      md5: 4d72a44d99f2715b50771728dcf20a63
+      size: 298183864
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior
     deps:

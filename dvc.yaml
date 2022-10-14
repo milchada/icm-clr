@@ -18,10 +18,11 @@ stages:
     params:
     - prepare
     deps:
-    - ./dataset_raw/
+    #- ./dataset_raw/
     - ./scripts/preprocessing/
     outs:
     - ./dataset/
+    - ./plots/preprocessing/
 
   train_simclr:
     cmd: python3 -m scripts.model.train_simclr
@@ -32,7 +33,6 @@ stages:
     - losses
     deps:
     - ./dataset/
-    - ./dataset_raw/
     - ./scripts/model/losses.py
     - ./scripts/model/training.py
     - ./scripts/model/resnet.py

@@ -14,31 +14,32 @@ import numpy as np
 
 class Catalogue:
 
-    def __init__(self, simulation, snapshot_id, path, min_stellar_mass=None, max_stellar_mass=None, random = False):
-        self.__snapshot_id = snapshot_id
-        self.__simulation = simulation
-        self.__path = path
-        self.__base_path = path + simulation + "/output"
+    def __init__(self, simulation, snapshot_id, path, min_stellar_mass=None, max_stellar_mass=None, centrals_only=False, random=False):
+        self._snapshot_id = snapshot_id
+        self._simulation = simulation
+        self._path = path
+        self._base_path = path + simulation + "/output"
 
         #Hubble Constant
-        self.__H = 0.6774
+        self._H = 0.6774
 
-        #Load ids
-        self.__centrals = il.groupcat.loadHalos(self.__base_path,
-                                                self.__snapshot_id,
-                                                fields=["GroupFirstSub"])
-
-        stellar_mass = il.groupcat.loadSubhalos(self.__base_path,
-                                                self.__snapshot_id,
+        #Load centrals ids
+        if centrals_only:
+            self._centrals = il.groupcat.loadHalos(self._base_path,
+                                                   self._snapshot_id,
+                                                   fields=["GroupFirstSub"])
+            
+        stellar_mass = il.groupcat.loadSubhalos(self._base_path,
+                                                self._snapshot_id,
                                                 fields=["SubhaloMassType"])[:,4]
 
 
-        flag = il.groupcat.loadSubhalos(self.__base_path,
-                                        self.__snapshot_id,
+        flag = il.groupcat.loadSubhalos(self._base_path,
+                                        self._snapshot_id,
                                         fields=["SubhaloFlag"])
 
         #Fix units
-        stellar_mass *= 1e10 / self.__H
+        stellar_mass *= 1e10 / self._H
 
         #Apply criterion
         #Get first a mask for all subhalos which fit to the criterion
@@ -58,24 +59,27 @@ class Catalogue:
         mask_index = np.nonzero(mask)
 
         #Get all subhalo ids which are centrals and fullfill requirements
-        self.__centrals = np.intersect1d(self.__centrals, mask_index)
-
+        if centrals_only:
+            self._galaxies = np.intersect1d(self._centrals, mask_index)
+        else:
+            self._galaxies = mask_index[0]
+            
         if random is True:
-            np.random.shuffle(self.__centrals)
+            np.random.shuffle(self._galaxies)
 
-        self.__num_centrals = len(self.__centrals)
+        self._num_galaxies = len(self._galaxies)
 
     @property
-    def num_centrals(self):
-        return self.__num_centrals
+    def num_galaxies(self):
+        return self._num_galaxies
     
     def __len__(self):
-        return self.num_centrals
+        return self.num_galaxies
 
     def get_subhalos(self):
-        return Subhalos.Subhalos(self.__centrals,
-                                 self.__snapshot_id,
-                                 self.__simulation,
-                                 path = self.__path)
+        
+        sub = Subhalos.get_subhalo_object(self._simulation)
+        
+        return sub(self._galaxies, self._snapshot_id, self._simulation, self._path)
 
 

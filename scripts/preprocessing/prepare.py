@@ -13,7 +13,7 @@ Prepare the data for the training:
 Example (as in params.yaml):
 
 SETS:
-- ["TNG300-1", [0.99, 0., 0.]]  <--- Use this one for the scaling and matching
+- ["TNG300-1", [0.99, 0., 0.]]  <--- Use this one for the scaling
 - ["TNG100-1", [0., 0.95, 0.]]
 - ["TNG50-1", [0., 0.5, 0.5]]
 
@@ -58,6 +58,7 @@ from pickle import dump
 
 import config as c
 from scripts.util.str2None import str2None
+from scripts.util.make_dir import make_dir
 
 import yaml
 
@@ -71,6 +72,8 @@ ROOT_DESCENDANT_SPLIT = prepare_params['ROOT_DESCENDANT_SPLIT']
 MATCHING_MAX_ITER = prepare_params['MATCHING_MAX_ITER']
 MATCHING_MAX_DIST = prepare_params['MATCHING_MAX_DIST']
 MATCHING_FIELDS = str2None(prepare_params['MATCHING_FIELDS'])
+MATCHING_SOURCE_SETS = set(prepare_params['MATCHING_SOURCE_SETS'])
+MATCHING_TARGET_SETS = set(prepare_params['MATCHING_TARGET_SETS'])
 
 class DatasetPreparator(object):
     '''Load and perform preparation steps on a given dataset i.e. scaling and splitting operations'''
@@ -85,30 +88,15 @@ class DatasetPreparator(object):
         self.df = pd.read_csv(self._dataset_path)
         self.df = self.prepare_df(self.df)
         
-    #Helper function to log the sfr
-    #Replace 0 by minimum
-    def log_sfr(self, sfr):
-        sfr = np.array(sfr)
-        mask = (sfr == 0)
-        min_sfr = np.min(sfr[~mask])
-        sfr[mask] = min_sfr
-        return np.log10(sfr)
-
     #Function to apply general preparations on the raw df
     def prepare_df(self, df):
         #Apply log on the mass
         if "mass_in_rad" in df.head(0):
             df["mass"] = df["mass_in_rad"].apply(np.log10)
 
-        #Crop sfr. Because it is log it is not really important if it is -2 or -6
-        #The MLP however will waste energy into learning this difference
+        #Crop sfr. It is not really important if it is -2 or -6
         if "sfr" in df.head(0):
-            df["sfr"] = self.log_sfr(df["sfr"])
             df["sfr"] = np.clip(df["sfr"], -2, None)
-
-        #Convert metallicity to solar metallicity
-        if "metalicity_star" in df.head(0):
-            df["metalicity_star"] = df["metalicity_star"].apply(lambda x: np.log(x/0.0127))
 
         #Calculate lookback_time_last_maj_merger from snap_num_last_maj_merger if avail
         if "snap_num_last_maj_merger" in df.head(0):
@@ -132,8 +120,7 @@ class DatasetPreparator(object):
             mass = np.log10(mass)
 
             df['mass_last_maj_merger'] = mass
-
-
+            
         #Calulate exsitu fraction
         if "mass_exsitu" in df.head(0) and "mass_in_rad" in df.head(0):
             df["exsitu"] = df["mass_exsitu"]/df["mass_in_rad"]
@@ -142,6 +129,9 @@ class DatasetPreparator(object):
         if "mean_merger_mass_ratio" in df.head(0):
             mask = df["mean_merger_mass_ratio"] > 0
             df = df[mask]
+            
+        #Remove galaxies with bad petro fit or other missing fields
+        df = df.dropna(subset=['petro_half_light', 'petro_90_light'])
 
         return df
 
@@ -255,7 +245,9 @@ class DatasetPreparator(object):
         
 
 class DatasetMatcher(object):
-    ''''''
+    '''
+    Load multiple dataset. To ensure comparability; match samples according to given fields
+    '''
     
     def __init__(self):
         self._sets = SETS
@@ -264,7 +256,9 @@ class DatasetMatcher(object):
         self._dataset_fractions = []
         
         self.load_datasets()
+        self.plot_matching_fields("raw")
         self.match_datasets()
+        self.plot_matching_fields("matched")
         self.scale_split_save()
             
             
@@ -276,51 +270,158 @@ class DatasetMatcher(object):
         
         for title in self._dataset_titles:
             self._datasets.append(DatasetPreparator(title))
+            
+    def __len__(self):
+        return len(self._datasets)
+       
+
+    # Plotting
+    #------------------------------------------------------------------------------------------
+    
+    def plot_matching_fields(self, title):
+        
+        plot_base = c.plots_path + "preprocessing/"
+        make_dir(plot_base)
+        
+        for j in range(len(MATCHING_FIELDS[0])):
+            path = plot_base + title + "_" + MATCHING_FIELDS[0][j] + ".pdf"
+            fields = [r[j] for r in MATCHING_FIELDS]
+            self.plot_dataset_hist(fields, path)
+        
+    
+    def plot_dataset_hist(self, field, path, bins=50):
+        '''
+        Plot the hist of a given field (str) for all datasets
+        If the field is a list, plot different fields for each dataset in the same histogram 
+        '''
+        
+        assert isinstance(field, str) or (isinstance(field, list) and len(field)==len(self))
+        
+        fig, ax = plt.subplots()
+        
+        for i, (data, title) in enumerate(zip(self._datasets, self._dataset_titles)):
+            
+            if isinstance(field, str):
+                ax.hist(data.df[field], density=True, alpha=0.5, label=title, bins=bins)
+            else:
+                ax.hist(data.df[field[i]], density=True, alpha=0.5, label=title, bins=bins)
+        
+        if isinstance(field, str):
+            ax.set_xlabel(field)
+        else:
+            ax.set_xlabel(field[0])
+            
+        ax.legend()
+        fig.savefig(path)
+        
+    def plot_dataset_scatter2d(self, fields):
+        '''Plot the 2d scatter of two fields'''
+        
+        assert isinstance(field, str) or (isinstance(field, list) and len(field)==len(self))
+        pass
+    
+        
+    # Matching
+    #------------------------------------------------------------------------------------------
         
     def match_datasets(self):
         '''
-        Match the given datasets according to the Matching Fields.
-        Atm it supports only the matching of 2 datasets; otherwise the handling 
-        of the matching masks has to be fixed: maybe get the matched_mask for all datasets first
-        and then match again for target[matched_mask]
+            Match the given datasets according to the Matching Fields.
         '''
         
-        if MATCHING_FIELDS is not None and len(self._datasets)==2:
-            target_dataset = self._datasets[0]
-            target_fields = MATCHING_FIELDS[0]
-            target = target_dataset.df[target_fields]
+        def inv_concatenate(x, target):
+            ''' 
+            We have lists of numpy arrays in this method
+            Split the numpy array x such that it has the same shape as the target list of numpy arrays.
+            The arrays in the list dont need to be of the same size/shape (otherwise a simple reshape would do it)
             
-            for i, fields in enumerate(MATCHING_FIELDS):
-                
-                if i == 0:
-                    continue
-                
-                source_dataset = self._datasets[i]
-                source = source_dataset.df[fields]
-
-                #Match the source to the target
-                matched_indexes, matched_mask = self._get_matched_indexes(target, source)
-                source_dataset.df = source_dataset.df.iloc[matched_indexes]
+            E.g.
+            
+            x = [0,1,2,3,4,5,6,7,8,9]
+            target = [[0,0,0],[0,0],[0,0,0,0,0]]
+            return [[0,1,2],[3,4],[5,6,7,8,9]]
+            
+            lenghts_target = [3, 2, 5]
+            split_indices = [3, 5]
+            x_split = [[0,1,2],[3,4],[5,6,7,8,9]]
+            
+            '''
+            
+            length_x = x.shape[0]
+            lenghts_target = [i.shape[0] for i in target]
+            
+            assert length_x == np.sum(lenghts_target), "Error: number of galaxies in x differs from target"
+            
+            #Get the indices for the splitting of x
+            split_indices = np.cumsum(lenghts_target)[:-1]
+            
+            x_split = np.split(x, split_indices)
+            
+            #Do some sanity checks on the fly
+            assert len(x_split) == len(target)
+            assert np.all([i.shape[0]==j.shape[0] for i, j in zip(x_split, target)])
+            
+            return x_split
         
-            #Remove target galaxies which have no analogue in the source
-            target_dataset.df = target_dataset.df[matched_mask]
+        source = []
+        target = []
+        
+        if MATCHING_FIELDS is None:
+            return
+        
+        assert np.all([len(MATCHING_FIELDS[0]) == len(i) for i in MATCHING_FIELDS]), "Number of matching Fields should be the same for all datsets"
             
-    
-    def _get_matched_indexes(self, target, source):
+        #Get Fields from the datasets
+        for i, fields in enumerate(MATCHING_FIELDS):
+                
+            dataset = self._datasets[i]
+            matching_data = dataset.df[fields]
+            
+            if self._dataset_titles[i] in MATCHING_SOURCE_SETS:
+                source.append(matching_data)
+            elif self._dataset_titles[i] in MATCHING_TARGET_SETS:
+                target.append(matching_data)
+            else:
+                raise ValueError("Please specify if dataset is a target or source set in params.yaml")
+
+        #Concat lists
+        source_concat = np.concatenate(source, axis=0)
+        target_concat = np.concatenate(target, axis=0)        
+                
+        #Match the source to the target
+        matched_source_mask, matched_target_mask = self._get_matched_masks(target_concat, source_concat)
+        
+        #Split the 2 masks back to the shape of the original sets
+        matched_source_mask = inv_concatenate(matched_source_mask, source)
+        matched_target_mask = inv_concatenate(matched_target_mask, target)
+        
+        #Messy internal index for iterating separately through the source and target sets
+        j = 0
+        k = 0
+        
+        #Now apply the matching to the single datasets
+        for i, fields in enumerate(MATCHING_FIELDS):
+            
+            dataset = self._datasets[i]
+            dataset_title = self._dataset_titles[i]
+                
+            if dataset_title in MATCHING_SOURCE_SETS:
+                #Remove unmatched source galaxies
+                dataset.df = dataset.df[matched_source_mask[j]]
+                j += 1
+            elif dataset_title in MATCHING_TARGET_SETS:
+                #Remove target galaxies which have no analogue in the source
+                dataset.df = dataset.df[matched_target_mask[k]]
+                k += 1
+            else:
+                raise ValueError("Please specify if dataset is a target or source set in params.yaml")
+
+                
+    def _get_matched_masks(self, target, source):
         '''
         Match the set given by source to the set given by target. 
-        Returns the index which will sort the source dataset to match the distribution of the target for the columns given 
+        Returns the masks of source and target datasets such that the distribution for the given fields are identical
         '''
-        
-        #def plot(target, source):
-        #    bins = 50
-        #    for th, sh in zip(target.head(0), source.head(0)):
-        #        fig = plt.Figure()
-        #        plt.hist(target[th], density=True, label="target", bins=bins)
-        #        plt.hist(source[sh], density=True, alpha=0.5, label="source", bins=bins)
-        #        plt.xlabel(th)
-        #        plt.legend()
-        #        fig.savefig(c.plots_path + "matching_" + th + ".pdf")
         
         #Scale source and target to ensure a fair treatment of the variouse matching fields
         source = np.array(source)
@@ -339,40 +440,52 @@ class DatasetMatcher(object):
         index_set = set()
         
         #Output list containing the matched 
-        matched_indexes = []
+        matched_source_indexes = []
         
         #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
-        matched_mask = []
+        matched_target_mask = []
         
         for x in target:
             for i in range(MATCHING_MAX_ITER): 
-                distance, index = kdt.query([x], k=i+1, return_distance=True)
-                distance = distance[0,-1]
-                index = index[0,-1]
+                try:
+                    distance, index = kdt.query([x], k=i+1, return_distance=True)
+                    distance = distance[0,-1]
+                    index = index[0,-1]
+                except ValueError:
+                    matched_target_mask.append(False)
+                    break
                     
                 if distance>MATCHING_MAX_DIST or i == MATCHING_MAX_ITER-1:
-                    matched_mask.append(False)
+                    matched_target_mask.append(False)
                     break
         
                 if index not in index_set:
-                    matched_mask.append(True)
+                    matched_target_mask.append(True)
                     index_set.add(index)
-                    matched_indexes.append(index)
+                    matched_source_indexes.append(index)
                     break
 
         #Ensure that there are no double matched galaxies
-        ux, counts = np.unique(matched_indexes, return_counts=True)
+        _, counts = np.unique(matched_source_indexes, return_counts=True)
         assert(np.sum(counts > 1) == 0)
         
+        #Translate the index list into a mask
+        matched_source_mask = np.zeros(source.shape[0], dtype=int)
+        matched_source_mask[matched_source_indexes] = 1
+        
+        #To boolean numpy array
+        matched_source_mask = np.array(matched_source_mask, dtype=bool)
+        matched_target_mask = np.array(matched_target_mask, dtype=bool)
+        
         #Print numer of matched galaxies
-        num_matched = str(np.sum(matched_mask))
-        num_target = str(len(matched_mask))
+        num_matched = str(np.sum(matched_target_mask))
+        num_target = str(len(matched_target_mask))
         print("Number of matched galaxies: " + num_matched + " / " + num_target)
         
-        #Plot
-        #plot(target[matched_mask], source[matched_indexes])
-        
-        return matched_indexes, matched_mask
+        return matched_source_mask, matched_target_mask
+    
+    
+    #------------------------------------------------------------------------------------------
     
     def scale_split_save(self):
         

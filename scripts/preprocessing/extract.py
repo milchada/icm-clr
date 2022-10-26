@@ -26,29 +26,15 @@ DATASETS = extract_params["DATASETS"]
 FIELDS = [str2None(i) for i in extract_params["FIELDS"]]
 IMAGE_SIZE = int(str2None(extract_params["IMAGE_SIZE"]))
 FILTERS = extract_params["FILTERS"]
-
-try:
-    MIN_SNAPSHOT = extract_params["MIN_SNAPSHOT"]
-except KeyError:
-    MIN_SNAPSHOT = None
-
-try:
-    SNAPSHOTS = extract_params["SNAPSHOTS"]
-except KeyError:
-    SNAPSHOTS = None
+SNAPSHOTS = extract_params["SNAPSHOTS"]
+SKIP = extract_params["SKIP"]
 
 if __name__ == "__main__":
-    
-    if SNAPSHOTS is not None:
-        snapshots = SNAPSHOTS
-    elif MIN_SNAPSHOT is not None:
-        snapshots = np.arange(MIN_SNAPSHOT,100)
-    else:
-        snapshots = np.arange(0,100)
-    
+        
     for i, dataset in enumerate(DATASETS):
-        print("Load " + dataset)
-        DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS, FIELDS[i], IMAGE_SIZE, FILTERS)
+        if not SKIP[i]:
+            print("Load " + dataset)
+            DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS[i], FIELDS[i], IMAGE_SIZE, FILTERS)
             
             
 

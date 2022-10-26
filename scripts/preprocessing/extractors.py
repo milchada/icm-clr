@@ -10,6 +10,7 @@ Each dataset type has its own object; depending on the special structure of the 
 from scripts.preprocessing.TNG.Catalogue import Catalogue
 from scripts.preprocessing.cropper import FractionalCropper, PetrosianCropper
 from scripts.util.chunked_pool import ChunkedPool
+from scripts.preprocessing.caching import Cache
 
 import os
 from tqdm import tqdm
@@ -39,6 +40,8 @@ class DataExtractor(object):
         self._label_path = os.path.join(c.dataset_raw_path, self._dataset, "label.csv")
         self._image_path = os.path.join(c.dataset_raw_path, self._dataset, "images/")
         self._cache_path = os.path.join(c.dataset_raw_path, self._dataset, "cache.csv")
+        
+        self.init_cache()
         
         self._fields = fields
         self._image_size = image_size
@@ -81,36 +84,30 @@ class DataExtractor(object):
     # During the image handling we do some costly measurements on the images (galaxy radius)
     # So lets keep them if we add more images later on
     #--------------------------------------------------------------------------     
+    def init_cache(self):
+        self._cache = Cache(self._cache_path, USE_CACHE)
+    
     @property
     def use_cache(self):
-        if os.path.exists(self._cache_path):
-            return USE_CACHE
-        else:
-            return False
+        return self._cache.use_cache
         
     def push_to_cache(self, df):
         '''If caching is activated, match new data to the one already in the cache'''
-        if self.use_cache is not None:
-            df_cache = self.pull_from_cache()
-            df = pd.concat([df_cache, df])
-            df = df.drop_duplicates()
-            
-        df.to_csv(self._cache_path, index=False)
+        self._cache.push(df)
         
     def pull_from_cache(self):
-        if self.use_cache:
-            return pd.read_csv(self._cache_path)
-    
+        return self._cache()
+        
     def skip_image(self, path):
         """
         Test if target image is already existing and can be skipped
         
-        Return True if the image exists and caching is activated
-        Return False if the image is not exsisting and/or caching is deactivated
+        Return True if the image exists and also in the cache
+        Return False if the image is not exsisting and/or not cached
         """
         
         if os.path.exists(path):
-            if self.use_cache:
+            if self._cache.isin(path, 'image_path'):
                 return True
             else:
                 os.remove(path)
@@ -171,7 +168,7 @@ class TNGDataExtractor(DataExtractor):
             out.append(np.transpose(labels))
 
         return pd.DataFrame(np.concatenate(out), columns=fields)
-
+        
     def extract(self):
         df = self._load_TNG_labels(self._fields)
         self.save_labels(df)

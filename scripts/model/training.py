@@ -5,7 +5,7 @@ import config as c
 import os
 
 class Trainer(object):
-    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path):
+    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, use_checkpoint=False):
         
         self._epoch = 0
         self._val_loss_memory = []
@@ -17,6 +17,9 @@ class Trainer(object):
         self.model = model
         self.optimizer = optimizer
         self.experiment_tracker = experiment_tracker
+        
+        if use_checkpoint:
+            self.load()
     
     @property
     def epoch(self):
@@ -122,6 +125,12 @@ class Trainer(object):
 
         if self._save_path is not None:
             torch.save(self.model.state_dict(), self._save_path)
+            
+    def load(self):
+        '''Load model'''
+        if self._save_path is not None:
+            checkpoint = torch.load(self._save_path, map_location=torch.device(c.device))
+            self.model.load_state_dict(checkpoint)
         
     def __iter__(self):
         self._epoch = 0

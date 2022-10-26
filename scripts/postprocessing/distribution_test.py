@@ -38,7 +38,7 @@ class DistributionTest(object):
         raise NotImplementedError("This function is supposed to be overwritten!")
         
 class MeanNeighborDistanceDeviation(DistributionTest):
-    def __init__(self, x, n_neighbor=32, p=1):
+    def __init__(self, x, n_neighbor=64, p=1):
         super().__init__(x)
         
         self._n_neighbor = n_neighbor
@@ -68,7 +68,7 @@ class MeanNeighborDistanceDeviation(DistributionTest):
         
     def get_deviations(self, y):
         self._check_input(self._x, y)
-        return (self.get_self_distances() - self.get_distances(y))/self.get_normalization_distances(y)
+        return (self.get_distances(y) - self.get_self_distances())/self.get_normalization_distances(y)
         
     def __call__(self, y):
         '''Get the mean neighbor distance deviation between y and x'''
@@ -79,7 +79,7 @@ class PermutationTest(object):
     
     def __init__(self, x, y, distribution_test):
         assert x.shape == y.shape
-        assert isinstance(distribution_test, DistributionTest)
+        #assert isinstance(distribution_test, DistributionTest)
         
         self._x = x
         self._y = y 
@@ -88,7 +88,6 @@ class PermutationTest(object):
         self._T_list = [self.get_test_statistic()]
         
         self._rng = np.random.default_rng()
-        
     
     def perform_permutation_step(self, num_swaps):
         '''
@@ -98,8 +97,8 @@ class PermutationTest(object):
         
         '''
         
-        self._x = rng.shuffle(self._x, axis=0)
-        self._y = rng.shuffle(self._y, axis=0)
+        self._rng.shuffle(self._x, axis=0)
+        self._rng.shuffle(self._y, axis=0)
         
         for i in range(num_swaps):
             tmp = self._x[i]
@@ -116,16 +115,16 @@ class PermutationTest(object):
         self._T_list.append(T)
         
     @property
-    def T(self):
-        return self._T_list[0]
-    
-    @property
     def T_list(self):
         return self._T_list
         
     @property
-    def relative_delta_T(self):
-        return np.abs(self._T_list[-1] - self._T_list[-2])/self._T_list[-1]
+    def T(self):
+        return self.T_list[0]
+    
+    @property
+    def T_last(self):
+        return self.T_list[-1]
         
     @property
     def p_value(self):
@@ -135,13 +134,12 @@ class PermutationTest(object):
         
     @property
     def num_permutations(self):
-        return len(self._T_list)
+        return len(self.T_list)
     
-    def __call__(self, num_swaps_per_step, relative_delta_T):
+    def __call__(self, num_swaps_per_step, num_steps):
         
-        while True:
-            self.perform_step()
-            
-            if self.relative_delta_T < relative_delta_T:
-                return
+        for i in range(num_steps):
+            self.perform_step(num_swaps_per_step)
+            print("Step " + str(i+1) + ": T = " + str(self.T_last))
+
             

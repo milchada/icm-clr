@@ -43,6 +43,7 @@ import numpy as np
 import pandas as pd
 import os
 import glob
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 
@@ -74,6 +75,7 @@ MATCHING_MAX_DIST = prepare_params['MATCHING_MAX_DIST']
 MATCHING_FIELDS = str2None(prepare_params['MATCHING_FIELDS'])
 MATCHING_SOURCE_SETS = set(prepare_params['MATCHING_SOURCE_SETS'])
 MATCHING_TARGET_SETS = set(prepare_params['MATCHING_TARGET_SETS'])
+MATCHING_UNCERTAINTIES = np.array(prepare_params['MATCHING_UNCERTAINTIES'][0])
 
 class DatasetPreparator(object):
     '''Load and perform preparation steps on a given dataset i.e. scaling and splitting operations'''
@@ -85,11 +87,21 @@ class DatasetPreparator(object):
         self.y_scaler = None
         
         #Load and prepare set
+        print("Load " + self._dataset + " ...")
         self.df = pd.read_csv(self._dataset_path)
         self.df = self.prepare_df(self.df)
         
     #Function to apply general preparations on the raw df
     def prepare_df(self, df):
+        
+        def dropna(df, field):
+            len_before = len(df)
+            df = df.dropna(subset=[field])
+            len_after = len(df)
+            print("Removing NaNs in column: " + field)
+            print(str(len_before-len_after) + " galaxies dropped!")
+            return df
+        
         #Apply log on the mass
         if "mass_in_rad" in df.head(0):
             df["mass"] = df["mass_in_rad"].apply(np.log10)
@@ -126,12 +138,18 @@ class DatasetPreparator(object):
             df["exsitu"] = df["mass_exsitu"]/df["mass_in_rad"]
 
         #Clip away some bad behaving galaxies
-        if "mean_merger_mass_ratio" in df.head(0):
-            mask = df["mean_merger_mass_ratio"] > 0
-            df = df[mask]
+        #if "mean_merger_mass_ratio" in df.head(0):
+        #    mask = df["mean_merger_mass_ratio"] > 0
+        #    df = df[mask]
             
         #Remove galaxies with bad petro fit or other missing fields
-        df = df.dropna(subset=['petro_half_light', 'petro_90_light'])
+        df = dropna(df, 'petro_half_light')
+        df = dropna(df, 'petro_90_light')
+        
+        matching_fields = np.unique(MATCHING_FIELDS)
+        for m in matching_fields:
+            if m in df.head(0):
+                df = dropna(df, m)
 
         return df
 
@@ -287,6 +305,11 @@ class DatasetMatcher(object):
             path = plot_base + title + "_" + MATCHING_FIELDS[0][j] + ".pdf"
             fields = [r[j] for r in MATCHING_FIELDS]
             self.plot_dataset_hist(fields, path)
+            
+        for j in range(len(MATCHING_FIELDS[0])-1):
+            path = plot_base + title + "_" + MATCHING_FIELDS[0][j] + "_" + MATCHING_FIELDS[0][j+1] + ".pdf"
+            fields = [[r[j], r[j+1]] for r in MATCHING_FIELDS]
+            self.plot_dataset_scatter2d(fields, path)
         
     
     def plot_dataset_hist(self, field, path, bins=50):
@@ -314,11 +337,28 @@ class DatasetMatcher(object):
         ax.legend()
         fig.savefig(path)
         
-    def plot_dataset_scatter2d(self, fields):
-        '''Plot the 2d scatter of two fields'''
+    def plot_dataset_scatter2d(self, fields, path):
+        '''
+        Plot the 2d scatter of two fields
+        fields should be a list of list with the str of the header to plot
+        with dimensions: (num_simulations, 2)
+        '''
         
-        assert isinstance(field, str) or (isinstance(field, list) and len(field)==len(self))
-        pass
+        assert isinstance(fields, list) and len(fields)==len(self)
+        for i in fields:
+            assert isinstance(i, list)
+            assert len(i)==2
+        
+        fig, ax = plt.subplots()
+        
+        for i, (data, title) in enumerate(zip(self._datasets, self._dataset_titles)):
+            ax.scatter(data.df[fields[i][0]], data.df[fields[i][1]], s=1, label=title)
+            ax.set_xlabel(fields[0][0])
+            ax.set_ylabel(fields[0][1])
+            
+        ax.legend()
+        fig.savefig(path)
+        
     
         
     # Matching
@@ -416,22 +456,33 @@ class DatasetMatcher(object):
             else:
                 raise ValueError("Please specify if dataset is a target or source set in params.yaml")
 
-                
+    '''            
     def _get_matched_masks(self, target, source):
-        '''
-        Match the set given by source to the set given by target. 
-        Returns the masks of source and target datasets such that the distribution for the given fields are identical
-        '''
+        
+        #Match the set given by source to the set given by target. 
+        #Returns the masks of source and target datasets such that the distribution for the given fields are identical
+        
+        
+        def get_trial(x):
+            o = np.zeros_like(x)
+            
+            for i, j in enumerate(x):
+                o[i] = rng.uniform(j-MATCHING_UNCERTAINTIES[i], j+MATCHING_UNCERTAINTIES[i])
+        
+            return o
+        
+        #Get random
+        rng = np.random.default_rng(SPLIT_SEED)
         
         #Scale source and target to ensure a fair treatment of the variouse matching fields
         source = np.array(source)
         target = np.array(target)
         
-        scaler = StandardScaler()
-        scaler.fit(target)
+        #scaler = StandardScaler()
+        #scaler.fit(target)
 
-        source = scaler.transform(source)
-        target = scaler.transform(target)
+        #source = scaler.transform(source)
+        #target = scaler.transform(target)
         
         #Create a KDTree to search for the nearest galaxy in the sample to match
         kdt = KDTree(source, metric='euclidean')
@@ -445,26 +496,88 @@ class DatasetMatcher(object):
         #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
         matched_target_mask = []
         
-        for x in target:
-            for i in range(MATCHING_MAX_ITER): 
-                try:
-                    distance, index = kdt.query([x], k=i+1, return_distance=True)
+        max_iter_counter = 0
+        
+        for x in tqdm(target):
+            for i in range(MATCHING_MAX_ITER):
+                trial = get_trial(x)
+                for k in range(10):
+                    distance, index = kdt.query([trial], k=k+1, return_distance=True)
                     distance = distance[0,-1]
                     index = index[0,-1]
-                except ValueError:
+
+                    within_box = np.all(np.abs(source[index] - x) <= MATCHING_UNCERTAINTIES)
+
+                    if index not in index_set and within_box:
+                        matched_target_mask.append(True)
+                        index_set.add(index)
+                        matched_source_indexes.append(index)
+                        i = MATCHING_MAX_ITER-1
+                        break
+                
+                if i == MATCHING_MAX_ITER-1:
                     matched_target_mask.append(False)
-                    break
-                    
-                if distance>MATCHING_MAX_DIST or i == MATCHING_MAX_ITER-1:
-                    matched_target_mask.append(False)
+                    max_iter_counter += 1
                     break
         
-                if index not in index_set:
-                    matched_target_mask.append(True)
-                    index_set.add(index)
-                    matched_source_indexes.append(index)
-                    break
-
+                
+        #Ensure that there are no double matched galaxies
+        _, counts = np.unique(matched_source_indexes, return_counts=True)
+        assert(np.sum(counts > 1) == 0)
+        
+        #Translate the index list into a mask
+        matched_source_mask = np.zeros(source.shape[0], dtype=int)
+        matched_source_mask[matched_source_indexes] = 1
+        
+        #To boolean numpy array
+        matched_source_mask = np.array(matched_source_mask, dtype=bool)
+        matched_target_mask = np.array(matched_target_mask, dtype=bool)
+        
+        #Print numer of matched galaxies
+        num_matched = str(np.sum(matched_target_mask))
+        num_target = str(len(matched_target_mask))
+        print("Max iter reached for : " + str(max_iter_counter))
+        print("Number of matched galaxies: " + num_matched + " / " + num_target)
+        
+        return matched_source_mask, matched_target_mask
+        '''
+ 
+    def _get_matched_masks(self, target, source):
+        '''
+        Match the set given by source to the set given by target. 
+        Returns the masks of source and target datasets such that the distribution for the given fields are identical
+        '''
+        
+        #Get random
+        rng = np.random.default_rng(SPLIT_SEED)
+        
+        #Scale source and target to ensure a fair treatment of the variouse matching fields
+        source = np.array(source)
+        target = np.array(target)
+        
+        #Set of already used indexes
+        unused_source_mask = np.ones(source.shape[0])
+        
+        #Output list containing the matched 
+        matched_source_indexes = []
+        
+        #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
+        matched_target_mask = []
+        
+        for x in tqdm(target):
+            
+            within_box = np.all(np.abs(source - x) <= MATCHING_UNCERTAINTIES, axis=1)
+            within_box = np.logical_and(unused_source_mask, within_box)
+            within_box_index = np.argwhere(within_box)
+            
+            if len(within_box_index) > 0:
+                index = rng.choice(within_box_index)
+                unused_source_mask[index]= False
+                matched_source_indexes.append(index)
+                matched_target_mask.append(True)
+            else:
+                matched_target_mask.append(False)
+                
         #Ensure that there are no double matched galaxies
         _, counts = np.unique(matched_source_indexes, return_counts=True)
         assert(np.sum(counts > 1) == 0)
@@ -483,7 +596,8 @@ class DatasetMatcher(object):
         print("Number of matched galaxies: " + num_matched + " / " + num_target)
         
         return matched_source_mask, matched_target_mask
-    
+ 
+
     
     #------------------------------------------------------------------------------------------
     

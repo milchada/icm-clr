@@ -75,7 +75,7 @@ class Subhalos(object):
         '''Add here additional paths which are not in the base path of the simulation'''
         
         auxcat_path = self._base_path + "/postprocessing/dnelson/auxCat"
-        self._stellar_phot_dust_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
+        self._stellar_phot_dust_path = self._base_path + "/postprocessing/stellar_light/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
         self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
         self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
         
@@ -465,7 +465,7 @@ class Subhalos(object):
 class SubhalosTNG100(Subhalos):
     
     def define_auxcat_paths(self):
-        auxcat_path = "/ptmp/leisert/TNG100-1/auxCat"
+        auxcat_path = "/ptmp/leisert/image_cache/TNG100-1/auxCat"
         self._stellar_phot_dust_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
         self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
         self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)

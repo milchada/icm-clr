@@ -20,6 +20,8 @@ class TestMeanNeighborDistanceDeviation(unittest.TestCase):
         self.c = self.a + 0.1*np.random.rand(NUMPOINTS, NUMDIM)
         self.c[:,0] += 0.5
         
+        self.d = np.concatenate((np.random.normal(size = (NUMPOINTS//2, NUMDIM)), np.random.rand(NUMPOINTS//2, NUMDIM)), axis=0)
+        
     def test_reshape_input(self):
         x, y = DistributionTest.reshape_input(self.x, self.x_wrong_num_points)
         self.assertTrue(x.shape == y.shape)
@@ -52,12 +54,14 @@ class TestMeanNeighborDistanceDeviation(unittest.TestCase):
         deviations_a = mndd.get_deviations(self.a)
         deviations_b = mndd.get_deviations(self.b)
         deviations_c = mndd.get_deviations(self.c)
+        deviations_d = mndd.get_deviations(self.d)
         self.assertTrue(deviations_a.ndim == 1)
         self.assertTrue(deviations_a.shape[0] == self.x.shape[0])
         
         plt.hist(deviations_a, bins=30)
         plt.hist(deviations_b, bins=30, alpha = 0.5)
         plt.hist(deviations_c, bins=30, alpha = 0.5)
+        plt.hist(deviations_d, bins=30, alpha = 0.5)
         plt.savefig('./temp/TestDistributionTest_test_mndd.png')
         
         first_axis = self.x[:,0]

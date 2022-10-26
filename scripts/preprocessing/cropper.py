@@ -124,8 +124,8 @@ class PetrosianCropper(ImageCropper):
     @property
     def valid(self):
         '''Flag if the fit was successful'''
-        not_nan = not np.any(np.isnan((self.r_half_light, self.r_90_light)))
-        return not_nan
+        #not_nan = not np.any(np.isnan((self.r_half_light, self.r_90_light)))
+        return not np.isnan(self.r_90_light)
     
     @property
     def petro_multiplier(self):

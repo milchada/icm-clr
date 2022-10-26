@@ -10,8 +10,8 @@ Parameters for scripts which have to be traced by DVC are stored in params.yaml
 """
 
 #Paths
-image_cache_path = "../ptmp_link/image_cache/"
-illustris_path = "../IllustrisTNG/"
+image_cache_path = "/ptmp/leisert/image_cache/"
+illustris_path = "/virgotng/universe/IllustrisTNG/"
 dataset_raw_path = "./dataset_raw/"
 dataset_path = "./dataset/"
 model_path = "./model/"

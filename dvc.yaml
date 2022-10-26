@@ -62,7 +62,6 @@ stages:
     deps:
     - ./scripts/postprocessing/write_representation.py
     - ./model/resnet.pt
-    - ./dataset_raw/
     - ./dataset/
     outs:
     - ./postprocessing/representation.npy

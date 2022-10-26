@@ -87,7 +87,8 @@ def train_simclr(params={},
                       experiment_tracker,
                       params["PATIENCE"],
                       params["NUM_EPOCHS"],
-                      save_path)
+                      save_path,
+                      use_checkpoint=True)
     
     
     #Prepare training data 

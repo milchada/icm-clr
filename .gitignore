@@ -5,3 +5,6 @@
 /dataset
 /model
 /temp
+/metrics
+/plots
+/postprocessing

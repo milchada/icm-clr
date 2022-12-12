@@ -15,16 +15,14 @@ import config as c
 
 params = yaml.safe_load(open('params.yaml'))
 losses_params = params['losses']
-mmd_forw_kernels = losses_params['mmd_forw_kernels']
-mmd_back_kernels = losses_params['mmd_back_kernels']
 mmd_kernels = losses_params['mmd_kernels']
 mmd_kernel_type = losses_params['mmd_kernel_type']
 
 adaption_type = losses_params['adaption_type']
 
-lambd_simclr_train = losses_params['lambd_simclr_train']
-lambd_simclr_domain = losses_params['lambd_simclr_domain']
-lambd_simclr_adaption = losses_params['lambd_simclr_adaption']
+lambd_simclr_train = losses_params['lambd_clr_train']
+lambd_simclr_domain = losses_params['lambd_clr_domain']
+lambd_simclr_adaption = losses_params['lambd_clr_adaption']
 
 lambd_max_likelihood = losses_params['lambd_max_likelihood']
 lambd_mmd_forw = losses_params['lambd_mmd_forw']
@@ -101,16 +99,25 @@ def info_nce_loss(features, n_views, batch_size):
     logits = logits / nce_temperature
     return logits, labels
 
+def loss_nnclr(img, rep, model, n_views, batch_queue):
+    #Replace the second view with the closest representation in the queue
+    img[1::2] = batch_queue.multi_nn_search(rep[1::2])
+    rep[1::2] = model(img[1::2])
+    #Push the first views to the queue
+    batch_queue.push(img[0::2], rep[0::2])
+    #Then apply the usual simclr loss
+    return loss_simclr(rep, n_views, batch_queue.batch_size)
+
 def loss_simclr(x, n_views, batch_size):
     logits, labels = info_nce_loss(x, n_views, batch_size)
     loss = torch.nn.CrossEntropyLoss().to(c.device)(logits, labels)
     return loss, logits, labels 
 
 def forward_mmd(y0, y1):
-    return MMD_matrix(y0, y1, mmd_forw_kernels)
+    return MMD_matrix(y0, y1, mmd_kernels)
 
 def backward_mmd(x0, x1):
-    return MMD_matrix(x0, x1, mmd_back_kernels)
+    return MMD_matrix(x0, x1, mmd_kernels)
 
 def mmd(x0, x1):
     return MMD_matrix(x0, x1, mmd_kernels)

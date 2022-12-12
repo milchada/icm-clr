@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 class Cache(object):
-    def __init__(self, path, use_cache):
+    def __init__(self, path, use_cache=True):
         
         self._path = path
         self._use_cache = use_cache
@@ -33,6 +33,9 @@ class Cache(object):
             self._cache = df
             
         self.save()
+        
+    def pull(self):
+        return self._cache
     
     @property
     def use_cache(self):
@@ -41,6 +44,16 @@ class Cache(object):
     @property
     def path(self):
         return self._path
-     
-    def __call__(self):
-        return self._cache
+    
+    
+#Short test
+if __name__ == "__main__":
+    import numpy as np
+    from tqdm import tqdm
+    cache = Cache("../../temp/cache.csv")
+    for i in tqdm(range(100)):
+        a = pd.DataFrame(np.random.rand(10000, 3), columns=['a','b','c'])
+        cache.push(a)
+        
+        for i in tqdm(range(10000)):
+            cache.isin(2, 'a')

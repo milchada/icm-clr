@@ -1,5 +1,4 @@
 import torch.nn as nn
-#from torchsummary import summary
 from scripts.model.resnet import Wide_ResNet
 
 import yaml
@@ -57,3 +56,11 @@ class ResNetSimCLR(nn.Module):
         else:
             return self.resnet(x)
         
+        
+if __name__ == "__main__":
+    from torchinfo import summary
+    import torch
+    IMAGE_SIZE = yaml.safe_load(open('params.yaml'))['data']['IMAGE_SIZE']
+    model = ResNetSimCLR()
+    input_size = (1, model_default_params["RESNET_NUM_CHANNELS"], IMAGE_SIZE, IMAGE_SIZE)
+    summary(model, input_size=input_size, depth=1, col_names=['num_params'])

@@ -1,10 +1,11 @@
 import torch
 
 from scripts.model.resnet_simclr import ResNetSimCLR
-from scripts.model.losses import loss_simclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
+from scripts.model.losses import loss_simclr, loss_nnclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
 from scripts.model.optimizer import Optimizer
 from scripts.model.training import Trainer
 from scripts.model.experiment_tracking import NeptuneExperimentTracking, VoidExperimentTracking
+from scripts.model.batch_queue import init_batch_queue
 
 import config as c
 
@@ -64,7 +65,7 @@ def train_simclr(params={},
     
     #Init experiment tracking
     if experiment_tracking:
-        experiment_tracker = NeptuneExperimentTracking(tags=['simclr'])
+        experiment_tracker = NeptuneExperimentTracking(tags=['clr'])
     else: 
         experiment_tracker = VoidExperimentTracking()
     
@@ -88,56 +89,91 @@ def train_simclr(params={},
                       params["PATIENCE"],
                       params["NUM_EPOCHS"],
                       save_path,
-                      use_checkpoint=True)
-    
+                      use_checkpoint=False)
     
     #Prepare training data 
     augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])
     flip_augmentation = FlipAugmentation(params["AUGMENTATION_PARAMS"])
     train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
-    domain_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
-    train_mmd_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
-    domain_mmd_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
+    
+    training_data = [train_loader]
+    
+    if params['DOMAIN_LEARNING']:
+        domain_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
+        train_mmd_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
+        domain_mmd_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
+        
+        training_data += [domain_loader, train_mmd_loader, domain_mmd_loader]
     
     #Prepare validation data
     val_loader = data.get_val_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
-
-    #Add the datasets together
-    training_data = [train_loader, domain_loader, train_mmd_loader, domain_mmd_loader]
     validation_data = [val_loader]
+    
+    #Prepare lossfunctions
+    if params['CLR_TYPE'] == 'SIMCLR':
+        training_loss = lambda img, rep, model: loss_simclr(rep, N_VIEWS, params["BATCH_SIZE"])
+        validation_loss = lambda img, rep, model: loss_simclr(rep, N_VIEWS, params["BATCH_SIZE"])
+        domain_loss = lambda img, rep, model: loss_simclr(rep, N_VIEWS, params["BATCH_SIZE"])
+    
+    elif params['CLR_TYPE'] == 'NNCLR':
+        train_batch_queue = init_batch_queue(model, train_loader, params["NNCLR_QUEUE_SIZE"])
+        val_batch_queue = init_batch_queue(model, val_loader, params["NNCLR_QUEUE_SIZE"])
+        
+        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue)
+        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue)
+        
+        if params['DOMAIN_LEARNING']:
+            domain_batch_queue = init_batch_queue(model, domain_loader, params["NNCLR_QUEUE_SIZE"])
+            domain_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, domain_batch_queue)
+            
+    else:
+        raise ValueError("Invalid CLR_TYPE given!")
+        
     
     #Prepare Training Lossfunction
     def training_lossfunction(model, batch):
+        
         train_images = images_2_device(batch[0])
-        domain_images = images_2_device(batch[1])
-        train_adaption_images = images_2_device(batch[2])
-        domain_adaption_images = images_2_device(batch[3])
+        
+        if params['DOMAIN_LEARNING']:
+            domain_images = images_2_device(batch[1])
+            train_adaption_images = images_2_device(batch[2])
+            domain_adaption_images = images_2_device(batch[3])
         
         #Loss for the training set
         features = model(train_images)
-        train_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
+        train_loss, logits, labels = training_loss(train_images, features, model)
         train_top1, train_top5 = accuracy(logits, labels, topk=(1, 5))
 
         #Loss for the domain set
-        features = model(domain_images)
-        domain_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
-        domain_top1, domain_top5 = accuracy(logits, labels, topk=(1, 5))
+        if params['DOMAIN_LEARNING']:
+            features = model(domain_images)
+            domain_loss, logits, labels = domain_loss(domain_images, features, model)
+            domain_top1, domain_top5 = accuracy(logits, labels, topk=(1, 5))
 
         #Loss for the training - domain representation distance
-        train_rep = model(train_adaption_images, projection_head=False)
-        domain_rep = model(domain_adaption_images, projection_head=False)
-        adaption_loss = loss_adaption(train_rep, domain_rep)
+        if params['DOMAIN_LEARNING']:
+            train_rep = model(train_adaption_images, projection_head=False)
+            domain_rep = model(domain_adaption_images, projection_head=False)
+            adaption_loss = loss_adaption(train_rep, domain_rep)
 
         #Calculate total loss
-        loss = lambd_simclr_train * train_loss + lambd_simclr_domain * domain_loss + lambd_simclr_adaption * adaption_loss
+        loss = lambd_simclr_train * train_loss 
 
         loss_dict = {'training_loss': train_loss,
                      'training_acc/top1': train_top1[0],
-                     'training_acc/top5': train_top5[0],
-                     'domain_loss': domain_loss,
-                     'domain_acc/top1': domain_top1[0],
-                     'domain_acc/top5': domain_top5[0],
-                     'adaption_loss': adaption_loss,
+                     'training_acc/top5': train_top5[0]}
+        
+        if params['DOMAIN_LEARNING']:
+            loss += lambd_simclr_domain * domain_loss + lambd_adaption * adaption_loss
+            
+            loss_dict = {**loss_dict,
+                         'domain_loss': domain_loss,
+                         'domain_acc/top1': domain_top1[0],
+                         'domain_acc/top5': domain_top5[0],
+                         'adaption_loss': adaption_loss}
+            
+        loss_dict = {**loss_dict,
                      'total_loss': loss}
 
         loss_dict = loss_dict_2_host(loss_dict)
@@ -150,7 +186,7 @@ def train_simclr(params={},
 
         #Loss for validation set
         features = model(val_images)
-        val_loss, logits, labels = loss_simclr(features, N_VIEWS, params["BATCH_SIZE"])
+        val_loss, logits, labels = validation_loss(val_images, features, model)
         val_top1, val_top5 = accuracy(logits, labels, topk=(1, 5))
 
         loss_dict = {'validation_loss': val_loss,

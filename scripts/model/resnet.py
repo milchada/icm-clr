@@ -352,7 +352,7 @@ class Wide_ResNet(torch.nn.Module):
         return x1, x2, x3
     
     def forward(self, x):
-
+        
         # wrap the input tensor in a GeometricTensor
         x = enn.GeometricTensor(x, self.in_type)
         

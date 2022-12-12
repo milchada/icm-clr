@@ -143,7 +143,7 @@ class DatasetPreparator(object):
         #    df = df[mask]
             
         #Remove galaxies with bad petro fit or other missing fields
-        df = dropna(df, 'petro_half_light')
+        #df = dropna(df, 'petro_half_light')
         df = dropna(df, 'petro_90_light')
         
         matching_fields = np.unique(MATCHING_FIELDS)

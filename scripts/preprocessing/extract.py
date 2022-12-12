@@ -14,6 +14,7 @@ import config as c
 from tqdm import tqdm
 
 from scripts.util.str2None import str2None
+from scripts.util.logging import logger
 from scripts.preprocessing.extractors import DataExtractor
 
 import yaml
@@ -27,14 +28,15 @@ FIELDS = [str2None(i) for i in extract_params["FIELDS"]]
 IMAGE_SIZE = int(str2None(extract_params["IMAGE_SIZE"]))
 FILTERS = extract_params["FILTERS"]
 SNAPSHOTS = extract_params["SNAPSHOTS"]
-SKIP = extract_params["SKIP"]
+LOAD = extract_params["LOAD"]
+FRACTION = extract_params["FRACTION"]
 
 if __name__ == "__main__":
         
     for i, dataset in enumerate(DATASETS):
-        if not SKIP[i]:
-            print("Load " + dataset)
-            DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS[i], FIELDS[i], IMAGE_SIZE, FILTERS)
+        if LOAD[i]:
+            logger.info("Loading Dataset: " + dataset)
+            DataExtractor.get_extractor(dataset, MIN_STELLAR_MASS, MAX_STELLAR_MASS, SNAPSHOTS[i], FIELDS[i], IMAGE_SIZE, FILTERS, FRACTION[i])
             
             
 

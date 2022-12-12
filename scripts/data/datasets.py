@@ -51,8 +51,12 @@ class SimClrDataset(Dataset):
     def __getitem__(self, idx):
         '''Return an item with index idx'''
 
-        image = self._get_single_image(idx)
-    
+        try:
+            image = self._get_single_image(idx)
+        except OSError:
+            print("Problems reading " + str(self.image_paths[idx]))
+            return
+        
         samples = [self.transform(image) for i in range(self.n_views)]
             
         if self.df_label is None:

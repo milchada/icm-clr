@@ -34,11 +34,16 @@ extract:
          "mean_merger_lookback_time", "mean_merger_mass_ratio",
          "color", "i_band_mag_dust_apparent"]
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
-    #Skip dataset
-    SKIP:
+    #Load datasets?
+    LOAD:
+      - False
       - True
       - False
-      - False
+    #Only use fractions of the overall set - not 
+    FRACTION:
+      - 1.0
+      - 1.0
+      - 0.75
     #Target image size to apply the augmentations to
     IMAGE_SIZE: 256
     #Filters to load from the raw images
@@ -49,7 +54,7 @@ extract:
     #Set this to False if there are any problems during the loading
     USE_CACHE: True
     #Number of workers to use
-    NUM_WORKERS: 8
+    NUM_WORKERS: 32
     #Chunk size of the image loading
     SIZE_CHUNKS: 2000
 
@@ -59,7 +64,7 @@ prepare:
     #Datasets to use with the split fractions: Training, Validation, Testing
     #Note, that feature scaling is determined by the first set
     SETS:
-      - ["HSC", [0.0, 0.8, 0.1, 0.1]]
+      - ["HSC", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG100", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
     #Max number of iterations and distance the Matching algorithm is using until a target galaxy is removed from the set 
@@ -118,11 +123,17 @@ train_simclr:
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.5
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 128
+    BATCH_SIZE: 64
     #Maximum number of training epochs
     NUM_EPOCHS: 50
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 10
+    #Domain Learning
+    DOMAIN_LEARNING: False
+    #Contrastive Learning Type (SIMCLR or NNCLR):
+    CLR_TYPE: "NNCLR"
+    #Size of Queue (i.e. number of batches) in case that NNCLR is used:
+    NNCLR_QUEUE_SIZE: 128
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 15
@@ -203,7 +214,7 @@ model:
     
     #Parameters for the resnet 
     RESNET_DEPTH: 16
-    RESNET_WIDTH: 2
+    RESNET_WIDTH: 1
     RESNET_DROPOUT: 0.1
     RESNET_REPRESENTATION_DIM: 128
     RESNET_REPRESENTATION_DEPTH: 2
@@ -230,17 +241,15 @@ model:
 losses:
     #Kernel vor forward and backward maximum mean discrepancy loss
     mmd_kernel_type: "inverse_multiquadratic"
-    mmd_forw_kernels: [[0.2, 2], [1.5, 2], [3.0, 2]]
-    mmd_back_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
     mmd_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
     
     #Loss type for the adaption
     adaption_type: "huber_linear_mmd"
     
-    #Prefactor for the simclr losses
-    lambd_simclr_train: 1.
-    lambd_simclr_domain: 1.
-    lambd_simclr_adaption: 1.
+    #Prefactor for the contrastive learning losses
+    lambd_clr_train: 1.
+    lambd_clr_domain: 0.
+    lambd_clr_adaption: 0.
     
     #Prefactor for the cINN losses
     #i.e. the overall loss is given as weighted sum with the weights given as prefactors

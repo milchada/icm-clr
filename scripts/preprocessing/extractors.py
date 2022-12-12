@@ -11,6 +11,7 @@ from scripts.preprocessing.TNG.Catalogue import Catalogue
 from scripts.preprocessing.cropper import FractionalCropper, PetrosianCropper
 from scripts.util.chunked_pool import ChunkedPool
 from scripts.preprocessing.caching import Cache
+from scripts.util.logging import logger
 
 import os
 from tqdm import tqdm
@@ -31,7 +32,7 @@ NUM_WORKERS = extract_params['NUM_WORKERS']
 SIZE_CHUNKS = extract_params['SIZE_CHUNKS']
 
 class DataExtractor(object):
-    def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None):
+    def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None, fraction=1.0):
         self._dataset = dataset
         self._min_mass = min_mass
         self._max_mass = max_mass
@@ -48,11 +49,12 @@ class DataExtractor(object):
         self._filters = filters
         self._filters_keys = self.get_filter_keys(filters)
         self._simulation = simulation
+        self._fraction = fraction
         
         self.create_paths()
         self.extract()
         
-    def get_extractor(dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None):
+    def get_extractor(dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, fraction=1.0):
         '''Static factory method to get the correct DataExtractor object based on the dataset asked for'''
         
         if dataset in {"TNG50-1", "TNG100-1", "TNG300-1"}:
@@ -62,7 +64,7 @@ class DataExtractor(object):
         elif dataset in {"HSC_TNG100"}:
             return TNGHSCExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation="TNG100-1")
         elif dataset in {"HSC"}:
-            return HSCDataExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters)
+            return HSCDataExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, None, fraction)
         else:
             raise NotImplementedError(dataset + " has not been implemented yet!")
     
@@ -96,7 +98,7 @@ class DataExtractor(object):
         self._cache.push(df)
         
     def pull_from_cache(self):
-        return self._cache()
+        return self._cache.pull()
         
     def skip_image(self, path):
         """
@@ -202,12 +204,12 @@ class TNGHSCExtractor(TNGDataExtractor):
         filelist = glob.glob(self._image_path + '**/*.fits', recursive=True) 
         
         if len(filelist) == 0:
-            print("No images available, extract images first!")
+            logger.info("No images available, extract images first!")
 
         #Get snapshot and id
         snapnums, sub_ids = self._split_filenames(filelist)
 
-        print("Assign Images to Labels")
+        logger.info("Assign Images to Labels")
         #Match the images with the data read from the csv (contained in df)
         origin = df.to_numpy()
         target = []
@@ -230,8 +232,8 @@ class TNGHSCExtractor(TNGDataExtractor):
             else:
                 mask.append(False)
 
-        print(str(np.sum(mask)) + " images assigned to simulation data.")
-        print(str(np.sum(np.logical_not(mask))) + " images dropped.")
+        logger.info(str(np.sum(mask)) + " images assigned to simulation data.")
+        logger.info(str(np.sum(np.logical_not(mask))) + " images dropped.")
         df_matched = pd.DataFrame(np.array(target)[:,0,:], columns=df.columns)
         df_matched['image_path'] = np.array(filelist)[mask]
 
@@ -247,54 +249,56 @@ class TNGHSCExtractor(TNGDataExtractor):
         if self.skip_image(new_path):
             return ['', np.nan, np.nan]
         
+        #Resize images and copy only needed filters
+        with fits.open(filedir) as hdul:
+
+            cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
+            cropper.fit(hdul["SUBARU_HSC.R"].data)
+
+            hdu_copy = [fits.PrimaryHDU()]
+
+            for fk, f in zip(self._filters_keys, self._filters):
+                header = hdul[fk].header
+                image = hdul[fk].data                            
+                image = cropper(image)
+                hdu_copy.append(fits.ImageHDU(image, name=f, header=header))
+
+            hdul_copy = fits.HDUList(hdu_copy)
+            hdul_copy.writeto(new_path)
+        
+        return [new_path, cropper.r_half_light, cropper.r_90_light]
+        
+    def _resized_copy_exceptions(self, filedirs):
         try:
-        
-            #Resize images and copy only needed filters
-            with fits.open(filedir) as hdul:
-
-                cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
-                cropper.fit(hdul["SUBARU_HSC.R"].data)
-
-                hdu_copy = [fits.PrimaryHDU()]
-
-                for fk, f in zip(self._filters_keys, self._filters):
-                    header = hdul[fk].header
-                    image = hdul[fk].data                            
-                    image = cropper(image)
-                    hdu_copy.append(fits.ImageHDU(image, name=f, header=header))
-
-                hdul_copy = fits.HDUList(hdu_copy)
-                hdul_copy.writeto(new_path)
-        
-            return [new_path, cropper.r_half_light, cropper.r_90_light]
-        
-        except KeyError:
-            
-            print("Filter missing: skip image!")
-            
+            return self._resized_copy(filedirs)
+        except OSError:
+            logger.warning("Faulty fits file: skip image!")
             return ['', np.nan, np.nan]
-        
+        except KeyError:
+            logger.warning("Filter missing: skip image!")
+            return ['', np.nan, np.nan]
         except TypeError:
-            
-            print("Weird type error: skip image!")
-            
+            logger.warning("Weird type error: skip image!")
+            return ['', np.nan, np.nan]
+        except ValueError:
+            logger.warning("Weird value error: skip image!")
             return ['', np.nan, np.nan]
         
     def _extract_images(self):
         image_path_wildcard = os.path.join(c.image_cache_path, self._dataset) + '/**/*.fits'
         filelist = glob.glob(image_path_wildcard, recursive=True)
-        print(str(len(filelist)) + " images found. Start loading...")
+        logger.info(str(len(filelist)) + " images found. Start loading...")
         
         def checkpoint(x):
             x = np.array(x)
             df = pd.DataFrame(x, columns=["image_path", "petro_half_light", "petro_90_light"])
             self.push_to_cache(df)
             
-        multi_resized_copy = ChunkedPool(self._resized_copy, checkpoint, SIZE_CHUNKS, NUM_WORKERS)
+        multi_resized_copy = ChunkedPool(self._resized_copy_exceptions, checkpoint, SIZE_CHUNKS, NUM_WORKERS)
         multi_resized_copy(filelist)
     
     def _extract_labels(self):
-        print("Load labels...")
+        logger.info("Load labels...")
         df = self._load_TNG_labels(self._fields)
         df = self._add_image_path(df)
         df_cache = self.pull_from_cache()
@@ -329,6 +333,11 @@ class HSCDataExtractor(DataExtractor):
         '''
 
         unique_ids = np.unique(id_list)
+        
+        if self._fraction < 1.0:
+            unique_ids = np.random.choice(unique_ids, int(len(unique_ids)*self._fraction), replace=False)
+        assert len(unique_ids) > 0
+        
         filelist_grouped = []
         mask = []
         
@@ -350,23 +359,30 @@ class HSCDataExtractor(DataExtractor):
                 filelist_grouped.append(file_cutout[filter_index_ordered])
                 mask.append(True)
             else:
-                print("Warning: HSC index " + str(i) + " has a filter missing. Galaxy dropped...")   
+                logger.warning("Warning: HSC index " + str(i) + " has a filter missing. Galaxy dropped...")   
                 mask.append(False)
             
         return unique_ids[mask], filelist_grouped
     
     def _get_new_image_path(self, unique_id):
+        '''Get target path'''
         return self._image_path + "%017d.fits" % (unique_id)
+    
+    def _remove_cached_images(self, unique_ids, filelist_grouped):
+        '''Check if image has already been copied and remove those'''
+        
+        v_get_new_image_path = np.vectorize(self._get_new_image_path)
+        image_paths = v_get_new_image_path(unique_ids)
+        
+        mask = np.isin(image_paths, self.pull_from_cache()['image_path'].to_numpy()) 
+        
+        return np.array(unique_ids)[~mask], np.array(filelist_grouped)[~mask], 
             
     def _resized_copy(self, filedirs):
         '''Copy a resized version to save space and memory'''
     
         id_list, filter_list = self._get_data_from_fits(filedirs)
         new_path = self._get_new_image_path(id_list[0])
-
-        #Test if file is already existing; either skip and use the cached data or delete and reload 
-        if self.skip_image(new_path):
-            return ['', np.nan, np.nan]
         
         #Init a PetrosianCropper and fit the red channel
         cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
@@ -386,26 +402,35 @@ class HSCDataExtractor(DataExtractor):
                 #Bring the image to AB standard 
                 fluxmag0 = hdul[0].header["FLUXMAG0"]
                 image *= 1e9 / fluxmag0
-                    
+
                 #Retrict to a multiple of the petro90 radius
                 image = cropper(image)
-                
+
                 hdu_copy.append(fits.ImageHDU(image, name=self.get_filter(f), header=header))
 
         hdul_copy = fits.HDUList(hdu_copy)
 
         #Save
         hdul_copy.writeto(new_path)
-        
+
         return [new_path, cropper.r_half_light, cropper.r_90_light]
-    
+        
     def _resized_copy_exceptions(self, filedirs):
         try:
             return self._resized_copy(filedirs)
         except OSError:
-            print("Faulty fits file: skip image!")
+            logger.warning("Faulty fits file: skip image!")
             return ['', np.nan, np.nan]
-    
+        except KeyError:
+            logger.warning("Filter missing: skip image!")
+            return ['', np.nan, np.nan]
+        except TypeError:
+            logger.warning("Weird type error: skip image!")
+            return ['', np.nan, np.nan]
+        except ValueError:
+            logger.warning("Weird value error: skip image!")
+            return ['', np.nan, np.nan]
+        
     def _extract_labels(self, unique_ids):
         CSV_PATH = os.path.join(c.image_cache_path, self._dataset, "s20a_hsc-wide_gridet_sdss-dr16_petr20_gswlc2.csv")
         df = pd.read_csv(CSV_PATH)
@@ -427,20 +452,18 @@ class HSCDataExtractor(DataExtractor):
         
         return df
         
-        
     def extract(self):
         
         filelist = glob.glob(c.image_cache_path + self._dataset + '/**/*.fits', recursive=True)
         filelist = np.array(filelist)
-        
-        if len(filelist) == 0:
-            print("Error: no images found!")
-            return
+        logger.info("Overall " + str(len(filelist)) + " images found...")
         
         id_list, filter_list = self._get_data_from_fits(filelist)
-        
         unique_ids, filelist_grouped = self._group_filters(id_list, filter_list, filelist)
+        logger.info("Load only a fraction of " + str(self._fraction) + " and remove faulty images: Load " + str(len(unique_ids)) + " images...")
         
+        unique_ids_removed, filelist_grouped_removed = self._remove_cached_images(unique_ids, filelist_grouped)       
+        logger.info("After removing already cached images: Load " + str(len(unique_ids_removed)) + " images...")
         
         def checkpoint(x):
             x = np.array(x)
@@ -448,7 +471,7 @@ class HSCDataExtractor(DataExtractor):
             self.push_to_cache(df)
             
         multi_resized_copy = ChunkedPool(self._resized_copy_exceptions, checkpoint, SIZE_CHUNKS, NUM_WORKERS)
-        multi_resized_copy(filelist_grouped)
+        multi_resized_copy(filelist_grouped_removed)
         
         self._extract_labels(unique_ids)
         

@@ -111,9 +111,10 @@ class Subhalos(object):
                 result = f[field][self._subhalo_ids]
                 
         except ValueError:
+            print("WARNING: Value error occured during loading of field: " + field)
             with h5py.File(path, 'r') as f:
                 ids = f["subhaloIDs"][:]
-                index = np.where(np.isin(ids, self._subhalo_ids, assume_unique=True))
+                index = np.where(np.isin(ids, self._subhalo_ids))
                 result = f[field][index]
 
                 #Not sure if they are always sorted so fix that by "entsorting" the result
@@ -363,6 +364,10 @@ class Subhalos(object):
     def lookback(self):
         zeros = [0]*len(self._subhalo_ids)
         return np.array(cosmo.age(zeros) - cosmo.age(self.z))
+    
+    @property
+    def num_dm_particles(self):
+        return self.load_groupcat("SubhaloLenType")[:,1]
     
     @property
     def stellar_mass(self):

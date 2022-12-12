@@ -128,7 +128,7 @@ class Trainer(object):
             
     def load(self):
         '''Load model'''
-        if self._save_path is not None:
+        if self._save_path is not None and os.path.exists(self._save_path):
             checkpoint = torch.load(self._save_path, map_location=torch.device(c.device))
             self.model.load_state_dict(checkpoint)
         

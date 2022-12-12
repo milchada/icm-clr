@@ -64,15 +64,15 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/
-      md5: 91d81865b1d0f4dea0d043c98012ac05.dir
-      size: 47644571
-      nfiles: 36
+      md5: b7fb276bc49eb7fa106a50b718a5aacc.dir
+      size: 47714477
+      nfiles: 39
     params:
       params.yaml:
         prepare:
           SPLIT_SEED: 42
           SETS:
-          - - HSC_TNG50
+          - - HSC
             - - 0.8
               - 0.0
               - 0.1
@@ -82,25 +82,28 @@ stages:
               - 0.0
               - 0.1
               - 0.1
-          - - HSC
-            - - 0.0
-              - 0.8
+          - - HSC_TNG50
+            - - 0.8
+              - 0.0
               - 0.1
               - 0.1
-          MATCHING_MAX_ITER: 200
-          MATCHING_MAX_DIST: 0.1
+          MATCHING_MAX_ITER: 10000
+          MATCHING_MAX_DIST: 0.01
           MATCHING_FIELDS:
-          - - z
-            - i_band_mag_dust_apparent
-          - - z
-            - i_band_mag_dust_apparent
           - - photoz
             - i_cmodel_mag_ge
+          - - z
+            - i_band_mag_dust_apparent
+          - - z
+            - i_band_mag_dust_apparent
+          MATCHING_UNCERTAINTIES:
+          - - 0.05
+            - 0.1
           MATCHING_SOURCE_SETS:
           - HSC
           MATCHING_TARGET_SETS:
-          - HSC_TNG50
           - HSC_TNG100
+          - HSC_TNG50
           OBSERVABLES: None
           UNOBSERVABLES:
           - lookback
@@ -112,12 +115,12 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 229c13d9af621d87195be3d3735bb84e.dir
-      size: 28571339
+      md5: 8be437af024ffcd090166091e37cce08.dir
+      size: 43588230
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: f6a72b3424b2847c948079ca39eda778.dir
-      size: 8826394
+      md5: 355a880056e13d016107488279e74319.dir
+      size: 5739392
       nfiles: 6
   train:
     cmd: python3 -m scripts.model.train

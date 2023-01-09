@@ -5,7 +5,7 @@ import config as c
 import os
 
 class Trainer(object):
-    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, use_checkpoint=False):
+    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, use_checkpoint=False):
         
         self._epoch = 0
         self._val_loss_memory = []

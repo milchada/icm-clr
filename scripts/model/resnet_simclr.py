@@ -58,9 +58,26 @@ class ResNetSimCLR(nn.Module):
         
         
 if __name__ == "__main__":
-    from torchinfo import summary
+    #from torchinfo import summary
     import torch
     IMAGE_SIZE = yaml.safe_load(open('params.yaml'))['data']['IMAGE_SIZE']
     model = ResNetSimCLR()
-    input_size = (1, model_default_params["RESNET_NUM_CHANNELS"], IMAGE_SIZE, IMAGE_SIZE)
-    summary(model, input_size=input_size, depth=1, col_names=['num_params'])
+    input_size = torch.rand(1, model_default_params["RESNET_NUM_CHANNELS"], IMAGE_SIZE, IMAGE_SIZE)
+    #summary(model, input_size=input_size, depth=1, col_names=['num_params'])
+    
+    #print(model)
+    
+    #print(model.state_dict())
+    
+    #out = model(input_size)
+    
+    
+    #for name, layer in model.named_modules():
+    #    print(name)
+    #    #print(layer)
+    #    try:
+    #        print(model._modules[name].in_features)
+    #        print(model._modules[name].out_features)
+    #    except:
+    #        pass
+    #    print("---------------------------------------------------")

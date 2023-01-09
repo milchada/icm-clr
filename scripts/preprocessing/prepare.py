@@ -70,8 +70,6 @@ SETS = prepare_params["SETS"]
 OBSERVABLES = str2None(prepare_params['OBSERVABLES'])
 UNOBSERVABLES = prepare_params['UNOBSERVABLES']
 ROOT_DESCENDANT_SPLIT = prepare_params['ROOT_DESCENDANT_SPLIT']
-MATCHING_MAX_ITER = prepare_params['MATCHING_MAX_ITER']
-MATCHING_MAX_DIST = prepare_params['MATCHING_MAX_DIST']
 MATCHING_FIELDS = str2None(prepare_params['MATCHING_FIELDS'])
 MATCHING_SOURCE_SETS = set(prepare_params['MATCHING_SOURCE_SETS'])
 MATCHING_TARGET_SETS = set(prepare_params['MATCHING_TARGET_SETS'])
@@ -455,92 +453,6 @@ class DatasetMatcher(object):
                 k += 1
             else:
                 raise ValueError("Please specify if dataset is a target or source set in params.yaml")
-
-    '''            
-    def _get_matched_masks(self, target, source):
-        
-        #Match the set given by source to the set given by target. 
-        #Returns the masks of source and target datasets such that the distribution for the given fields are identical
-        
-        
-        def get_trial(x):
-            o = np.zeros_like(x)
-            
-            for i, j in enumerate(x):
-                o[i] = rng.uniform(j-MATCHING_UNCERTAINTIES[i], j+MATCHING_UNCERTAINTIES[i])
-        
-            return o
-        
-        #Get random
-        rng = np.random.default_rng(SPLIT_SEED)
-        
-        #Scale source and target to ensure a fair treatment of the variouse matching fields
-        source = np.array(source)
-        target = np.array(target)
-        
-        #scaler = StandardScaler()
-        #scaler.fit(target)
-
-        #source = scaler.transform(source)
-        #target = scaler.transform(target)
-        
-        #Create a KDTree to search for the nearest galaxy in the sample to match
-        kdt = KDTree(source, metric='euclidean')
-        
-        #Set of already used indexes
-        index_set = set()
-        
-        #Output list containing the matched 
-        matched_source_indexes = []
-        
-        #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
-        matched_target_mask = []
-        
-        max_iter_counter = 0
-        
-        for x in tqdm(target):
-            for i in range(MATCHING_MAX_ITER):
-                trial = get_trial(x)
-                for k in range(10):
-                    distance, index = kdt.query([trial], k=k+1, return_distance=True)
-                    distance = distance[0,-1]
-                    index = index[0,-1]
-
-                    within_box = np.all(np.abs(source[index] - x) <= MATCHING_UNCERTAINTIES)
-
-                    if index not in index_set and within_box:
-                        matched_target_mask.append(True)
-                        index_set.add(index)
-                        matched_source_indexes.append(index)
-                        i = MATCHING_MAX_ITER-1
-                        break
-                
-                if i == MATCHING_MAX_ITER-1:
-                    matched_target_mask.append(False)
-                    max_iter_counter += 1
-                    break
-        
-                
-        #Ensure that there are no double matched galaxies
-        _, counts = np.unique(matched_source_indexes, return_counts=True)
-        assert(np.sum(counts > 1) == 0)
-        
-        #Translate the index list into a mask
-        matched_source_mask = np.zeros(source.shape[0], dtype=int)
-        matched_source_mask[matched_source_indexes] = 1
-        
-        #To boolean numpy array
-        matched_source_mask = np.array(matched_source_mask, dtype=bool)
-        matched_target_mask = np.array(matched_target_mask, dtype=bool)
-        
-        #Print numer of matched galaxies
-        num_matched = str(np.sum(matched_target_mask))
-        num_target = str(len(matched_target_mask))
-        print("Max iter reached for : " + str(max_iter_counter))
-        print("Number of matched galaxies: " + num_matched + " / " + num_target)
-        
-        return matched_source_mask, matched_target_mask
-        '''
  
     def _get_matched_masks(self, target, source):
         '''

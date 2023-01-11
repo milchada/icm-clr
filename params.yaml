@@ -16,7 +16,7 @@ extract:
       - "HSC"
     SNAPSHOTS:
       - [72, 78, 84, 91]
-      - [72, 78, 84, 85, 86, 87, 88, 89, 90, 91]
+      - [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91]
       - None
     FIELDS: 
       - ["snapshot_id", "subhalo_id", "root_descendant_id",
@@ -54,7 +54,7 @@ extract:
     #Set this to False if there are any problems during the loading
     USE_CACHE: True
     #Number of workers to use
-    NUM_WORKERS: 32
+    NUM_WORKERS: 4
     #Chunk size of the image loading
     SIZE_CHUNKS: 2000
 
@@ -67,15 +67,18 @@ prepare:
       - ["HSC", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG100", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
-    #Max number of iterations and distance the Matching algorithm is using until a target galaxy is removed from the set 
-    MATCHING_MAX_ITER: 10000
-    MATCHING_MAX_DIST: 0.01
+    #Specify fields to match between the sets and the uncertainties they are matched with
     MATCHING_FIELDS:
+      #- ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
+      #- ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+      #- ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
       - ["photoz", "i_cmodel_mag_ge"]
       - ['z', 'i_band_mag_dust_apparent']
       - ['z', 'i_band_mag_dust_apparent']
+
     MATCHING_UNCERTAINTIES:
-      - [0.05, 0.1]
+    #  - [0.05, 0.1, 5]
+    - [0.05, 0.1]
     MATCHING_SOURCE_SETS: ['HSC']
     MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
     #List of observables and unobservables used
@@ -133,7 +136,7 @@ train_simclr:
     #Contrastive Learning Type (SIMCLR or NNCLR):
     CLR_TYPE: "NNCLR"
     #Size of Queue (i.e. number of batches) in case that NNCLR is used:
-    NNCLR_QUEUE_SIZE: 128
+    NNCLR_QUEUE_SIZE: 256
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 15
@@ -213,13 +216,14 @@ model:
     BATCH_NORM_COND: False
     
     #Parameters for the resnet 
-    RESNET_DEPTH: 16
+    #Resnet depth should be 6n+4
+    RESNET_DEPTH: 10
     RESNET_WIDTH: 1
     RESNET_DROPOUT: 0.1
     RESNET_REPRESENTATION_DIM: 128
-    RESNET_REPRESENTATION_DEPTH: 2
+    RESNET_REPRESENTATION_DEPTH: 1
     RESNET_PROJECTION_DIM: 128
-    RESNET_PROJECTION_DEPTH: 2
+    RESNET_PROJECTION_DEPTH: 1
     RESNET_NUM_CHANNELS: 3
     
     #The Number of discrete rotations the RESNET is initially equivariant
@@ -230,7 +234,7 @@ model:
     #2 = Restriction after the first block to N/2
     #3 = Restriction after the first (to N/2) and the second block (to 1)
     RESNET_ROTATION_RESTRICTION: 0
-    #Flag if the RESNET
+    #Flag if the RESNET should be reflection invariant
     RESNET_REFLECTION_EQUIVARIANCE: True
     #Initial Stride of the Resnet
     RESNET_INITIAL_STRIDE: 2

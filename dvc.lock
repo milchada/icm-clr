@@ -64,8 +64,8 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/
-      md5: 0833820c75eecd11ac092f9b1373b34a.dir
-      size: 58875243
+      md5: b23a034c6268fc8bff64911245f84f85.dir
+      size: 50960254
       nfiles: 39
     params:
       params.yaml:
@@ -90,13 +90,17 @@ stages:
           MATCHING_FIELDS:
           - - photoz
             - i_cmodel_mag_ge
+            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
+            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
+            - petro_90_light
           MATCHING_UNCERTAINTIES:
           - - 0.05
             - 0.1
+            - 5
           MATCHING_SOURCE_SETS:
           - HSC
           MATCHING_TARGET_SETS:
@@ -113,13 +117,13 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 3b64c2c6fa6b371db5f15a4e56cc4f78.dir
-      size: 139801519
+      md5: 71055fc3aa4028972d63dde3d4dbef79.dir
+      size: 128869000
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: 197d720109bc952a482939e64a6e6fa6.dir
-      size: 13393754
-      nfiles: 6
+      md5: 295501f1c4ac94802ec1994e9bd22c50.dir
+      size: 28477761
+      nfiles: 10
   train:
     cmd: python3 -m scripts.model.train
     deps:

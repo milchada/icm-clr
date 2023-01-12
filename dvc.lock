@@ -178,24 +178,24 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: 3b54a7579ce17a88b6ebc62fa809b381.dir
-      size: 26936870
+      md5: 71055fc3aa4028972d63dde3d4dbef79.dir
+      size: 128869000
       nfiles: 14
     - path: ./scripts/model/losses.py
-      md5: 4845cef4ddb46388345b7ea1e9369ae5
-      size: 5780
+      md5: b5792a5271c99a508b093ce80798d578
+      size: 6061
     - path: ./scripts/model/resnet.py
-      md5: 2d1f58e5bd0840260085beb44437dbf9
-      size: 16257
+      md5: 120d0671926e2a1d48588c01eff15109
+      size: 16265
     - path: ./scripts/model/resnet_simclr.py
-      md5: 707d3b5c44ed780a26662cf30a2cdfae
-      size: 2592
+      md5: 4372bec775e08528580d760a381aa6f1
+      size: 3346
     - path: ./scripts/model/train_simclr.py
-      md5: 0a4b02cfe02805ded5aee7605a42f9bd
-      size: 6772
+      md5: 80f2052202d9b4c56b495c9c5e07385d
+      size: 8470
     - path: ./scripts/model/training.py
-      md5: 286fb757ed94bdda89e3a98d4cf5b7d1
-      size: 4633
+      md5: e1b42f493ecd6b08a6c688755a50c736
+      size: 5502
     params:
       params.yaml:
         data:
@@ -216,20 +216,6 @@ stages:
           NUM_WORKERS: 18
         losses:
           mmd_kernel_type: inverse_multiquadratic
-          mmd_forw_kernels:
-          - - 0.2
-            - 2
-          - - 1.5
-            - 2
-          - - 3.0
-            - 2
-          mmd_back_kernels:
-          - - 0.2
-            - 0.1
-          - - 0.2
-            - 0.5
-          - - 0.2
-            - 2
           mmd_kernels:
           - - 0.2
             - 0.1
@@ -237,16 +223,10 @@ stages:
             - 0.5
           - - 0.2
             - 2
-          - - 1.5
-            - 2
-          - - 3.0
-            - 2
-          - - 0.2
-            - 3
-          adaption_type: huber_kld
-          lambd_simclr_train: 1.0
-          lambd_simclr_domain: 1.0
-          lambd_simclr_adaption: 1.0
+          adaption_type: huber_linear_mmd
+          lambd_clr_train: 1.0
+          lambd_clr_domain: 0.0
+          lambd_clr_adaption: 0.0
           lambd_max_likelihood: 1.0
           lambd_mmd_forw: 0.0
           lambd_mmd_back: 0.0
@@ -265,13 +245,13 @@ stages:
           NUM_HIDDEN_LAYERS_COND: 2
           DROPOUT_COND: 0.0
           BATCH_NORM_COND: false
-          RESNET_DEPTH: 16
-          RESNET_WIDTH: 2
+          RESNET_DEPTH: 10
+          RESNET_WIDTH: 1
           RESNET_DROPOUT: 0.1
           RESNET_REPRESENTATION_DIM: 128
-          RESNET_REPRESENTATION_DEPTH: 2
+          RESNET_REPRESENTATION_DEPTH: 1
           RESNET_PROJECTION_DIM: 128
-          RESNET_PROJECTION_DEPTH: 2
+          RESNET_PROJECTION_DEPTH: 1
           RESNET_NUM_CHANNELS: 3
           RESNET_ROTATION_EQUIVARIANCE: 8
           RESNET_ROTATION_RESTRICTION: 0
@@ -284,24 +264,28 @@ stages:
           BETA_2: 0.999
           LR_PATIENCE: 2
           LR_DECAY: 0.5
-          BATCH_SIZE: 128
-          NUM_EPOCHS: 40
-          PATIENCE: 5
+          BATCH_SIZE: 64
+          NUM_EPOCHS: 50
+          MAX_NUM_BATCHES_PER_EPOCH: 100
+          PATIENCE: 10
+          DOMAIN_LEARNING: false
+          CLR_TYPE: NNCLR
+          NNCLR_QUEUE_SIZE: 256
           AUGMENTATION_PARAMS:
             ROTATION: 15
             TRANSLATE: 0.2
             SCALE: 1.5
             FLIP: true
             GAUSSIAN_BLUR_SIGMA:
-            - 0.0
-            - 0.0
+            - 0.001
+            - 0.1
             NOISE_STD:
-            - 0.0
-            - 0.0
+            - 0.01
+            - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: d11ceab65488f8acdd3a5f0b8e533fce
-      size: 137916582
+      md5: 60c4c48d7e6ec5aa1979d8b346adfe1a
+      size: 23007616
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior
     deps:

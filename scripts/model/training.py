@@ -13,6 +13,7 @@ class Trainer(object):
         self._patience = patience
         self._num_epochs = num_epochs
         self._save_path = save_path
+        self._max_num_batches = max_num_batches
         
         self.model = model
         self.optimizer = optimizer
@@ -44,7 +45,15 @@ class Trainer(object):
         
         self.model.train()        
         
+        batch_num = 0
+        
         for batch in zip(*datasets):
+            
+            #Run only a max number of batches per epoch
+            if batch_num < self._max_num_batches:
+                batch_num += 1
+            else:
+                break
             
             with autocast(enabled=True), torch.cuda.device(c.device):
                 loss, lossdict = lossfunction(self.model, batch)
@@ -88,7 +97,15 @@ class Trainer(object):
         loss_list = []
         lossdict_list = []
         
+        batch_num = 0
+        
         for batch in zip(*datasets):
+            
+            #Run only a max number of batches per epoch
+            if batch_num < self._max_num_batches:
+                batch_num += 1
+            else:
+                break
             
             with autocast(enabled=True), torch.cuda.device(c.device), torch.no_grad():
                 loss, lossdict = lossfunction(self.model, batch)

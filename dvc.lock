@@ -148,19 +148,19 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: 3b54a7579ce17a88b6ebc62fa809b381.dir
-      size: 26936870
+      md5: a66a452aafc825292495bc9294f250f7.dir
+      size: 130231813
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: d11ceab65488f8acdd3a5f0b8e533fce
-      size: 137916582
+      md5: 61bb583e7644cdb4245ebdf2a4e93435
+      size: 23007616
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 8c69d412b5da0c2d9efcfdaabcead9a5
-      size: 1827456
+      md5: b9a773d79282aa4e86496b1f7ab034d3
+      size: 9017216
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
     deps:
@@ -469,3 +469,12 @@ stages:
     - path: ./postprocessing/z_norm.npy
       md5: 583fcc76993625a4b431a43e66668ff4
       size: 3776
+  visualize_UMAP:
+    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb
+    deps:
+    - path: ./postprocessing/representation.npy
+      md5: b9a773d79282aa4e86496b1f7ab034d3
+      size: 9017216
+    - path: ./scripts/postprocessing/visualize_UMAP.ipynb
+      md5: ec6d443789df86ea3248441b120cb723
+      size: 41125347

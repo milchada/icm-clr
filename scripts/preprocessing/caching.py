@@ -37,6 +37,17 @@ class Cache(object):
     def pull(self):
         return self._cache
     
+    def clean(self):
+        
+        def robust_path_exsists(path):
+            if isinstance(path, str):
+                return os.path.exists(path)
+            else:
+                return False
+        
+        mask = self._cache['image_path'].apply(robust_path_exsists)
+        self._cache = self._cache[mask]
+    
     @property
     def use_cache(self):
         return self._use_cache and self._cache is not None

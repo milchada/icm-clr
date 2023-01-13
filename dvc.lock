@@ -64,8 +64,8 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/
-      md5: b23a034c6268fc8bff64911245f84f85.dir
-      size: 50960254
+      md5: 09aa01bbba194908469231032b890c70.dir
+      size: 51008184
       nfiles: 39
     params:
       params.yaml:
@@ -117,12 +117,12 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 71055fc3aa4028972d63dde3d4dbef79.dir
-      size: 128869000
+      md5: a66a452aafc825292495bc9294f250f7.dir
+      size: 130231813
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: 295501f1c4ac94802ec1994e9bd22c50.dir
-      size: 28477761
+      md5: d9954f7e1be014eedb59d13a41add610.dir
+      size: 28008089
       nfiles: 10
   train:
     cmd: python3 -m scripts.model.train
@@ -178,8 +178,8 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: 71055fc3aa4028972d63dde3d4dbef79.dir
-      size: 128869000
+      md5: a66a452aafc825292495bc9294f250f7.dir
+      size: 130231813
       nfiles: 14
     - path: ./scripts/model/losses.py
       md5: b5792a5271c99a508b093ce80798d578
@@ -266,7 +266,7 @@ stages:
           LR_DECAY: 0.5
           BATCH_SIZE: 64
           NUM_EPOCHS: 50
-          MAX_NUM_BATCHES_PER_EPOCH: 100
+          MAX_NUM_BATCHES_PER_EPOCH: 200
           PATIENCE: 10
           DOMAIN_LEARNING: false
           CLR_TYPE: NNCLR
@@ -284,7 +284,7 @@ stages:
             - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: 60c4c48d7e6ec5aa1979d8b346adfe1a
+      md5: 61bb583e7644cdb4245ebdf2a4e93435
       size: 23007616
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior

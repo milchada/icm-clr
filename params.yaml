@@ -130,7 +130,7 @@ train_simclr:
     #Maximum number of training epochs
     NUM_EPOCHS: 50
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
-    MAX_NUM_BATCHES_PER_EPOCH: 100
+    MAX_NUM_BATCHES_PER_EPOCH: 200
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 10
     #Domain Learning

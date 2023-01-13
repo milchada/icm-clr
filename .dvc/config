@@ -1,0 +1,8 @@
+[core]
+    remote = datashare
+['remote "datashare"']
+    url = webdavs://datashare.mpcdf.mpg.de/remote.php/dav/files/leisert/DVC_SIMCLR
+    user = leisert
+    ask_password = true
+    jobs = 4
+    timeout = 120

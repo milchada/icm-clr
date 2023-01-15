@@ -71,6 +71,12 @@ stages:
     deps:
     - ./scripts/postprocessing/visualize_UMAP.ipynb
     - ./postprocessing/representation.npy
+    
+  compare_distributions:
+    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/compare_distributions.ipynb
+    deps:
+    - ./scripts/postprocessing/compare_distributions.ipynb
+    - ./postprocessing/representation.npy
 
   #Postprocessing
   #---------------------------------------------------------

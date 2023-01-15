@@ -37,7 +37,7 @@ class DistributionTest(object):
     def __call__(self, y):
         raise NotImplementedError("This function is supposed to be overwritten!")
         
-class MeanNeighborDistanceDeviation(DistributionTest):
+class NeighborDistance(DistributionTest):
     def __init__(self, x, n_neighbor=64, p=1):
         super().__init__(x)
         
@@ -65,7 +65,9 @@ class MeanNeighborDistanceDeviation(DistributionTest):
     def get_normalization_distances(self, y):
         concat_array = np.concatenate([self._x , y], axis=0)
         return self._get_distances(concat_array, 2*self._n_neighbor+1)
-        
+    
+class MeanNeighborDistanceDeviation(NeighborDistance):
+
     def get_deviations(self, y):
         self._check_input(self._x, y)
         return (self.get_distances(y) - self.get_self_distances())/self.get_normalization_distances(y)
@@ -74,6 +76,14 @@ class MeanNeighborDistanceDeviation(DistributionTest):
         '''Get the mean neighbor distance deviation between y and x'''
         return np.mean(np.abs(self.get_deviations(y)))
     
+class MeanNeighborDistance(NeighborDistance):
+
+    def get_normalized_neighbor_distances(self, y):
+        self._check_input(self._x, y)
+        return self.get_distances(y)/self.get_self_distances()
+        
+    def __call__(self, y):
+        return np.mean(self.get_normalized_neighbor_distances(y))
     
 class PermutationTest(object):
     

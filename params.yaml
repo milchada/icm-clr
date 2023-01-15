@@ -69,16 +69,11 @@ prepare:
       - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
     #Specify fields to match between the sets and the uncertainties they are matched with
     MATCHING_FIELDS:
-      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      #- ["photoz", "i_cmodel_mag_ge"]
-      #- ['z', 'i_band_mag_dust_apparent']
-      #- ['z', 'i_band_mag_dust_apparent']
-
+      - ["photoz", "i_cmodel_mag_ge"]
+      - ['z', 'i_band_mag_dust_apparent']
+      - ['z', 'i_band_mag_dust_apparent']
     MATCHING_UNCERTAINTIES:
-    - [0.05, 0.1, 5]
-    #- [0.05, 0.1]
+      - [0.05, 0.1]
     MATCHING_SOURCE_SETS: ['HSC']
     MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
     #List of observables and unobservables used

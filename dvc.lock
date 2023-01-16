@@ -90,17 +90,13 @@ stages:
           MATCHING_FIELDS:
           - - photoz
             - i_cmodel_mag_ge
-            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
-            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
-            - petro_90_light
           MATCHING_UNCERTAINTIES:
           - - 0.05
             - 0.1
-            - 5
           MATCHING_SOURCE_SETS:
           - HSC
           MATCHING_TARGET_SETS:
@@ -117,13 +113,13 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: a66a452aafc825292495bc9294f250f7.dir
-      size: 130231813
+      md5: b27e7085888fc720d4903e9cdd465929.dir
+      size: 141412965
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: d9954f7e1be014eedb59d13a41add610.dir
-      size: 28008089
-      nfiles: 10
+      md5: 0301e1e860c808cac819e7b6b5ee77c1.dir
+      size: 13393754
+      nfiles: 6
   train:
     cmd: python3 -m scripts.model.train
     deps:
@@ -148,19 +144,19 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: a66a452aafc825292495bc9294f250f7.dir
-      size: 130231813
+      md5: b27e7085888fc720d4903e9cdd465929.dir
+      size: 141412965
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: 61bb583e7644cdb4245ebdf2a4e93435
+      md5: b150009db5c134f21045c670b9bf4a75
       size: 23007616
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: b9a773d79282aa4e86496b1f7ab034d3
-      size: 9017216
+      md5: 7e100cd9d21f357f598430c3f6e34e16
+      size: 9796736
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
     deps:
@@ -178,8 +174,8 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: a66a452aafc825292495bc9294f250f7.dir
-      size: 130231813
+      md5: b27e7085888fc720d4903e9cdd465929.dir
+      size: 141412965
       nfiles: 14
     - path: ./scripts/model/losses.py
       md5: b5792a5271c99a508b093ce80798d578
@@ -284,7 +280,7 @@ stages:
             - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: 61bb583e7644cdb4245ebdf2a4e93435
+      md5: b150009db5c134f21045c670b9bf4a75
       size: 23007616
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior
@@ -473,8 +469,17 @@ stages:
     cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb
     deps:
     - path: ./postprocessing/representation.npy
-      md5: b9a773d79282aa4e86496b1f7ab034d3
-      size: 9017216
+      md5: 7e100cd9d21f357f598430c3f6e34e16
+      size: 9796736
     - path: ./scripts/postprocessing/visualize_UMAP.ipynb
-      md5: ec6d443789df86ea3248441b120cb723
-      size: 41125347
+      md5: 24dc8876e014d3ceca4212a1aaf2cd64
+      size: 41232436
+  compare_distributions:
+    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/compare_distributions.ipynb
+    deps:
+    - path: ./postprocessing/representation.npy
+      md5: 7e100cd9d21f357f598430c3f6e34e16
+      size: 9796736
+    - path: ./scripts/postprocessing/compare_distributions.ipynb
+      md5: 65b02cb7c7edc8c63e80f8b0162fbdc4
+      size: 1101406

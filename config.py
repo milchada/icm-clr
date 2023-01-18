@@ -18,9 +18,17 @@ model_path = "./model/"
 postprocessing_path = "./postprocessing/"
 metrics_path = "./metrics/"
 plots_path = "./plots/"
-
 resnet_path = model_path + 'resnet.pt'
+cinn_path = model_path + 'cinn.pt'
 
+#Parameter for the optuna optimization
+#Set up the databank with e.g.
+#mysql -S ${PWD}/mysql/run/mysqld/mysqld.sock -u root -e "CREATE DATABASE IF NOT EXISTS studyname"
+#before running optuna
+optuna_storage_user = 'root:hoHo@localhost'
+optuna_storage_socket = '/u/leisert/mysql/run/mysqld/mysqld.sock'
+
+#Device to use
 device = 'cuda:0'
 
 #Label dict (code friendly -> human friendly)

@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["debug"]
+    tags: ["optuna"]
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -72,13 +72,10 @@ prepare:
       - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      #- ["photoz", "i_cmodel_mag_ge"]
-      #- ['z', 'i_band_mag_dust_apparent']
-      #- ['z', 'i_band_mag_dust_apparent']
-
+ 
     MATCHING_UNCERTAINTIES:
     - [0.05, 0.1, 5]
-    #- [0.05, 0.1]
+ 
     MATCHING_SOURCE_SETS: ['HSC']
     MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
     #List of observables and unobservables used
@@ -145,7 +142,7 @@ train_simclr:
         TRANSLATE: 0.2
         SCALE: 1.5
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.001, 0.1]
+        GAUSSIAN_BLUR_SIGMA: [0.001, 0.01]
         NOISE_STD: [0.01, 0.05]
     
 train_cinn:

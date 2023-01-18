@@ -2,12 +2,9 @@
 
 Script to optimize the model using optuna
 
-STILL UNDER CONSTRUCTION
-
 '''
 
 import optuna
-import joblib
 
 import os
 
@@ -23,20 +20,14 @@ class ParameterOptimization:
     
     def _objective(self, trail):
         pass
-       
-    def _checkpoint_callback(self, study, trial):
-        make_dir(self.study_path)
-        joblib.dump(study, self.study_path)
         
-    def _create_study(self, continue_study):
-        if os.path.exists(self.study_path) and continue_study:
-            self.study = joblib.load(self.study_path)
-        else:
-            self.study = optuna.create_study(directions=self.direction)
+    def _create_study(self):
+        optuna_storage = 'mysql://' + c.optuna_storage_user + '/' + c.optuna_study_name + '?unix_socket=' + optuna_storage_socket
+        self.study = optuna.create_study(directions=self.direction, load_if_exists=True, storage=optuna_storage, study_name=self.study_name)
         
-    def run(self, timeout=22*3600, continue_study=True):
-        self._create_study(continue_study)
-        self.study.optimize(self._objective, timeout=timeout, gc_after_trial=True, callbacks=(self._checkpoint_callback))
+    def run(self, timeout=24*3600):
+        self._create_study()
+        self.study.optimize(self._objective, timeout=timeout, gc_after_trial=True)
         print(self.study.best_trial.value)
     
     def plot(self):
@@ -63,13 +54,13 @@ class ParameterOptimization:
 class ParameterOptimizationSimCLR(ParameterOptimization):
     
     def __init__(self):
-        self.plot_path = c.plots_path + "optuna/resnet/"
-        self.study_path = c.metrics_path + "optuna_resnet.pkl"
-        self.direction = ['minimize', 'maximize']
+        self.study_name = 'simclr'
+        self.plot_path = c.plots_path + "optuna/simclr/"
+        self.direction = ['minimize']
     
     def _objective(self, trail):
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 32, 256, log=True),
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 32, 128, log=True),
                         'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.001, log=True),
                         'WEIGHT_DECAY':  trail.suggest_float('WEIGHT_DECAY', 0.00001, 0.001, log=True),
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
@@ -79,15 +70,38 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
                         'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256]),
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 2)}
 
-        loss, top1, top5 = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+        loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
 
-        return loss, top1
+        return loss
+
+class ParameterOptimizationNNCLR(ParameterOptimization):
+    
+    def __init__(self):
+        self.study_name = 'nnclr'
+        self.plot_path = c.plots_path + "optuna/nnclr/"
+        self.direction = ['minimize']
+    
+    def _objective(self, trail):
+
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 32, 128, log=True),
+                        'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.001, log=True),
+                        'WEIGHT_DECAY':  trail.suggest_float('WEIGHT_DECAY', 0.00001, 0.001, log=True),
+                        'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
+                        'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
+                        'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
+                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256]),
+                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256]),
+                        'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 2)}
+
+        loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+
+        return loss
 
 class ParameterOptimizationCINN(ParameterOptimization):
     
     def __init__(self):
+        self.study_name = 'cinn'
         self.plot_path = c.plots_path + "optuna/cinn/"
-        self.study_path = c.metrics_path + "optuna_cinn.pkl"
         self.direction = ['minimize']
     
     def _objective(self, trail):

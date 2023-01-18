@@ -1,7 +1,7 @@
 *.pyc
 **/.ipynb_checkpoints
 **/__pycache__
-/scripts/util/illustris_python
+**/illustris_python
 /dataset_raw
 /dataset
 /model

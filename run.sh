@@ -1,15 +1,14 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o ./job.out.%j
-#SBATCH -e ./job.err.%j
+#SBATCH -o ./temp/job.out.%j
+#SBATCH -e ./temp/job.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job name
 #SBATCH -J ergo
 #
+#SBATCH --partition=p.gpu
 #SBATCH --ntasks=1
-#
-# --- default case: use a single GPU on a shared node ---
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=18
 #SBATCH --mem=125000

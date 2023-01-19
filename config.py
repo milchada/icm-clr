@@ -9,6 +9,8 @@ Parameters for scripts which have to be traced by DVC are stored in params.yaml
 @author: Lukas Eisert 
 """
 
+import torch
+
 #Paths
 image_cache_path = "/ptmp/leisert/image_cache/"
 illustris_path = "/virgotng/universe/IllustrisTNG/"
@@ -29,7 +31,7 @@ optuna_storage_user = 'root:hoHo@localhost'
 optuna_storage_socket = '/u/leisert/mysql/run/mysqld/mysqld.sock'
 
 #Device to use
-device = 'cuda:0'
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #Label dict (code friendly -> human friendly)
 label_dict = {"fraction_disk_stars": "Fraction of Disk Stars [D/T]",

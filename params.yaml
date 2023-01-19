@@ -119,7 +119,7 @@ train_simclr:
     BETA_1: 0.9
     BETA_2: 0.999
     #Reduce the Learning rate if the validation loss has not improved for this number of epochs
-    LR_PATIENCE: 2
+    LR_PATIENCE: 5
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.5
     #Size of batches used for the training and evaluation
@@ -129,7 +129,7 @@ train_simclr:
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
     MAX_NUM_BATCHES_PER_EPOCH: 200
     #Stop the training after validation loss has not improved for PATIENCE epochs
-    PATIENCE: 10
+    PATIENCE: 50
     #Domain Learning
     DOMAIN_LEARNING: False
     #Contrastive Learning Type (SIMCLR or NNCLR):

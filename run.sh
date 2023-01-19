@@ -17,10 +17,11 @@
 #SBATCH --mail-user=eisert@mpia.de
 #SBATCH --time=2:00:00
 
-module load anaconda/3
-module load cuda/11.4   
-module load cudnn/8.2.4
-module load pytorch/gpu-cuda-11.4/1.11.0  
+module purge
+module load anaconda/3/2021.11
+module load cuda/11.6
+module load cudnn/8.4.1
+module load pytorch/gpu-cuda-11.6/1.13.0
 conda activate ergo
 
 srun dvc repro

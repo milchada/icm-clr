@@ -10,7 +10,7 @@ from optuna.storages import JournalStorage, JournalFileStorage
 import os
 
 from scripts.model.train_simclr import train_simclr
-from scripts.model.train_cinn import train_cinn
+#from scripts.model.train_cinn import train_cinn
 from scripts.util.make_dir import make_dir
 import config as c
 
@@ -97,7 +97,7 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
         loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
 
         return loss
-
+'''
 class ParameterOptimizationCINN(ParameterOptimization):
     
     def __init__(self):
@@ -129,7 +129,7 @@ class ParameterOptimizationCINN(ParameterOptimization):
         nll, fmmd, bmmd, z_std, z_mean = train_cinn(params=params_trail, save_model=False, experiment_tracking=False)
 
         return nll
-
+'''
 
 if __name__ == "__main__":
 

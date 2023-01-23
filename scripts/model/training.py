@@ -3,7 +3,19 @@ from torch.cuda.amp import autocast
 import numpy as np
 import config as c
 import os
+import tqdm
 from time import time
+
+def run_training(trainer, training_lossfunction, training_data, validation_lossfunction, validation_data):
+    '''Perform the training and return the final validation loss'''
+    
+    for epoch_counter in tqdm(trainer):
+            
+        trainer.perform_training_step(training_lossfunction, training_data)
+        val_loss, _ = trainer.perform_validation_step(validation_lossfunction, validation_data)        
+            
+    return val_loss
+
 
 class Trainer(object):
     def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, max_runtime_seconds=None, use_checkpoint=False):
@@ -28,6 +40,10 @@ class Trainer(object):
     @property
     def epoch(self):
         return self._epoch
+
+    @property
+    def runtime_seconds(self):
+        return (time() - self._time_start)
 
     def step(self):
         self._epoch += 1
@@ -136,7 +152,7 @@ class Trainer(object):
     
     def max_time_criterion(self):
         if self._max_runtime_seconds is not None:
-            return (time() - self._time_start) >= self._max_runtime_seconds
+            return self.runtime_seconds >= self._max_runtime_seconds
         else:
             return False
 

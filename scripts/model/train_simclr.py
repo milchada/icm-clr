@@ -3,7 +3,7 @@ import torch
 from scripts.model.resnet_simclr import ResNetSimCLR
 from scripts.model.losses import loss_simclr, loss_nnclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
 from scripts.model.optimizer import Optimizer
-from scripts.model.training import Trainer
+from scripts.model.training import Trainer, run_training
 from scripts.model.experiment_tracking import NeptuneExperimentTracking, VoidExperimentTracking
 from scripts.model.batch_queue import init_batch_queue
 
@@ -201,13 +201,8 @@ def train_simclr(params={},
         return val_loss, loss_dict
 
     #Perform training
-    for epoch_counter in tqdm(trainer):
-        
-        trainer.perform_training_step(training_lossfunction, training_data)
-        val_loss, _ = trainer.perform_validation_step(validation_lossfunction, validation_data)        
-        
-    return val_loss
-            
+    return run_training(trainer, training_lossfunction, training_data, validation_lossfunction, validation_data)
+
 
 if __name__ == "__main__":
     train_simclr()

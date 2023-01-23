@@ -85,7 +85,7 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
     
     def _objective(self, trail):
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 64, log=True),
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
                         'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),

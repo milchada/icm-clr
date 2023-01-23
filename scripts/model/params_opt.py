@@ -61,8 +61,6 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
     
     def _objective(self, trail):
 
-MAX_NUM_BATCHES_PER_EPOCH
-
         params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
                         'MAX_NUM_BATCHES_PER_EPOCH': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4

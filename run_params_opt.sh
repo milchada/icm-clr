@@ -24,6 +24,4 @@ module load cudnn/8.4.1
 module load pytorch/gpu-cuda-11.6/1.13.0
 conda activate ergo
 
-ssh -nNTf -L /u/leisert/mysql/run/mysqld/mysqld1.sock:/u/leisert/mysql/run/mysqld/mysqld.sock leisert@vera01
 srun python -m scripts.model.params_opt
-rm /u/leisert/mysql/run/mysqld/mysqld1.sock

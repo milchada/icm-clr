@@ -5,6 +5,7 @@ Script to optimize the model using optuna
 '''
 
 import optuna
+from optuna.storages import JournalStorage, JournalFileStorage
 
 import os
 
@@ -22,7 +23,7 @@ class ParameterOptimization:
         pass
         
     def _create_study(self):
-        optuna_storage = 'mysql://' + c.optuna_storage_user + '/' + c.optuna_study_name + '?unix_socket=' + optuna_storage_socket
+        optuna_storage = JournalStorage(JournalFileStorage(c.optuna_storage))
         self.study = optuna.create_study(directions=self.direction, load_if_exists=True, storage=optuna_storage, study_name=self.study_name)
         
     def run(self, timeout=24*3600):

@@ -1,7 +1,12 @@
-optuna
+optuna >= 3.1.0
 dvc
 astropy
+scipy
+matplotlib
+seaborn
+e2cnn
 
+#torch
 #illustris-python
 
 

@@ -147,7 +147,7 @@ class Trainer(object):
 
     def stopping_criterion(self):
         '''Test stopping criteria'''
-        return self.early_stopping_criterion() or self.max_epochs_criterion() or self.max_time_criterion
+        return self.early_stopping_criterion() or self.max_epochs_criterion() #or self.max_time_criterion
     
     def save(self):
         '''Save model'''

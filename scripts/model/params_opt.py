@@ -131,6 +131,9 @@ class ParameterOptimizationCINN(ParameterOptimization):
 
 
 if __name__ == "__main__":
+
+    import sys
+    sys.path.append('/vera/u/leisert/conda-envs/ergo/lib/python3.8/site-packages/')
     
     opt = ParameterOptimizationNNCLR()
     opt.run()

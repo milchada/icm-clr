@@ -12,8 +12,6 @@ import config as c
 from scripts.data import data
 from scripts.data.augmentations import SimCLRAugmentation, FlipAugmentation
 
-from tqdm import tqdm
-
 #Load Parameters
 import yaml
 params = yaml.safe_load(open('params.yaml'))

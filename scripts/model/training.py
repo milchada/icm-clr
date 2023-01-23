@@ -3,7 +3,7 @@ from torch.cuda.amp import autocast
 import numpy as np
 import config as c
 import os
-import tqdm
+from tqdm import tqdm
 from time import time
 
 class Trainer(object):

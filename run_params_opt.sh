@@ -40,4 +40,7 @@ unset __conda_setup
 
 conda activate ergo
 
+alias python3=python3.9
+alias python=python3.9
+
 srun python -m scripts.model.params_opt

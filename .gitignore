@@ -1,8 +1,6 @@
 *.pyc
 **/.ipynb_checkpoints
 **/__pycache__
-**/illustris_python
-**/e2cnn
 /dataset_raw
 /dataset
 /model

@@ -5,6 +5,7 @@ scipy
 matplotlib
 seaborn
 e2cnn
+neptune-client
 
 #torch
 #illustris-python

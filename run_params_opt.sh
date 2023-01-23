@@ -1,7 +1,7 @@
 #!/bin/bash -l
 # Standard output and error:
-#SBATCH -o ./job.out.%j
-#SBATCH -e ./job.err.%j
+#SBATCH -o ./temp/job.out.%j
+#SBATCH -e ./temp/job.err.%j
 # Initial working directory:
 #SBATCH -D ./
 # Job name

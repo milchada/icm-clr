@@ -3,9 +3,10 @@ from torch.cuda.amp import autocast
 import numpy as np
 import config as c
 import os
+from time import time
 
 class Trainer(object):
-    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, use_checkpoint=False):
+    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, max_runtime_seconds=None, use_checkpoint=False):
         
         self._epoch = 0
         self._val_loss_memory = []
@@ -14,7 +15,9 @@ class Trainer(object):
         self._num_epochs = num_epochs
         self._save_path = save_path
         self._max_num_batches = max_num_batches
-        
+        self._max_runtime_seconds = max_runtime_seconds
+        self._time_start = time()
+
         self.model = model
         self.optimizer = optimizer
         self.experiment_tracker = experiment_tracker
@@ -131,9 +134,15 @@ class Trainer(object):
     def max_epochs_criterion(self):
         return self.epoch >= (self._num_epochs - 1)
     
+    def max_time_criterion(self):
+        if self._max_runtime_seconds is not None:
+            return (time() - self._time_start) >= self._max_runtime_seconds
+        else:
+            return False
+
     def stopping_criterion(self):
         '''Test stopping criteria'''
-        return self.early_stopping_criterion() or self.max_epochs_criterion()
+        return self.early_stopping_criterion() or self.max_epochs_criterion() or self.max_time_criterion
     
     def save(self):
         '''Save model'''

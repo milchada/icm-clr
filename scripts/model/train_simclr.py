@@ -90,6 +90,7 @@ def train_simclr(params={},
                       params["NUM_EPOCHS"],
                       save_path,
                       max_num_batches = params["MAX_NUM_BATCHES_PER_EPOCH"],
+                      max_runtime_seconds = params["MAX_RUNTIME_SECONDS"],
                       use_checkpoint=False)
     
     #Prepare training data 

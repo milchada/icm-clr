@@ -125,11 +125,13 @@ train_simclr:
     #Size of batches used for the training and evaluation
     BATCH_SIZE: 64
     #Maximum number of training epochs
-    NUM_EPOCHS: 50
+    NUM_EPOCHS: 200
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
     MAX_NUM_BATCHES_PER_EPOCH: 200
+    #Stop the training if a max runtime (in seconds) has been reached
+    MAX_RUNTIME_SECONDS: 7200
     #Stop the training after validation loss has not improved for PATIENCE epochs
-    PATIENCE: 50
+    PATIENCE: 200
     #Domain Learning
     DOMAIN_LEARNING: False
     #Contrastive Learning Type (SIMCLR or NNCLR):

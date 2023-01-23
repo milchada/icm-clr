@@ -5,7 +5,7 @@ Script to optimize the model using optuna
 '''
 
 import optuna
-from optuna.storages import JournalStorage, JournalFileStorage
+from optuna.storages import JournalStorage, JournalFileStorage, JournalFileSymlinkLock
 
 import os
 
@@ -23,7 +23,8 @@ class ParameterOptimization:
         pass
         
     def _create_study(self):
-        optuna_storage = JournalStorage(JournalFileStorage(c.optuna_storage))
+        optuna_storage_lock = JournalFileSymlinkLock(c.optuna_storage)
+        optuna_storage = JournalStorage(JournalFileStorage(c.optuna_storage, lock_obj=optuna_storage_lock))
         self.study = optuna.create_study(directions=self.direction, load_if_exists=True, storage=optuna_storage, study_name=self.study_name)
         
     def run(self, timeout=24*3600):

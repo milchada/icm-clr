@@ -8,6 +8,7 @@ import optuna
 from optuna.storages import JournalStorage, JournalFileStorage, JournalFileSymlinkLock
 
 import os
+import torch
 
 from scripts.model.train_simclr import train_simclr
 #from scripts.model.train_cinn import train_cinn
@@ -29,7 +30,7 @@ class ParameterOptimization:
         
     def run(self, timeout=24*3600):
         self._create_study()
-        self.study.optimize(self._objective, timeout=timeout, gc_after_trial=True)
+        self.study.optimize(self._objective, timeout=timeout, gc_after_trial=True, catch=(torch.cuda.OutOfMemoryError))
         print(self.study.best_trial.value)
     
     def plot(self):
@@ -85,7 +86,7 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
     
     def _objective(self, trail):
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 64, log=True),
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
                         'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),

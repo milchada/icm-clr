@@ -48,6 +48,17 @@ class ResNetSimCLR(nn.Module):
         trainable_parameters = [p for p in self.projection.parameters() if p.requires_grad]
         
         return trainable_parameters
+
+    @property
+    def model_size_mb(self):
+        param_size = 0
+        for param in self.projection.parameters():
+            param_size += param.nelement() * param.element_size()
+        buffer_size = 0
+        for buffer in self.projection.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+
+        return (param_size + buffer_size) / 1024**2
         
     def forward(self, x, projection_head=True):
         

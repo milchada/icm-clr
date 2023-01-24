@@ -86,6 +86,8 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
     
     def _objective(self, trail):
 
+        torch.cuda.empty_cache()
+
         params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
                         'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),

@@ -30,9 +30,9 @@ class ParameterOptimization:
         optuna_storage = JournalStorage(JournalFileStorage(c.optuna_storage, lock_obj=optuna_storage_lock))
         self.study = optuna.create_study(directions=self.direction, load_if_exists=True, storage=optuna_storage, study_name=self.study_name)
         
-    def run(self, timeout=24*3600):
+    def run(self):
         self._create_study()
-        self.study.optimize(self._objective, timeout=timeout, gc_after_trial=True, catch=(torch.cuda.OutOfMemoryError))
+        self.study.optimize(self._objective, n_trials=1, gc_after_trial=True, catch=(torch.cuda.OutOfMemoryError))
         print(self.study.best_trial.value)
     
     def plot(self):
@@ -142,4 +142,3 @@ if __name__ == "__main__":
 
     opt = ParameterOptimizationNNCLR()
     opt.run()
-    opt.plot()

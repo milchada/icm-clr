@@ -41,4 +41,8 @@ unset __conda_setup
 conda activate ergo
 
 srun nvidia-smi
-srun python -m scripts.model.params_opt
+
+while :
+do
+    srun python -m scripts.model.params_opt
+done

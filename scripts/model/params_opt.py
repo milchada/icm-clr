@@ -65,15 +65,13 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
     
     def _objective(self, trail):
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
-                        'MAX_NUM_BATCHES_PER_EPOCH': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
-                        'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
-                        'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 32, log=True),
+                        'MAX_NUM_BATCHES_PER_EPOCH': trail.suggest_int('BATCH_SIZE', 16, 32, log=True),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
-                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256]),
-                        'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
-                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256]),
-                        'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3)}
+                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128]),
+                        'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 2),
+                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128]),
+                        'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 2)}
 
         loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
 
@@ -91,15 +89,13 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
         gc.collect()
         torch.cuda.empty_cache()
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
-                        'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
-                        'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 32, log=True),
+                        'MAX_NUM_BATCHES_PER_EPOCH': trail.suggest_int('BATCH_SIZE', 16, 32, log=True),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
-                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256]),
-                        'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
-                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256]),
-                        'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
-                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 1028)}
+                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128]),
+                        'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 2),
+                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128]),
+                        'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 2)}
 
         loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
 

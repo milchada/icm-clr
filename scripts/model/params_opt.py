@@ -9,6 +9,8 @@ from optuna.storages import JournalStorage, JournalFileStorage, JournalFileSymli
 
 import os
 import torch
+import gc
+
 
 from scripts.model.train_simclr import train_simclr
 #from scripts.model.train_cinn import train_cinn
@@ -86,6 +88,7 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
     
     def _objective(self, trail):
 
+        gc.collect()
         torch.cuda.empty_cache()
 
         params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),

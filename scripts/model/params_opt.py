@@ -32,8 +32,7 @@ class ParameterOptimization:
         
     def run(self):
         self._create_study()
-        self.study.optimize(self._objective, n_trials=1, gc_after_trial=True, catch=(torch.cuda.OutOfMemoryError))
-        print(self.study.best_trial.value)
+        self.study.optimize(self._objective, gc_after_trial=True, catch=(torch.cuda.OutOfMemoryError))
     
     def plot(self):
         '''Save study plots'''

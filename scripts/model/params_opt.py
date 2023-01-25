@@ -101,9 +101,19 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
                         'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 1028)}
 
-        loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+        try:
 
-        return loss
+            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            return loss
+
+
+        except torch.cuda.OutOfMemoryError:
+
+            gc.collect()
+            torch.cuda.empty_cache()
+            raise optuna.TrialPruned()
+
+
 '''
 class ParameterOptimizationCINN(ParameterOptimization):
     

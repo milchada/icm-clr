@@ -13,14 +13,16 @@ class ExperimentTracking(object):
     
 class NeptuneExperimentTracking(ExperimentTracking):
     
-    def __init__(self, tags=[]):
+    def __init__(self, params, tags=[]):
+        self._params = params
         self._tags = tags
         self.set_up()
     
     def set_up(self):
         
-        params = yaml.safe_load(open('params.yaml'))
-        neptune_params = params['neptune']
+        default_params = yaml.safe_load(open('params.yaml'))
+        neptune_params = default_params['neptune']
+        params = dict(nested_to_record(default_params), **params)
     
         try:
             import neptune
@@ -34,7 +36,7 @@ class NeptuneExperimentTracking(ExperimentTracking):
             #Create neptune experiment and save all parameters in the parameter file
             from pandas.io.json._normalize import nested_to_record
             self._experiment = project.create_experiment(name=experiment_name, 
-                                                         params=nested_to_record(params),
+                                                         params=params,
                                                          tags=neptune_params["tags"] + self._tags)
             
         except:

@@ -63,7 +63,7 @@ def train_simclr(params={},
     
     #Init experiment tracking
     if experiment_tracking:
-        experiment_tracker = NeptuneExperimentTracking(tags=['clr'])
+        experiment_tracker = NeptuneExperimentTracking(params, tags=['clr'])
     else: 
         experiment_tracker = VoidExperimentTracking()
     

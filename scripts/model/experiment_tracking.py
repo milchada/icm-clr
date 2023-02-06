@@ -1,4 +1,5 @@
 import yaml
+from pandas.io.json._normalize import nested_to_record
 
 class ExperimentTracking(object):
     
@@ -34,7 +35,6 @@ class NeptuneExperimentTracking(ExperimentTracking):
             experiment_name = Repo('./').active_branch.name
             
             #Create neptune experiment and save all parameters in the parameter file
-            from pandas.io.json._normalize import nested_to_record
             self._experiment = project.create_experiment(name=experiment_name, 
                                                          params=params,
                                                          tags=neptune_params["tags"] + self._tags)

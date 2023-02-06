@@ -63,9 +63,10 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
         self.direction = ['minimize']
     
     def _objective(self, trail):
+        gc.collect()
+        torch.cuda.empty_cache()
 
         params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
-                        'MAX_NUM_BATCHES_PER_EPOCH': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
                         'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
@@ -74,9 +75,10 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
                         'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256]),
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3)}
 
-        loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+        try:
 
-        return loss
+            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            return loss
 
 class ParameterOptimizationNNCLR(ParameterOptimization):
     
@@ -149,5 +151,6 @@ class ParameterOptimizationCINN(ParameterOptimization):
 
 if __name__ == "__main__":
 
-    opt = ParameterOptimizationNNCLR()
+    #opt = ParameterOptimizationNNCLR()
+    opt = ParameterOptimizationSimCLR()
     opt.run()

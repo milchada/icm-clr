@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "optuna_2h_fix"]
+    tags: ["simclr", "optuna_2h_fix"]
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -135,7 +135,7 @@ train_simclr:
     #Domain Learning
     DOMAIN_LEARNING: False
     #Contrastive Learning Type (SIMCLR or NNCLR):
-    CLR_TYPE: "NNCLR"
+    CLR_TYPE: "SIMCLR"
     #Size of Queue (i.e. number of batches) in case that NNCLR is used:
     NNCLR_QUEUE_SIZE: 256
     #Augmentation parameters

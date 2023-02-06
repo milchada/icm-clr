@@ -23,7 +23,7 @@ class NeptuneExperimentTracking(ExperimentTracking):
         
         default_params = yaml.safe_load(open('params.yaml'))
         neptune_params = default_params['neptune']
-        params = dict(nested_to_record(default_params), **params)
+        params = dict(nested_to_record(default_params), **self._params)
     
         try:
             import neptune

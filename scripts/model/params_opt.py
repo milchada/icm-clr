@@ -80,6 +80,13 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
             loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
             return loss
 
+        except torch.cuda.OutOfMemoryError:
+
+            gc.collect()
+            torch.cuda.empty_cache()
+            raise optuna.TrialPruned()
+
+
 class ParameterOptimizationNNCLR(ParameterOptimization):
     
     def __init__(self):
@@ -106,7 +113,6 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
 
             loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
             return loss
-
 
         except torch.cuda.OutOfMemoryError:
 

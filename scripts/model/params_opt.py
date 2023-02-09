@@ -121,42 +121,47 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
             raise optuna.TrialPruned()
 
 
-'''
-class ParameterOptimizationCINN(ParameterOptimization):
+class ParameterOptimizationCLR(ParameterOptimization):
     
     def __init__(self):
-        self.study_name = 'cinn'
-        self.plot_path = c.plots_path + "optuna/cinn/"
+        self.study_name = 'nnclr_v2'
+        self.plot_path = c.plots_path + "optuna/nnclr_v2/"
         self.direction = ['minimize']
     
     def _objective(self, trail):
 
-        batch_norm = trail.suggest_categorical('BATCH_NORM', [True, False])
-        dropout = trail.suggest_float('DROPOUT', 0., 0.4, step=0.1)
+        gc.collect()
+        torch.cuda.empty_cache()
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 256, 4096, log=True),
-                        'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
-                        'LR_DECAY':  trail.suggest_float('LR_DECAY', 0.1, 0.9),
-                        'NUM_COUPLING_LAYERS': trail.suggest_int('NUM_COUPLING_LAYERS', 6, 14),
-                        'NUM_COND_NODES': trail.suggest_categorical('NUM_COND_NODES', [64, 128, 256]),
-                        'NUM_HIDDEN_NODES': trail.suggest_categorical('NUM_HIDDEN_NODES', [64, 128, 256]),
-                        'NUM_HIDDEN_LAYERS': trail.suggest_int('NUM_HIDDEN_LAYERS', 1, 3),
-                        'NUM_HIDDEN_NODES_COND': trail.suggest_categorical('NUM_HIDDEN_NODES_COND', [64, 128, 256]),
-                        'NUM_HIDDEN_LAYERS_COND': trail.suggest_int('NUM_HIDDEN_LAYERS_COND', 1, 3),
-                        'L2_DECAY': trail.suggest_float('L2_DECAY', 0.00001, 0.0001),
-                        'NOISE': trail.suggest_float('NOISE', 0.001, 0.05, log=True),
-                        'BATCH_NORM': batch_norm,
-                        'BATCH_NORM_COND': batch_norm,
-                        'DROPOUT': dropout,
-                        'DROPOUT_COND': dropout}
+        AUGMENTATION_PARAMS = {'ROTATION': 15,
+                               'TRANSLATE': trail.suggest_float('TRANSLATE', 0.05, 0.5),
+                               'SCALE': trail.suggest_float('SCALE', 1.2, 2.5),
+                               'FLIP': True,
+                               'GAUSSIAN_BLUR_SIGMA': [0.001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.01, 10)],
+                               'NOISE_STD': [0.01, trail.suggest_float('NOISE_STD', 0.02, 0.1)]}
 
-        nll, fmmd, bmmd, z_std, z_mean = train_cinn(params=params_trail, save_model=False, experiment_tracking=False)
+        params_trail = {'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
+                        'LR_PATIENCE': trail.suggest_int('LR_PATIENCE', 3, 20),
+                        'LR_DECAY': trail.suggest_float('LR_DECAY', 0.2, 0.8),
+                        'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.00001, 0.001, log=True),
+                        'PATIENCE': trail.suggest_int('PATIENCE', 5, 20),
+                        'AUGMENTATION_PARAMS': AUGMENTATION_PARAMS}
 
-        return nll
-'''
+        if params_trail['LR_PATIENCE'] > params_trail['PATIENCE']:
+            raise optuna.TrialPruned()
+
+        try:
+
+            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            return loss
+
+        except torch.cuda.OutOfMemoryError:
+
+            gc.collect()
+            torch.cuda.empty_cache()
+            raise optuna.TrialPruned()
 
 if __name__ == "__main__":
-
-    #opt = ParameterOptimizationNNCLR()
-    opt = ParameterOptimizationSimCLR()
+    
+    opt = ParameterOptimizationCLR()
     opt.run()

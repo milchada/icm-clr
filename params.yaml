@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "optuna_full"]
+    tags: ["nnclr", "production", 'with_petro_matching']
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -112,16 +112,16 @@ data:
 
 train_simclr:
     #Learning Rate for the SIMCLR training
-    LEARNING_RATE: 0.001
+    LEARNING_RATE: 0.0005
     #Weight decay for the simclr training
-    L2_DECAY: 0.0001
+    L2_DECAY: 0.00004
     #Betas for the ADAM optimizer
     BETA_1: 0.9
     BETA_2: 0.999
     #Reduce the Learning rate if the validation loss has not improved for this number of epochs
-    LR_PATIENCE: 5
+    LR_PATIENCE: 4
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
-    LR_DECAY: 0.5
+    LR_DECAY: 0.7
     #Size of batches used for the training and evaluation
     BATCH_SIZE: 32
     #Maximum number of training epochs
@@ -129,9 +129,9 @@ train_simclr:
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
     MAX_NUM_BATCHES_PER_EPOCH: 200
     #Stop the training if a max runtime (in seconds) has been reached
-    MAX_RUNTIME_SECONDS: 43200
+    MAX_RUNTIME_SECONDS: 82800
     #Stop the training after validation loss has not improved for PATIENCE epochs
-    PATIENCE: 200
+    PATIENCE: 50
     #Domain Learning
     DOMAIN_LEARNING: False
     #Contrastive Learning Type (SIMCLR or NNCLR):
@@ -141,10 +141,10 @@ train_simclr:
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 15 #In degree
-        TRANSLATE: 0.2 #As fraction of the overall image size
-        SCALE: 1.5 #max zoom in
+        TRANSLATE: 0.15 #As fraction of the overall image size
+        SCALE: 1.2 #max zoom in
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.001, 0.01] #Std in Pixel
+        GAUSSIAN_BLUR_SIGMA: [0.001, 5.0] #Std in Pixel
         NOISE_STD: [0.01, 0.05] #Noise std (Image values are normalized to 1)
     
 train_cinn:
@@ -177,17 +177,17 @@ train_cinn:
     BATCH_SIZE: 128
 
     #Level of the gaussian noise augmentation (Note that quantities are normalized)
-    NOISE: 0.75
+    NOISE: 0.0
     #Number of models used in the averaging
     NUM_MODELS: 1
     
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 10
-        TRANSLATE: 0.2
-        SCALE: 2.0
+        TRANSLATE: 0.15
+        SCALE: 1.2
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.1, 0.5]
+        GAUSSIAN_BLUR_SIGMA: [0.1, 5]
         NOISE_STD: [0.0, 0.05]
 
 model:

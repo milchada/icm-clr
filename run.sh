@@ -15,7 +15,7 @@
 #
 #SBATCH --mail-type=none
 #SBATCH --mail-user=eisert@mpia.de
-#SBATCH --time=2:00:00
+#SBATCH --time=24:00:00
 
 module purge
 module load anaconda/3/2021.11

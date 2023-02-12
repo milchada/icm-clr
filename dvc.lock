@@ -178,8 +178,8 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: a66a452aafc825292495bc9294f250f7.dir
-      size: 130231813
+      md5: 3e7becfa02f2f1233d308153681bfc47.dir
+      size: 133889199
       nfiles: 14
     - path: ./scripts/model/losses.py
       md5: b5792a5271c99a508b093ce80798d578
@@ -188,14 +188,14 @@ stages:
       md5: 120d0671926e2a1d48588c01eff15109
       size: 16265
     - path: ./scripts/model/resnet_simclr.py
-      md5: 4372bec775e08528580d760a381aa6f1
-      size: 3346
+      md5: 687e92913cf8608ac0b8d0c0bffa960d
+      size: 3726
     - path: ./scripts/model/train_simclr.py
-      md5: 80f2052202d9b4c56b495c9c5e07385d
-      size: 8470
+      md5: 3dc2afa19981b9414a9bfb328bf4ec40
+      size: 8388
     - path: ./scripts/model/training.py
-      md5: e1b42f493ecd6b08a6c688755a50c736
-      size: 5502
+      md5: eb621168ddef668ca269c94c31138a69
+      size: 6455
     params:
       params.yaml:
         data:
@@ -245,12 +245,12 @@ stages:
           NUM_HIDDEN_LAYERS_COND: 2
           DROPOUT_COND: 0.0
           BATCH_NORM_COND: false
-          RESNET_DEPTH: 10
-          RESNET_WIDTH: 1
-          RESNET_DROPOUT: 0.1
+          RESNET_DEPTH: 16
+          RESNET_WIDTH: 2
+          RESNET_DROPOUT: 0.25
           RESNET_REPRESENTATION_DIM: 128
-          RESNET_REPRESENTATION_DEPTH: 1
-          RESNET_PROJECTION_DIM: 128
+          RESNET_REPRESENTATION_DEPTH: 3
+          RESNET_PROJECTION_DIM: 256
           RESNET_PROJECTION_DEPTH: 1
           RESNET_NUM_CHANNELS: 3
           RESNET_ROTATION_EQUIVARIANCE: 8
@@ -258,34 +258,35 @@ stages:
           RESNET_REFLECTION_EQUIVARIANCE: true
           RESNET_INITIAL_STRIDE: 2
         train_simclr:
-          LEARNING_RATE: 0.001
-          L2_DECAY: 0.0001
+          LEARNING_RATE: 0.0005
+          L2_DECAY: 4e-05
           BETA_1: 0.9
           BETA_2: 0.999
-          LR_PATIENCE: 2
-          LR_DECAY: 0.5
-          BATCH_SIZE: 64
-          NUM_EPOCHS: 50
+          LR_PATIENCE: 4
+          LR_DECAY: 0.7
+          BATCH_SIZE: 32
+          NUM_EPOCHS: 200
           MAX_NUM_BATCHES_PER_EPOCH: 200
-          PATIENCE: 10
+          MAX_RUNTIME_SECONDS: 82800
+          PATIENCE: 50
           DOMAIN_LEARNING: false
           CLR_TYPE: NNCLR
           NNCLR_QUEUE_SIZE: 256
           AUGMENTATION_PARAMS:
             ROTATION: 15
-            TRANSLATE: 0.2
-            SCALE: 1.5
+            TRANSLATE: 0.15
+            SCALE: 1.2
             FLIP: true
             GAUSSIAN_BLUR_SIGMA:
             - 0.001
-            - 0.1
+            - 5.0
             NOISE_STD:
             - 0.01
             - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: 61bb583e7644cdb4245ebdf2a4e93435
-      size: 23007616
+      md5: e44b35bba6675005eec162ae59a14fd3
+      size: 138564674
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior
     deps:

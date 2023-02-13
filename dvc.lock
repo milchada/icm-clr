@@ -258,7 +258,7 @@ stages:
           RESNET_REFLECTION_EQUIVARIANCE: true
           RESNET_INITIAL_STRIDE: 2
         train_simclr:
-          LEARNING_RATE: 0.0005
+          LEARNING_RATE: 0.001
           L2_DECAY: 4e-05
           BETA_1: 0.9
           BETA_2: 0.999
@@ -285,7 +285,7 @@ stages:
             - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: e44b35bba6675005eec162ae59a14fd3
+      md5: b9868cfc73fd2a95ac7c13ef1695a091
       size: 138564674
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior

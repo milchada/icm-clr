@@ -112,7 +112,7 @@ data:
 
 train_simclr:
     #Learning Rate for the SIMCLR training
-    LEARNING_RATE: 0.0005
+    LEARNING_RATE: 0.001
     #Weight decay for the simclr training
     L2_DECAY: 0.00004
     #Betas for the ADAM optimizer

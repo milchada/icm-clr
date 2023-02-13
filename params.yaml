@@ -136,8 +136,6 @@ train_clr:
     DOMAIN_ADAPTION: False
     #Contrastive Learning Type (SIMCLR or NNCLR):
     CLR_TYPE: "NNCLR"
-    #Use a VAE approach to regularize the Representation Space:
-    VAE_REGULARIZATION: True
     #Size of Queue (i.e. number of batches) in case that NNCLR is used:
     NNCLR_QUEUE_SIZE: 256
     #Augmentation parameters

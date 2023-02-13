@@ -5,28 +5,35 @@ class DistributionTest(object):
     def __init__(self, x):
         self._x = x
         
-    def reshape_input(x, y):
-        '''Function to reshape the inputs by selecting random rows from the larger of the two input arrays'''
+    def reshape_inputs(x, df):
+        '''Function to reshape list of inputs x to same size by selecting random rows from the larger arrays.'''
         rng = np.random.default_rng()
         
-        assert x.ndim == 2
-        assert y.ndim == 2
+        for i in range(len(x)):
+            assert x[i].ndim == 2 #x should be list of 2D Tensors: First Dim Objects, Second Dim Representation Dimension
+            assert x[0].shape[1] == x[i].shape[1] #The Dim of representations should be the same for all arrays in the input list
+            assert x[i].shape[0] == len(df[i]) #The length of the df labels should be equal to number of representations
+            df[i].reset_index(inplace = True) #Reset index of input frames to avoid confusion
+            
+        #Get the split with the smallest number of objects
+        min_num_objects = np.min([x[i].shape[0] for i in range(len(x))])
         
-        assert x.shape[1] == y.shape[1], "Second dimensions of arrays should be equal! Got " + str(x.shape[1]) + " and " + str(y.shape[1])
+        x_out = []
+        df_out = []
         
-        num_x = x.shape[0]
-        num_y = y.shape[0]
-        
-        if num_x == num_y:
-            return x, y
-        elif num_x > num_y:
-            rand_index = rng.choice(np.arange(num_x), size=num_y, replace=False)
-            return x[rand_index], y
-        elif num_x < num_y:
-            rand_index = rng.choice(np.arange(num_y), size=num_x, replace=False)
-            return x, y[rand_index]
-        else:
-            raise
+        #Loop through all given sets of representations
+        for xe, dfe in zip(x, df):
+            if xe.shape[0] == min_num_objects:
+                x_out.append(xe)
+                df_out.append(dfe)
+            elif xe.shape[0] > min_num_objects:
+                rand_index = rng.choice(np.arange(xe.shape[0]), size=min_num_objects, replace=False)
+                x_out.append(xe[rand_index])
+                df_out.append(dfe.iloc[rand_index])
+            else:
+                raise
+                
+        return x_out, df_out
             
     def _check_input(self, x, y):
         assert x.ndim == 2
@@ -38,7 +45,7 @@ class DistributionTest(object):
         raise NotImplementedError("This function is supposed to be overwritten!")
         
 class NeighborDistance(DistributionTest):
-    def __init__(self, x, n_neighbor=64, p=1):
+    def __init__(self, x, n_neighbor=8, p=1):
         super().__init__(x)
         
         self._n_neighbor = n_neighbor
@@ -66,6 +73,11 @@ class NeighborDistance(DistributionTest):
         concat_array = np.concatenate([self._x , y], axis=0)
         return self._get_distances(concat_array, 2*self._n_neighbor+1)
     
+class MeanNeighborDistance(NeighborDistance):
+    
+    def __call__(self, y):
+        return np.mean(self.get_distances(y))
+    
 class MeanNeighborDistanceDeviation(NeighborDistance):
 
     def get_deviations(self, y):
@@ -76,7 +88,7 @@ class MeanNeighborDistanceDeviation(NeighborDistance):
         '''Get the mean neighbor distance deviation between y and x'''
         return np.mean(np.abs(self.get_deviations(y)))
     
-class MeanNeighborDistance(NeighborDistance):
+class MeanNormalizedNeighborDistance(NeighborDistance):
 
     def get_normalized_neighbor_distances(self, y):
         self._check_input(self._x, y)
@@ -84,6 +96,7 @@ class MeanNeighborDistance(NeighborDistance):
         
     def __call__(self, y):
         return np.mean(self.get_normalized_neighbor_distances(y))
+
     
 class PermutationTest(object):
     

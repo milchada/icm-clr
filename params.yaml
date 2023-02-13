@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "debug", 'with_petro_matching', 'vae']
+    tags: ["nnclr", "production", 'with_petro_matching']
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -66,28 +66,28 @@ prepare:
     SETS:
       - ["HSC", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG100", [0.8, 0.0, 0.1, 0.1]]
-      - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
+      #- ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
     #Specify fields to match between the sets and the uncertainties they are matched with
     MATCHING_FIELDS:
       - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+      #- ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     MATCHING_UNCERTAINTIES:
     - [0.05, 0.1, 5]
     #The source set is the set drawing samples from to match them to the target set.
     #I.e. we try to find a example in source for each example in the target. 
     MATCHING_SOURCE_SETS: ['HSC']
-    MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
+    MATCHING_TARGET_SETS: ['HSC_TNG100']
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
     OBSERVABLES:
       - None
       - None
-      - None
+    # - None
     UNOBSERVABLES:
       - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+    # - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
     
@@ -97,9 +97,6 @@ data:
     VALID_RANGE:
       - None
       - None
-      - None
-      - None
-      - [7., 11.5]
       - None
     #Choose the Dataset Object which determines how the images are loaded and streched
     DATASET: 'HSCDataset'

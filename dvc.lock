@@ -64,9 +64,9 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/
-      md5: cfc5efd1c9315d6f8b9862e288a816d0.dir
-      size: 49125062
-      nfiles: 21
+      md5: 20791bffb39c714864ead338d92455cd.dir
+      size: 49139497
+      nfiles: 23
     params:
       params.yaml:
         prepare:
@@ -90,17 +90,13 @@ stages:
           MATCHING_FIELDS:
           - - photoz
             - i_cmodel_mag_ge
-            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
-            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
-            - petro_90_light
           MATCHING_UNCERTAINTIES:
           - - 0.05
             - 0.1
-            - 5
           MATCHING_SOURCE_SETS:
           - HSC
           MATCHING_TARGET_SETS:
@@ -117,13 +113,13 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 3e7becfa02f2f1233d308153681bfc47.dir
-      size: 133889199
+      md5: c4f1949846b914fc0764d931bb81697b.dir
+      size: 141396015
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: d024c8fb0b3cad83f0339dd29e8c73cc.dir
-      size: 27967790
-      nfiles: 10
+      md5: 11ec0ac896b0e67b32344792205f63a3.dir
+      size: 13188118
+      nfiles: 6
   train:
     cmd: python3 -m scripts.model.train
     deps:
@@ -178,8 +174,8 @@ stages:
     cmd: python3 -m scripts.model.train_simclr
     deps:
     - path: ./dataset/
-      md5: 3e7becfa02f2f1233d308153681bfc47.dir
-      size: 133889199
+      md5: c4f1949846b914fc0764d931bb81697b.dir
+      size: 141396015
       nfiles: 14
     - path: ./scripts/model/losses.py
       md5: b5792a5271c99a508b093ce80798d578
@@ -285,7 +281,7 @@ stages:
             - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: b9868cfc73fd2a95ac7c13ef1695a091
+      md5: 40c726767095a303c791209c7b6d74da
       size: 138564674
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior

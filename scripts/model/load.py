@@ -3,9 +3,6 @@ import numpy as np
 import glob
 import config as c
 
-from scripts.model.combined_model import CombinedModel 
-from scripts.model.resnet_simclr import ResNetSimCLR 
-
 class Ensemble():
     '''
     Class for Ensemble Averaging
@@ -50,6 +47,8 @@ def load_cinn_model(num_models=None, model_index=None):
     :param model_index: return explicitly the model oder Ensemble of models with the given (list of) index; overwrites the num_models option
     """
     
+    from scripts.model.combined_model import CombinedModel 
+    
     #Check if gpu or cpu only is available
     device = torch.device(c.device)
     
@@ -92,6 +91,9 @@ def load_cinn_model(num_models=None, model_index=None):
     
 def load_resnet_model():
     """Load resnet model from the model folder"""
+    
+    from scripts.model.resnet_simclr import ResNetSimCLR 
+    
     model = ResNetSimCLR()
     model.to(c.device)
     checkpoint = torch.load(c.resnet_path, map_location=torch.device(c.device))

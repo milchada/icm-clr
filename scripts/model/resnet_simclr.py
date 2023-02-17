@@ -71,15 +71,16 @@ class ResNetSimCLRVAE(ResNetSimCLR):
         
     def forward(self, x, projection_head=True):
         
+        x = self.resnet(x)
+        mu = self.linear_mu(x)
+        sigma = torch.exp(self.linear_sigma(x)
+        z = mu + sigma*self.N.sample(mu.shape)
+        self.kl = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
+         
         if projection_head:
-            mu = self.linear_mu(self.resnet(x))
-            sigma = torch.exp(self.linear_sigma(self.resnet(x))
-            z = mu + sigma*self.N.sample(mu.shape)
-            self.kl = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
             return self.projection(z)
-        
         else:
-            return self.resnet(x)
+            return z
         
         
 if __name__ == "__main__":

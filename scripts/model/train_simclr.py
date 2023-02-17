@@ -1,6 +1,6 @@
 import torch
 
-from scripts.model.resnet_simclr import ResNetSimCLR
+from scripts.model.resnet_simclr import ResNetSimCLR, ResNetSimCLRVAE
 from scripts.model.losses import loss_simclr, loss_nnclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
 from scripts.model.optimizer import Optimizer
 from scripts.model.training import Trainer, run_training
@@ -68,7 +68,10 @@ def train_simclr(params={},
         experiment_tracker = VoidExperimentTracking()
     
     #Load the model
-    model = ResNetSimCLR(params)
+    if REGULARIZATION:
+        model = ResNetSimCLRVAE(params)
+    else:
+        model = ResNetSimCLR(params) 
     model.to(c.device)
     
     #Init the optimizer
@@ -119,8 +122,8 @@ def train_simclr(params={},
         train_batch_queue = init_batch_queue(model, train_loader, params["NNCLR_QUEUE_SIZE"])
         val_batch_queue = init_batch_queue(model, val_loader, params["NNCLR_QUEUE_SIZE"])
         
-        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue)
-        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue)
+        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue) + model.kl
+        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue) + model.kl
         
         if params['DOMAIN_LEARNING']:
             domain_batch_queue = init_batch_queue(model, domain_loader, params["NNCLR_QUEUE_SIZE"])

@@ -31,9 +31,8 @@ class ResNetSimCLR(nn.Module):
             self.resnet.add_module("ResNet_ReLU_Representation_" + str(i), nn.ReLU())
             self.resnet.add_module("ResNet_Linear_Representation_" + str(i), nn.Linear(params["RESNET_PROJECTION_DIM"], params["RESNET_PROJECTION_DIM"]))
     
-        # add mlp projection head
+        # We also need an projection head for the contrastive learning
         self.projection = nn.Sequential()
-        self.projection.add_module("ResNet", self.resnet)
         
         for i in range(params["RESNET_PROJECTION_DEPTH"]):
             self.projection.add_module("ResNet_ReLU_Projection_" + str(i), nn.ReLU())
@@ -45,25 +44,40 @@ class ResNetSimCLR(nn.Module):
     @property
     def trainable_parameters(self):
         """Return trainable parameters"""
-        trainable_parameters = [p for p in self.projection.parameters() if p.requires_grad]
+        trainable_parameters = [p for p in self.resnet.parameters() if p.requires_grad]
+        trainable_parameters += [p for p in self.projection.parameters() if p.requires_grad]
         
         return trainable_parameters
-
-    @property
-    def model_size_mb(self):
-        param_size = 0
-        for param in self.projection.parameters():
-            param_size += param.nelement() * param.element_size()
-        buffer_size = 0
-        for buffer in self.projection.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-
-        return (param_size + buffer_size) / 1024**2
         
     def forward(self, x, projection_head=True):
         
         if projection_head:
-            return self.projection(x)
+            return self.projection(self.resnet(x))
+        else:
+            return self.resnet(x)
+        
+class ResNetSimCLRVAE(ResNetSimCLR):
+    
+    def __init__(self, params={}):
+        
+        super(ResNetSimCLRVAE, self).__init__()
+        
+        self.linear_mu = nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"])
+        self.linear_sigma = nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"])
+        self.N = torch.distribution.Normal(0, 1)
+        self.N.loc = self.N.loc.cuda()
+        self.N.scale = self.N.scale.cuda()
+        self.kl = 0
+        
+    def forward(self, x, projection_head=True):
+        
+        if projection_head:
+            mu = self.linear_mu(self.resnet(x))
+            sigma = torch.exp(self.linear_sigma(self.resnet(x))
+            z = mu + sigma*self.N.sample(mu.shape)
+            self.kl = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
+            return self.projection(z)
+        
         else:
             return self.resnet(x)
         

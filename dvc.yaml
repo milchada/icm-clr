@@ -29,7 +29,7 @@ stages:
     params:
     - data
     - model
-    - train_simclr
+    - train_clr
     - losses
     deps:
     - ./dataset/

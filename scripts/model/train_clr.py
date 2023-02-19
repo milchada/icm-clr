@@ -99,9 +99,6 @@ def train_clr(params={},
     augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])
     flip_augmentation = FlipAugmentation(params["AUGMENTATION_PARAMS"])
     train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
-    
-    get_train_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
-    
     training_data = [train_loader]
     
     if params['DOMAIN_ADAPTION']:

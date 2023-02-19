@@ -209,4 +209,4 @@ def train_clr(params={},
 
 
 if __name__ == "__main__":
-    train_simclr()
+    train_clr()

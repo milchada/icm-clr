@@ -189,7 +189,7 @@ def train_clr(params={},
 
         #Loss for validation set
         features = model(val_images)
-        val_loss, logits, labels = validation_loss(val_images, features, model) + model.kl
+        val_loss, logits, labels = validation_loss(val_images, features, model)
         val_top1, val_top5 = accuracy(logits, labels, topk=(1, 5))
 
         loss_dict = {'validation_loss': val_loss,

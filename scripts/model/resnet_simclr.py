@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torch.distribution import Normal
+from torch.distributions import Normal
 from scripts.model.resnet import Wide_ResNet
 
 import yaml

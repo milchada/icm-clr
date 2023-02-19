@@ -161,7 +161,7 @@ def train_clr(params={},
             adaption_loss = loss_adaption(train_rep, domain_rep)
 
         #Calculate total loss
-        loss = lambd_simclr_train * train_loss + model.kl
+        loss = lambd_simclr_train * 1000.0 * train_loss + model.kl
 
         loss_dict = {'training_loss': train_loss,
                      'training_acc/top1': train_top1[0],

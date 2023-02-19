@@ -1,4 +1,5 @@
 import torch.nn as nn
+from torch.distribution import Normal
 from scripts.model.resnet import Wide_ResNet
 
 import yaml
@@ -67,7 +68,7 @@ class ResNetSimCLRVAE(ResNetSimCLR):
         
         self.linear_mu = nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"])
         self.linear_sigma = nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"])
-        self.N = torch.distribution.Normal(0, 1)
+        self.N = Normal(0, 1)
         self.N.loc = self.N.loc.cuda()
         self.N.scale = self.N.scale.cuda()
         self.kl = 0

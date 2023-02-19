@@ -24,8 +24,8 @@ stages:
     - ./dataset/
     - ./plots/preprocessing/
 
-  train_simclr:
-    cmd: python3 -m scripts.model.train_simclr
+  train_clr:
+    cmd: python3 -m scripts.model.train_clr
     params:
     - data
     - model
@@ -37,7 +37,7 @@ stages:
     - ./scripts/model/training.py
     - ./scripts/model/resnet.py
     - ./scripts/model/resnet_simclr.py
-    - ./scripts/model/train_simclr.py
+    - ./scripts/model/train_clr.py
     outs:
     - ./model/resnet.pt
 

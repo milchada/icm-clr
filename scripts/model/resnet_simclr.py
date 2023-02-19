@@ -59,8 +59,11 @@ class ResNetSimCLR(nn.Module):
 class ResNetSimCLRVAE(ResNetSimCLR):
     
     def __init__(self, params={}):
-        
-        super(ResNetSimCLRVAE, self).__init__()
+
+        #Use default parameter if not set
+        params = dict(model_default_params, **params)
+            
+        super(ResNetSimCLRVAE, self).__init__(params)
         
         self.linear_mu = nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"])
         self.linear_sigma = nn.Linear(params["RESNET_REPRESENTATION_DIM"], params["RESNET_REPRESENTATION_DIM"])

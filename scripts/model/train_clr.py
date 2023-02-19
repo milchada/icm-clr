@@ -122,8 +122,8 @@ def train_clr(params={},
         train_batch_queue = init_batch_queue(model, train_loader, params["NNCLR_QUEUE_SIZE"])
         val_batch_queue = init_batch_queue(model, val_loader, params["NNCLR_QUEUE_SIZE"])
         
-        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue) + torch.mean(model.kl)
-        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue) + torch.mean(model.kl)
+        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue) 
+        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue)
         
         if params['DOMAIN_ADAPTION']:
             domain_batch_queue = init_batch_queue(model, domain_loader, params["NNCLR_QUEUE_SIZE"])
@@ -161,7 +161,7 @@ def train_clr(params={},
             adaption_loss = loss_adaption(train_rep, domain_rep)
 
         #Calculate total loss
-        loss = lambd_simclr_train * train_loss 
+        loss = lambd_simclr_train * train_loss + model.kl
 
         loss_dict = {'training_loss': train_loss,
                      'training_acc/top1': train_top1[0],
@@ -189,7 +189,7 @@ def train_clr(params={},
 
         #Loss for validation set
         features = model(val_images)
-        val_loss, logits, labels = validation_loss(val_images, features, model)
+        val_loss, logits, labels = validation_loss(val_images, features, model) + model.kl
         val_top1, val_top5 = accuracy(logits, labels, topk=(1, 5))
 
         loss_dict = {'validation_loss': val_loss,

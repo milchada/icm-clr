@@ -23,7 +23,7 @@ class SimClrDataset(Dataset):
         
         #Load image paths
         if isinstance(image_file, str):
-            self.df = pd.read_csv(s)
+            self.df = pd.read_csv(image_file)
         elif isinstance(image_file, list):
             df_list = []
             
@@ -42,24 +42,20 @@ class SimClrDataset(Dataset):
         #Load labels if given
         if label_file is None:
             self.df_label = None
-        else:
-            if isinstance(label_file, str):
-                self.df_label = pd.read_csv(s)
-            
-            elif isinstance(label_file, list):
-                df_list = []
-            
-                for s in label_file:
-                    if isinstance(s, str):
-                        df_list.append(pd.read_csv(s))
-                    else:
-                        raise TypeError()
-                    
-                self.df_label = pd.concat(df_list, ignore_index=True)
-            else:
-                raise TypeError()
-            
+        elif isinstance(label_file, str):
+            self.df_label = pd.read_csv(label_file)
             assert len(self.df) == len(self.df_label), "Error: Number of rows in the image and label csv have to be equal!"
+        elif isinstance(label_file, list):
+            df_list = []
+            for s in label_file:
+                if isinstance(s, str):
+                    df_list.append(pd.read_csv(s))
+                else:
+                    raise TypeError()
+            self.df_label = pd.concat(df_list, ignore_index=True)
+            assert len(self.df) == len(self.df_label), "Error: Number of rows in the image and label csv have to be equal!"
+        else:
+            raise TypeError()
         
         #Load the transforms from the augmentation object
         if augmentation is None or augmentation is False:

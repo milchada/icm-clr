@@ -15,7 +15,7 @@ from scripts.data.augmentations import SimCLRAugmentation, FlipAugmentation
 #Load Parameters
 import yaml
 params = yaml.safe_load(open('params.yaml'))
-train_default_params = params['train_simclr']
+train_default_params = params['train_clr']
 
 #At this point we hardcode the number of simclr views to be 2
 N_VIEWS = 2
@@ -46,11 +46,11 @@ def loss_2_host(x):
 def loss_dict_2_host(d):
     return dict(map(lambda x: (x[0], loss_2_host(x[1])), d.items()))
     
-def train_simclr(params={},
-                 save_model=True,
-                 experiment_tracking=True):
+def train_clr(params={},
+              save_model=True,
+              experiment_tracking=True):
     """
-    Function to set up and train the resnet with simclr
+    Function to set up and train the resnet with clr
 
     :param params: dictionary with training and model parameter; fields which are not defined are taken from params.yaml
     :param save_model: if true metrics and model are saved; otherwise only the validation losses are returned (for parameter optimization)
@@ -68,10 +68,11 @@ def train_simclr(params={},
         experiment_tracker = VoidExperimentTracking()
     
     #Load the model
-    if REGULARIZATION:
+    if params['VAE_REGULARIZATION']:
         model = ResNetSimCLRVAE(params)
     else:
         model = ResNetSimCLR(params) 
+        
     model.to(c.device)
     
     #Init the optimizer
@@ -99,9 +100,11 @@ def train_simclr(params={},
     flip_augmentation = FlipAugmentation(params["AUGMENTATION_PARAMS"])
     train_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
     
+    get_train_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
+    
     training_data = [train_loader]
     
-    if params['DOMAIN_LEARNING']:
+    if params['DOMAIN_ADAPTION']:
         domain_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=augmentation, n_views=N_VIEWS, shuffle=True, drop_last=True)
         train_mmd_loader = data.get_train_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
         domain_mmd_loader = data.get_domain_loader(batch_size=params["BATCH_SIZE"], labels=False, augmentation=flip_augmentation, n_views=1, shuffle=True, drop_last=True)
@@ -125,7 +128,7 @@ def train_simclr(params={},
         training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue) + model.kl
         validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue) + model.kl
         
-        if params['DOMAIN_LEARNING']:
+        if params['DOMAIN_ADAPTION']:
             domain_batch_queue = init_batch_queue(model, domain_loader, params["NNCLR_QUEUE_SIZE"])
             domain_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, domain_batch_queue)
             
@@ -138,7 +141,7 @@ def train_simclr(params={},
         
         train_images = images_2_device(batch[0])
         
-        if params['DOMAIN_LEARNING']:
+        if params['DOMAIN_ADAPTION']:
             domain_images = images_2_device(batch[1])
             train_adaption_images = images_2_device(batch[2])
             domain_adaption_images = images_2_device(batch[3])
@@ -149,13 +152,13 @@ def train_simclr(params={},
         train_top1, train_top5 = accuracy(logits, labels, topk=(1, 5))
 
         #Loss for the domain set
-        if params['DOMAIN_LEARNING']:
+        if params['DOMAIN_ADAPTION']:
             features = model(domain_images)
             domain_loss, logits, labels = domain_loss(domain_images, features, model)
             domain_top1, domain_top5 = accuracy(logits, labels, topk=(1, 5))
 
         #Loss for the training - domain representation distance
-        if params['DOMAIN_LEARNING']:
+        if params['DOMAIN_ADAPTION']:
             train_rep = model(train_adaption_images, projection_head=False)
             domain_rep = model(domain_adaption_images, projection_head=False)
             adaption_loss = loss_adaption(train_rep, domain_rep)
@@ -167,7 +170,7 @@ def train_simclr(params={},
                      'training_acc/top1': train_top1[0],
                      'training_acc/top5': train_top5[0]}
         
-        if params['DOMAIN_LEARNING']:
+        if params['DOMAIN_ADAPTION']:
             loss += lambd_simclr_domain * domain_loss + lambd_adaption * adaption_loss
             
             loss_dict = {**loss_dict,

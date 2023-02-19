@@ -12,7 +12,7 @@ import torch
 import gc
 
 
-from scripts.model.train_simclr import train_simclr
+from scripts.model.train_simclr import train_clr
 #from scripts.model.train_cinn import train_cinn
 from scripts.util.make_dir import make_dir
 import config as c
@@ -77,7 +77,7 @@ class ParameterOptimizationSimCLR(ParameterOptimization):
 
         try:
 
-            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            loss = train_clr(params=params_trail, save_model=False, experiment_tracking=True)
             return loss
 
         except torch.cuda.OutOfMemoryError:
@@ -111,7 +111,7 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
 
         try:
 
-            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            loss = train_clr(params=params_trail, save_model=False, experiment_tracking=True)
             return loss
 
         except torch.cuda.OutOfMemoryError:

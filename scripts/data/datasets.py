@@ -15,20 +15,50 @@ class SimClrDataset(Dataset):
     def __init__(self, image_file, label_file=None, augmentation=None, n_views=1):
         """
         Args:
-            image_file (string): Path to the csv file with "image_path" as field.
-            label_file (string, optional): Path to the csv file with labels to return (If not set, only images are returned).
+            image_file (string or list of strings): Path to the csv file with "image_path" as field.
+            label_file (string or list of strings, optional): Path to the csv file with labels to return (If not set, only images are returned).
             augmentation (Augmentation, optional): use the augmenations (Default: None i.e. Default Augmentation).
             n_views (integer, optional): Number of views to return for each image (Default: 1).
         """
         
-        self.df = pd.read_csv(image_file)
+        #Load image paths
+        if isinstance(image_file, str):
+            self.df = pd.read_csv(s)
+        elif isinstance(image_file, list):
+            df_list = []
+            
+            for s in image_file:
+                if isinstance(s, str):
+                    df_list.append(pd.read_csv(s))
+                else:
+                    raise TypeError()
+                    
+            self.df = pd.concat(df_list, ignore_index=True)
+        else:
+            raise TypeError()
+        
         self.image_paths = self.df['image_path']
         
         #Load labels if given
         if label_file is None:
             self.df_label = None
         else:
-            self.df_label = pd.read_csv(label_file)
+            if isinstance(label_file, str):
+                self.df_label = pd.read_csv(s)
+            
+            elif isinstance(label_file, list):
+                df_list = []
+            
+                for s in label_file:
+                    if isinstance(s, str):
+                        df_list.append(pd.read_csv(s))
+                    else:
+                        raise TypeError()
+                    
+                self.df_label = pd.concat(df_list, ignore_index=True)
+            else:
+                raise TypeError()
+            
             assert len(self.df) == len(self.df_label), "Error: Number of rows in the image and label csv have to be equal!"
         
         #Load the transforms from the augmentation object

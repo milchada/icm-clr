@@ -72,22 +72,22 @@ prepare:
       - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
- 
     MATCHING_UNCERTAINTIES:
     - [0.05, 0.1, 5]
- 
+    #The source set is the set drawing samples from to match them to the target set.
+    #I.e. we try to find a example in source for each example in the target. 
     MATCHING_SOURCE_SETS: ['HSC']
     MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
-    OBSERVABLES: None
+    OBSERVABLES:
+      - None
+      - None
+      - None
     UNOBSERVABLES:
-      - 'lookback'
-      - 'mass'
-      - 'fraction_disk_stars'
-      - 'stellar_age_2rhalf_lumw'
-      - 'mass_last_maj_merger'
-      - 'exsitu'
+      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
     
@@ -110,7 +110,7 @@ data:
     #Number of data loading workers
     NUM_WORKERS: 18
 
-train_simclr:
+train_clr:
     #Learning Rate for the SIMCLR training
     LEARNING_RATE: 0.001
     #Weight decay for the simclr training
@@ -132,12 +132,12 @@ train_simclr:
     MAX_RUNTIME_SECONDS: 82800
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 50
-    #Domain Learning
-    DOMAIN_LEARNING: False
+    #Domain Adaption during the clr learning
+    DOMAIN_ADAPTION: False
     #Contrastive Learning Type (SIMCLR or NNCLR):
     CLR_TYPE: "NNCLR"
     #Use a VAE approach to regularize the Representation Space:
-    REGULARIZATION: True
+    VAE_REGULARIZATION: True
     #Size of Queue (i.e. number of batches) in case that NNCLR is used:
     NNCLR_QUEUE_SIZE: 256
     #Augmentation parameters

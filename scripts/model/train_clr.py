@@ -122,8 +122,8 @@ def train_clr(params={},
         train_batch_queue = init_batch_queue(model, train_loader, params["NNCLR_QUEUE_SIZE"])
         val_batch_queue = init_batch_queue(model, val_loader, params["NNCLR_QUEUE_SIZE"])
         
-        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue) + model.kl
-        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue) + model.kl
+        training_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, train_batch_queue) + torch.mean(model.kl)
+        validation_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, val_batch_queue) + torch.mean(model.kl)
         
         if params['DOMAIN_ADAPTION']:
             domain_batch_queue = init_batch_queue(model, domain_loader, params["NNCLR_QUEUE_SIZE"])

@@ -73,7 +73,7 @@ class ResNetSimCLRVAE(ResNetSimCLR):
         
         x = self.resnet(x)
         mu = self.linear_mu(x)
-        sigma = torch.exp(self.linear_sigma(x)
+        sigma = torch.exp(self.linear_sigma(x))
         z = mu + sigma*self.N.sample(mu.shape)
         self.kl = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
          

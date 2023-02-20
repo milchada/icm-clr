@@ -41,8 +41,10 @@ class MLP_Gaussian(nn.Module):
             if i < params["NUM_HIDDEN_LAYERS_MLP"] and params["DROPOUT_MLP"] > 0.0:
                 self.mlp.add_module("Dropout_MLP_" + str(i), nn.Dropout(p=params["DROPOUT_MLP"]))
                 
-        #Output layer
-        self.mlp.add_module("Output_Linear_MLP", nn.Linear(params["NUM_HIDDEN_NODES_MLP"], data.NUM_DIM*2))
+        #Output layers
+        self.mu_layer = nn.Sequential(nn.Linear(params["NUM_HIDDEN_NODES_MLP"], data.NUM_DIM))
+        self.var_layer = nn.Sequential(nn.Linear(params["NUM_HIDDEN_NODES_MLP"], data.NUM_DIM))
             
-    def forward(self, c):
-        return self.mlp(c)
+    def forward(self, x):
+        mlp = self.mlp(x)
+        return self.mu_layer(mlp), self.var_layer(mlp)

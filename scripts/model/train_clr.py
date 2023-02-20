@@ -1,6 +1,6 @@
 import torch
 
-from scripts.model.resnet_simclr import ResNetSimCLR, ResNetSimCLRVAE
+from scripts.model.resnet_simclr import ResNetSimCLR
 from scripts.model.losses import loss_simclr, loss_nnclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
 from scripts.model.optimizer import Optimizer
 from scripts.model.training import Trainer, run_training
@@ -68,10 +68,7 @@ def train_clr(params={},
         experiment_tracker = VoidExperimentTracking()
     
     #Load the model
-    if params['VAE_REGULARIZATION']:
-        model = ResNetSimCLRVAE(params)
-    else:
-        model = ResNetSimCLR(params) 
+    model = ResNetSimCLR(params) 
         
     model.to(c.device)
     
@@ -161,7 +158,7 @@ def train_clr(params={},
             adaption_loss = loss_adaption(train_rep, domain_rep)
 
         #Calculate total loss
-        loss = lambd_simclr_train * 1000.0 * train_loss + model.kl
+        loss = lambd_simclr_train * train_loss
 
         loss_dict = {'training_loss': train_loss,
                      'training_acc/top1': train_top1[0],

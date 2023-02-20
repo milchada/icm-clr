@@ -203,7 +203,6 @@ model:
     #Width and Depth of the hidden networks in the coupling layers 
     NUM_HIDDEN_NODES: 128
     NUM_HIDDEN_LAYERS: 2
-    
     #Dropout and Batch Norm between the layers in the hidden networks in the coupling layers
     DROPOUT: 0.0
     BATCH_NORM: False
@@ -211,10 +210,16 @@ model:
     #Width and Depth of the conditional network
     NUM_HIDDEN_NODES_COND: 128    
     NUM_HIDDEN_LAYERS_COND: 2
-    
     #Dropout and Batch Norm between the layers in the conditional network
     DROPOUT_COND: 0.0
     BATCH_NORM_COND: False
+
+    #Width and Depth of the MLP network
+    NUM_HIDDEN_NODES_MLP: 128    
+    NUM_HIDDEN_LAYERS_MLP: 2
+    #Dropout and Batch Norm between the layers in the MLP network
+    DROPOUT_MLP: 0.0
+    BATCH_NORM_MLP: False
     
     #Parameters for the resnet 
     #Resnet depth should be 6n+4

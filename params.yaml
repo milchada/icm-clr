@@ -128,6 +128,8 @@ train_clr:
     MAX_RUNTIME_SECONDS: 82800
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 50
+    #Train CLR on training and domain set
+    DOMAIN_TRAINING: True
     #Domain Adaption during the clr learning
     DOMAIN_ADAPTION: False
     #Contrastive Learning Type (SIMCLR or NNCLR):

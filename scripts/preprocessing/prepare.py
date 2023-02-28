@@ -532,7 +532,7 @@ class DatasetMatcher(object):
         
         #Get scaler first
         first_dataset = self._datasets[0]
-        first_dataset.scale_split(self._dataset_fractions[0])
+        first_dataset.scale_split(self._dataset_fractions[0], self._dataset_observables[0], self._dataset_unobservables[0])
         x_scaler = first_dataset.x_scaler
         y_scaler = first_dataset.y_scaler
         

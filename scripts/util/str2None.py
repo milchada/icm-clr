@@ -1,5 +1,6 @@
 def str2None(x):
-    if x == "None":
+    if isinstance(x, str) and x == "None":
         return None
     else:
-        return x
+        return float(x)
+

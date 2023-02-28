@@ -67,8 +67,9 @@ params = yaml.safe_load(open('params.yaml'))
 prepare_params = params['prepare']
 SPLIT_SEED = prepare_params['SPLIT_SEED']
 SETS = prepare_params["SETS"]
-OBSERVABLES = str2None(prepare_params['OBSERVABLES'])
-UNOBSERVABLES = prepare_params['UNOBSERVABLES']
+OBSERVABLES = map(str2None, prepare_params['OBSERVABLES'])
+UNOBSERVABLES = map(str2None, prepare_params['UNOBSERVABLES'])
+LABELS = prepare_params['LABELS']
 ROOT_DESCENDANT_SPLIT = prepare_params['ROOT_DESCENDANT_SPLIT']
 MATCHING_FIELDS = str2None(prepare_params['MATCHING_FIELDS'])
 MATCHING_SOURCE_SETS = set(prepare_params['MATCHING_SOURCE_SETS'])
@@ -221,27 +222,20 @@ class DatasetPreparator(object):
             x[:] = np.nan
             return pd.DataFrame(x, columns=["None"]), None
         
-        try:
-            x = df.loc[:, fields].values
-        except KeyError as e:
-            print(e)
-            print("Warning: Dataset " + self._dataset + " does not contain all fields.")
-            x = np.empty((len(df),len(fields)))
-            x[:] = np.nan
-            return pd.DataFrame(x, columns=fields), None
+        x = df.loc[:, fields].values
                 
         if scaler is None:
             scaler = StandardScaler()
             scaler.fit(x)
             
-        return pd.DataFrame(scaler.transform(x), columns=fields), scaler
+        return pd.DataFrame(scaler.transform(x), columns=LABELS), scaler
     
-    def scale_split(self, fractions):
+    def scale_split(self, fractions, unobservable, observable):
         '''Select, scale and split the data according to the given fractions'''
         
         #Select fields asked for and scale them
-        df_x, self.x_scaler = self.scale(self.df, UNOBSERVABLES, self.x_scaler)
-        df_y, self.y_scaler = self.scale(self.df, OBSERVABLES, self.y_scaler)
+        df_x, self.x_scaler = self.scale(self.df, unobservable, self.x_scaler)
+        df_y, self.y_scaler = self.scale(self.df, observable, self.y_scaler)
         
         #Keep all fields also as unscaled metadata
         df_m = self.df
@@ -270,6 +264,8 @@ class DatasetMatcher(object):
         self._datasets = []
         self._dataset_titles = []
         self._dataset_fractions = []
+        self._dataset_observables = []
+        self._dataset_unobservables = []
         
         self.load_datasets()
         self.plot_matching_fields("raw")
@@ -286,6 +282,13 @@ class DatasetMatcher(object):
         
         for title in self._dataset_titles:
             self._datasets.append(DatasetPreparator(title))
+            
+        for obs in OBSERVABLES:
+             self._dataset_observables.append(obs)
+        
+        for unobs in UNOBSERVABLES:
+             self._dataset_unobservables.append(unobs)
+            
             
     def __len__(self):
         return len(self._datasets)
@@ -543,10 +546,10 @@ class DatasetMatcher(object):
         val = []
         test = []
         
-        for s, frac in zip(self._datasets, self._dataset_fractions):
+        for s, frac, obs, unobs in zip(self._datasets, self._dataset_fractions, self._dataset_observables, self._dataset_unobservables):
             s.x_scaler = x_scaler
             s.y_scaler = y_scaler
-            x_split, y_split, m_split = s.scale_split(frac)
+            x_split, y_split, m_split = s.scale_split(frac, obs, unobs)
             
             #Go through each of the splits for x, y and m
             train.append([x_split[0], y_split[0], m_split[0]])

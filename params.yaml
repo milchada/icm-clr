@@ -80,14 +80,13 @@ prepare:
     MATCHING_TARGET_SETS: ['HSC_TNG100']
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
-    OBSERVABLES: None
+    OBSERVABLES: 
+      - None
+      - None
     UNOBSERVABLES:
-      - 'lookback'
-      - 'mass'
-      - 'fraction_disk_stars'
-      - 'stellar_age_2rhalf_lumw'
-      - 'mass_last_maj_merger'
-      - 'exsitu'
+      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+    LABELS: ['z', 'i_band_mag', 'petro_90_radius']
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
     

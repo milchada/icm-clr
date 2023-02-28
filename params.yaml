@@ -97,9 +97,6 @@ data:
       - None
       - None
       - None
-      - None
-      - [7., 11.5]
-      - None
     #Choose the Dataset Object which determines how the images are loaded and streched
     DATASET: 'HSCDataset'
     #Target filters to use (NOT IMPLEMENTED YET!)

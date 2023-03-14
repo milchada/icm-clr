@@ -64,8 +64,8 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/
-      md5: 20791bffb39c714864ead338d92455cd.dir
-      size: 49139497
+      md5: a023395d1c10cc9f552690318219a1a2.dir
+      size: 49139767
       nfiles: 23
     params:
       params.yaml:
@@ -97,22 +97,28 @@ stages:
           - HSC
           MATCHING_TARGET_SETS:
           - HSC_TNG100
-          OBSERVABLES: None
+          OBSERVABLES:
+          - None
+          - None
           UNOBSERVABLES:
-          - lookback
-          - mass
-          - fraction_disk_stars
-          - stellar_age_2rhalf_lumw
-          - mass_last_maj_merger
-          - exsitu
+          - - photoz
+            - i_cmodel_mag_ge
+            - petro_90_light
+          - - z
+            - i_band_mag_dust_apparent
+            - petro_90_light
+          LABELS:
+          - z
+          - i_band_mag
+          - petro_90_radius
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 062e5e16db8b42e6cd5e687245c3f3e5.dir
-      size: 128813929
+      md5: f7888397656ab6916510d66403323482.dir
+      size: 127820056
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: 2a259cf088d4770b737c5fa9ec54ee99.dir
+      md5: 8b48d233934e130d2942cef6d70fded4.dir
       size: 27552265
       nfiles: 10
   train:
@@ -139,18 +145,18 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: 062e5e16db8b42e6cd5e687245c3f3e5.dir
-      size: 128813929
+      md5: f7888397656ab6916510d66403323482.dir
+      size: 127820056
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: d87057e1fe50922f5d7852233bb2b689
+      md5: 9c6ca910ed3ecaca9b3b5b17889a3c1c
       size: 138536834
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 042d9312955a95759a1df0a72de7c107
+      md5: 6e53a36acacafdf8948115f59277aa7e
       size: 8919168
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
@@ -474,12 +480,12 @@ stages:
     cmd: python3 -m scripts.model.train_clr
     deps:
     - path: ./dataset/
-      md5: 062e5e16db8b42e6cd5e687245c3f3e5.dir
-      size: 128813929
+      md5: f7888397656ab6916510d66403323482.dir
+      size: 127820056
       nfiles: 14
     - path: ./scripts/model/losses.py
-      md5: b5792a5271c99a508b093ce80798d578
-      size: 6061
+      md5: 36be0f287435a461abbcbcddd7226b95
+      size: 6012
     - path: ./scripts/model/resnet.py
       md5: 120d0671926e2a1d48588c01eff15109
       size: 16265
@@ -499,11 +505,7 @@ stages:
           - None
           - None
           - None
-          - None
-          - - 7.0
-            - 11.5
-          - None
-          DATASET: HSCDataset
+          DATASET: SingleStretchDataset
           FILTERS:
           - I
           - R
@@ -541,6 +543,10 @@ stages:
           NUM_HIDDEN_LAYERS_COND: 2
           DROPOUT_COND: 0.0
           BATCH_NORM_COND: false
+          NUM_HIDDEN_NODES_MLP: 128
+          NUM_HIDDEN_LAYERS_MLP: 2
+          DROPOUT_MLP: 0.0
+          BATCH_NORM_MLP: false
           RESNET_DEPTH: 16
           RESNET_WIDTH: 2
           RESNET_DROPOUT: 0.25
@@ -565,6 +571,7 @@ stages:
           MAX_NUM_BATCHES_PER_EPOCH: 200
           MAX_RUNTIME_SECONDS: 82800
           PATIENCE: 50
+          DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
           CLR_TYPE: NNCLR
           NNCLR_QUEUE_SIZE: 256
@@ -581,5 +588,5 @@ stages:
             - 0.05
     outs:
     - path: ./model/resnet.pt
-      md5: d87057e1fe50922f5d7852233bb2b689
+      md5: 9c6ca910ed3ecaca9b3b5b17889a3c1c
       size: 138536834

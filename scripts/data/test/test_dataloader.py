@@ -15,7 +15,7 @@ class TestDataloader(unittest.TestCase):
     def setUp(self):
         
         params = yaml.safe_load(open('params.yaml'))
-        self.AUGMENTATION_PARAMS = params['train_simclr']["AUGMENTATION_PARAMS"]
+        self.AUGMENTATION_PARAMS = params['train_clr']["AUGMENTATION_PARAMS"]
         
         self.N_GALAXIES=20
         self.BATCH_SIZE=128

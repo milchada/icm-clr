@@ -7,6 +7,8 @@ from torch.utils.data import Dataset, DataLoader
 from astropy.io import fits
 import yaml
 
+data_params = yaml.safe_load(open('params.yaml'))['data']
+
 from scripts.data.augmentations import DefaultAugmentation
 
 class SimClrDataset(Dataset):
@@ -105,25 +107,24 @@ class FitsDataset(SimClrDataset):
 
         with fits.open(self.image_paths[idx]) as hdul:
             
-            G = hdul['G'].data
-            R = hdul['R'].data
-            I = hdul['I'].data
-        
-        I, R, G = self._rgbstretch(I,R,G)
+            filter_list = []
+            
+            for f in data_params['FILTERS']:
+                filter_list.append(hdul[f].data)
+            
+        stretched_filter_list = self._stretch(filter_list)
 
-        G = np.array(G*(2**8 - 1), dtype=np.uint8)
-        R = np.array(R*(2**8 - 1), dtype=np.uint8)
-        I = np.array(I*(2**8 - 1), dtype=np.uint8)
+        stretched_filter_list = [np.array(f*(2**8 - 1), dtype=np.uint8) for f in stretched_filter_list]
         
-        return np.concatenate((I[...,np.newaxis],R[...,np.newaxis],G[...,np.newaxis]), axis=2)
+        return np.concatenate(list(map(lambda x: x[...,np.newaxis], stretched_filter_list)), axis=2)
     
-    def _rgbstretch(self, r, g, b):
-        """Stretch rgb channels"""
+    def _stretch(self, channels):
+        """Stretch channels"""
         raise NotImplementedError("This function is supposed to be overwritten!")
 
-class HSCDataset(FitsDataset):
+class ConnorStretchDataset(FitsDataset):
     
-    def _stretch(self, x):
+    def _stretch_single_channel(self, x):
         u_min = -0.05
         u_max = 2. / 3.
         u_a = np.exp(10.)
@@ -131,14 +132,12 @@ class HSCDataset(FitsDataset):
         x = (x - u_min) / (u_max - u_min)
         return x
     
-    def _rgbstretch(self, r, g, b, ref_mag=26):
-        r *= 10**(0.4*(22.5-ref_mag))
-        g *= 10**(0.4*(22.5-ref_mag))
-        b *= 10**(0.4*(22.5-ref_mag))
-        return self._stretch(r), self._stretch(g), self._stretch(b)
+    def _stretch(self, channels, ref_mag=26):
+        channels = [c*10**(0.4*(22.5-ref_mag)) for c in channels]
+        return list(map(lambda x: self._stretch_single_channel(x), channels))
 
         
-class TNGDataset(FitsDataset):
+class SingleStretchDataset(FitsDataset):
     '''Dataset for the HSC Realistic TNG Images'''
     
     def _get_central_crop(self, img, num_pixel=20):
@@ -149,7 +148,7 @@ class TNGDataset(FitsDataset):
     
         return img[lower:upper, lower:upper]
     
-    def _stretch(self, x):
+    def _stretch_single_channel(self, x):
         """Perform a log stretch on x and normalize"""
         x[x<=0] = np.nan
         x = np.log10(x)
@@ -166,54 +165,28 @@ class TNGDataset(FitsDataset):
         
         return x
     
-    def _rgbstretch(self, r, g, b):
-        """Stretch rgb together to preserve the color"""
+    def _stretch(self, channels):
+        return list(map(lambda x: self._stretch_single_channel(x), channels))
+    
         
-        r = np.clip(r, 0, None)
-        g = np.clip(g, 0, None)
-        b = np.clip(b, 0, None)
+class MultiStretchDataset(SingleStretchDataset):
+
+    def _stretch(self, channels):
+        """Stretch all channels together to preserve the color"""
         
-        i = (r + g + b)/3
+        channels = [np.clip(c, 0, None) for c in channels]
         
-        factor = self._stretch(i)/i
+        i = (np.sum(channels, axis=0))/len(channels)
+        
+        factor = self._stretch_single_channel(i)/i
         factor = np.nan_to_num(factor, posinf=0.0)
         
-        r *= factor
-        g *= factor
-        b *= factor
+        channels = [c*factor for c in channels]
         
-        max_value = np.max([r,g,b], axis=0)
+        max_value = np.max(channels, axis=0)
         max_mask = max_value > 1
         
-        r[max_mask] /= max_value[max_mask]
-        g[max_mask] /= max_value[max_mask]
-        b[max_mask] /= max_value[max_mask]
+        for c in channels:
+            c[max_mask] /= max_value[max_mask]
         
-        return r, g, b
-    
-class TNGIdealDataset(TNGDataset):
-    '''Dataset for the ideal TNG Images'''
-    
-    def _stretch(self, x):
-        """Perform a linear stretch""" 
-        x = np.clip(x, -32, None)
-        
-        a_min = np.min(x)
-        a_max = np.max(x)
-        
-        x -= a_min
-        x /= (a_max - a_min)
-        
-        return x
-    
-    def _rgbstretch(self, r, g, b):
-    
-        r = -r
-        g = -g
-        b = -b
-        
-        r = self._stretch(r)
-        g = self._stretch(g)
-        b = self._stretch(b)
-        
-        return r, g, b
+        return channels

@@ -98,8 +98,8 @@ data:
       - None
       - None
     #Choose the Dataset Object which determines how the images are loaded and streched
-    DATASET: 'HSCDataset'
-    #Target filters to use (NOT IMPLEMENTED YET!)
+    DATASET: 'SingleStretchDataset'
+    #Target filters to use
     FILTERS: ['I','R','G'] 
     #Target edge size of the images
     IMAGE_SIZE: 128

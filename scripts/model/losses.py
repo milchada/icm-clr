@@ -122,7 +122,7 @@ def backward_mmd(x0, x1):
 def mmd(x0, x1):
     return MMD_matrix(x0, x1, mmd_kernels)
 
-def gaussian_nll_loss(x0, x1, var)
+def gaussian_nll_loss(x0, x1, var):
     loss = torch.nn.GaussianNLLLoss(full=False, eps=1e-06, reduction='mean')
     return loss(x0, x1, var)
 

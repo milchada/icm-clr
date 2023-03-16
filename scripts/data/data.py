@@ -202,7 +202,6 @@ class Data():
     @property
     def IMAGE_SIZE(self):
         return self.__image_size
-    
 
     #Pytorch data loader for batch-wise multithreaded loading of images
     #-----------------------------------------------------

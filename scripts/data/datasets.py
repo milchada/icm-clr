@@ -80,7 +80,7 @@ class SimClrDataset(Dataset):
         '''Return an item with index idx'''
 
         try:
-            image = self._get_single_image(idx)
+            image = self._get_single_image_index(idx)
         except OSError:
             print("Problems reading " + str(self.image_paths[idx]))
             return
@@ -93,19 +93,23 @@ class SimClrDataset(Dataset):
             label = torch.tensor(self.df_label.iloc[idx, :].to_numpy())
             return samples, label
         
-    def _get_single_image(self, idx):
+    def _get_single_image_index(self, idx):
         '''Return one single image with the id given as idx'''
         raise NotImplementedError("This function is supposed to be overwritten!")
         
 class FitsDataset(SimClrDataset):
     """Dataset to load and transform .fits images with multiple transformed views in a multithreaded and batched way"""
     
-    def _get_single_image(self, idx):
+    def _get_single_image_index(self, idx):
         
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        with fits.open(self.image_paths[idx]) as hdul:
+        self._get_single_image_path(self.image_paths[idx])
+            
+    def _get_single_image_path(self, path):
+            
+        with fits.open(path) as hdul:
             
             filter_list = []
             

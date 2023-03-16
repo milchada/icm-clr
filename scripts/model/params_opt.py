@@ -182,20 +182,18 @@ class ParameterOptimizationCLRv3(ParameterOptimization):
                                'NOISE_STD': [0.01, trail.suggest_float('NOISE_STD', 0.02, 0.1)]}
 
         params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
-                        'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
-                        'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
                         'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256,512]),
                         'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
                         'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256,512]),
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
-                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 2048),
+                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 4096),
                         'nce_temperature': trail.suggest_float('nce_temperature', 0.01, 0.1),
                         'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
                         'LR_PATIENCE': trail.suggest_int('LR_PATIENCE', 3, 20),
                         'LR_DECAY': trail.suggest_float('LR_DECAY', 0.2, 0.8),
                         'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.00001, 0.001, log=True),
-                        'PATIENCE': trail.suggest_int('PATIENCE', 5, 20),
+                        'PATIENCE': 30,
                         'AUGMENTATION_PARAMS': AUGMENTATION_PARAMS}
 
         if params_trail['LR_PATIENCE'] > params_trail['PATIENCE']:

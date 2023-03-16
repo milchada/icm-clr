@@ -105,7 +105,7 @@ class FitsDataset(SimClrDataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        self._get_single_image_path(self.image_paths[idx])
+        return self._get_single_image_path(self.image_paths[idx])
             
     def _get_single_image_path(self, path):
             

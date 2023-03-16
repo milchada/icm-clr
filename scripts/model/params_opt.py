@@ -12,7 +12,7 @@ import torch
 import gc
 
 
-from scripts.model.train_simclr import train_clr
+from scripts.model.train_clr import train_clr
 #from scripts.model.train_cinn import train_cinn
 from scripts.util.make_dir import make_dir
 import config as c

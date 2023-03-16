@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "production", 'with_petro_matching']
+    tags: ["nnclr", "optuna", 'with_petro_matching']
 
 #Parameters for the loading of the data from various sources
 extract:

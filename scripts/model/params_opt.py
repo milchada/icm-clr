@@ -103,11 +103,11 @@ class ParameterOptimizationNNCLR(ParameterOptimization):
                         'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
                         'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
-                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256]),
+                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256,512]),
                         'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
-                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256]),
+                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256,512]),
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
-                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 1028)}
+                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 2048)}
 
         try:
 
@@ -140,7 +140,58 @@ class ParameterOptimizationCLR(ParameterOptimization):
                                'GAUSSIAN_BLUR_SIGMA': [0.001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.01, 10)],
                                'NOISE_STD': [0.01, trail.suggest_float('NOISE_STD', 0.02, 0.1)]}
 
-        params_trail = {'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
+        params_trail = {'nce_temperature': trail.suggest_float('nce_temperature', 0.01, 0.1),
+                        'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
+                        'LR_PATIENCE': trail.suggest_int('LR_PATIENCE', 3, 20),
+                        'LR_DECAY': trail.suggest_float('LR_DECAY', 0.2, 0.8),
+                        'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.00001, 0.001, log=True),
+                        'PATIENCE': trail.suggest_int('PATIENCE', 5, 20),
+                        'AUGMENTATION_PARAMS': AUGMENTATION_PARAMS}
+
+        if params_trail['LR_PATIENCE'] > params_trail['PATIENCE']:
+            raise optuna.TrialPruned()
+
+        try:
+
+            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            return loss
+
+        except torch.cuda.OutOfMemoryError:
+
+            gc.collect()
+            torch.cuda.empty_cache()
+            raise optuna.TrialPruned()
+            
+class ParameterOptimizationCLRv3(ParameterOptimization):
+    
+    def __init__(self):
+        self.study_name = 'nnclr_v3'
+        self.plot_path = c.plots_path + "optuna/nnclr_v3/"
+        self.direction = ['minimize']
+    
+    def _objective(self, trail):
+
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        AUGMENTATION_PARAMS = {'ROTATION': 15,
+                               'TRANSLATE': trail.suggest_float('TRANSLATE', 0.05, 0.5),
+                               'SCALE': trail.suggest_float('SCALE', 1.2, 2.5),
+                               'FLIP': True,
+                               'GAUSSIAN_BLUR_SIGMA': [0.001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.01, 10)],
+                               'NOISE_STD': [0.01, trail.suggest_float('NOISE_STD', 0.02, 0.1)]}
+
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
+                        'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
+                        'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
+                        'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
+                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256,512]),
+                        'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
+                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256,512]),
+                        'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
+                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 2048),
+                        'nce_temperature': trail.suggest_float('nce_temperature', 0.01, 0.1),
+                        'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
                         'LR_PATIENCE': trail.suggest_int('LR_PATIENCE', 3, 20),
                         'LR_DECAY': trail.suggest_float('LR_DECAY', 0.2, 0.8),
                         'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.00001, 0.001, log=True),
@@ -163,5 +214,5 @@ class ParameterOptimizationCLR(ParameterOptimization):
 
 if __name__ == "__main__":
     
-    opt = ParameterOptimizationCLR()
+    opt = ParameterOptimizationCLRv3()
     opt.run()

@@ -153,7 +153,7 @@ class ParameterOptimizationCLR(ParameterOptimization):
 
         try:
 
-            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            loss = train_clr(params=params_trail, save_model=False, experiment_tracking=True)
             return loss
 
         except torch.cuda.OutOfMemoryError:
@@ -201,7 +201,7 @@ class ParameterOptimizationCLRv3(ParameterOptimization):
 
         try:
 
-            loss = train_simclr(params=params_trail, save_model=False, experiment_tracking=True)
+            loss = train_clr(params=params_trail, save_model=False, experiment_tracking=True)
             return loss
 
         except torch.cuda.OutOfMemoryError:

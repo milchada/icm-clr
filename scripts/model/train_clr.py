@@ -38,7 +38,7 @@ def accuracy(output, target, topk=(1,)):
 
 def images_2_device(x):
     x = torch.cat(x, dim=0)
-    return x.to(c.device)
+    return x #x.to(c.device)
 
 def loss_2_host(x):
     return x.cpu().detach().numpy()
@@ -66,12 +66,20 @@ def train_clr(params={},
         experiment_tracker = NeptuneExperimentTracking(params, tags=['clr'])
     else: 
         experiment_tracker = VoidExperimentTracking()
-    
+   
+    #PrepareDataPara
+    class DataParallelWrapper(torch.nn.DataParallel):
+        @property
+        def trainable_parameters(self):
+            return self.module.trainable_parameters
+
     #Load the model
     model = ResNetSimCLR(params) 
         
     model.to(c.device)
-    
+
+    model = DataParallelWrapper(module=model)
+
     #Init the optimizer
     optimizer = Optimizer(model, params)
     

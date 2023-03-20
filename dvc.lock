@@ -493,8 +493,8 @@ stages:
       md5: d1c4e86d37cb48fca285f3427a080556
       size: 4471
     - path: ./scripts/model/train_clr.py
-      md5: f5827ba88f881e034ea20ee09ce736fd
-      size: 8375
+      md5: 87ba2f6b249be283b1f9ac47ca954714
+      size: 8555
     - path: ./scripts/model/training.py
       md5: eb621168ddef668ca269c94c31138a69
       size: 6455
@@ -549,44 +549,44 @@ stages:
           BATCH_NORM_MLP: false
           RESNET_DEPTH: 16
           RESNET_WIDTH: 2
-          RESNET_DROPOUT: 0.25
+          RESNET_DROPOUT: 0.3
           RESNET_REPRESENTATION_DIM: 128
           RESNET_REPRESENTATION_DEPTH: 3
-          RESNET_PROJECTION_DIM: 256
-          RESNET_PROJECTION_DEPTH: 1
+          RESNET_PROJECTION_DIM: 64
+          RESNET_PROJECTION_DEPTH: 2
           RESNET_NUM_CHANNELS: 3
           RESNET_ROTATION_EQUIVARIANCE: 8
           RESNET_ROTATION_RESTRICTION: 0
           RESNET_REFLECTION_EQUIVARIANCE: true
           RESNET_INITIAL_STRIDE: 2
         train_clr:
-          LEARNING_RATE: 0.001
-          L2_DECAY: 4e-05
+          LEARNING_RATE: 0.00015
+          L2_DECAY: 6e-05
           BETA_1: 0.9
           BETA_2: 0.999
-          LR_PATIENCE: 4
-          LR_DECAY: 0.7
+          LR_PATIENCE: 16
+          LR_DECAY: 0.6
           BATCH_SIZE: 32
           NUM_EPOCHS: 200
           MAX_NUM_BATCHES_PER_EPOCH: 200
           MAX_RUNTIME_SECONDS: 82800
-          PATIENCE: 50
+          PATIENCE: 30
           DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
           CLR_TYPE: NNCLR
-          NNCLR_QUEUE_SIZE: 256
+          NNCLR_QUEUE_SIZE: 1024
           AUGMENTATION_PARAMS:
             ROTATION: 15
-            TRANSLATE: 0.15
-            SCALE: 1.2
+            TRANSLATE: 0.36
+            SCALE: 1.9
             FLIP: true
             GAUSSIAN_BLUR_SIGMA:
             - 0.001
-            - 5.0
+            - 6.5
             NOISE_STD:
             - 0.01
-            - 0.05
+            - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: 9c6ca910ed3ecaca9b3b5b17889a3c1c
-      size: 138536834
+      md5: d0ba6b7f65bc70bba197534fe630d233
+      size: 137717436

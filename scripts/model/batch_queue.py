@@ -43,11 +43,12 @@ class BatchQueue(object):
         assert len(img) == self.batch_size
         assert len(rep) == self.batch_size
         
-        self._img_batch_list.append(img)
+        self._img_batch_list.append(img.to(c.device))
+        
         self._img_batch_list.pop(1)
         
         rep = rep.detach()
-        self._rep_batch_list.append(rep)
+        self._rep_batch_list.append(rep.to(c.device))
         self._rep_batch_list.pop(1)
         
         self._calc_sample() 

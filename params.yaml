@@ -108,7 +108,7 @@ data:
 
 train_clr:
     #Learning Rate for the SIMCLR training
-    LEARNING_RATE: 0.001
+    LEARNING_RATE: 0.0001
     #Weight decay for the simclr training
     L2_DECAY: 0.00006
     #Betas for the ADAM optimizer
@@ -119,13 +119,13 @@ train_clr:
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.6
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 32
+    BATCH_SIZE: 24
     #Maximum number of training epochs
-    NUM_EPOCHS: 200
+    NUM_EPOCHS: 300
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
     MAX_NUM_BATCHES_PER_EPOCH: 200
     #Stop the training if a max runtime (in seconds) has been reached
-    MAX_RUNTIME_SECONDS: 82800
+    MAX_RUNTIME_SECONDS: 60000
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 30
     #Train CLR on training and domain set

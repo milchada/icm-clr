@@ -149,14 +149,14 @@ stages:
       size: 127820056
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: 9c6ca910ed3ecaca9b3b5b17889a3c1c
-      size: 138536834
+      md5: e01a0befa40f2c216d10ac24ce0ca972
+      size: 137715580
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 6e53a36acacafdf8948115f59277aa7e
+      md5: 7fe744b52eb0f919e0b2126ada18ae4d
       size: 8919168
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP
@@ -549,44 +549,44 @@ stages:
           BATCH_NORM_MLP: false
           RESNET_DEPTH: 16
           RESNET_WIDTH: 2
-          RESNET_DROPOUT: 0.25
+          RESNET_DROPOUT: 0.3
           RESNET_REPRESENTATION_DIM: 128
           RESNET_REPRESENTATION_DEPTH: 3
-          RESNET_PROJECTION_DIM: 256
-          RESNET_PROJECTION_DEPTH: 1
+          RESNET_PROJECTION_DIM: 64
+          RESNET_PROJECTION_DEPTH: 2
           RESNET_NUM_CHANNELS: 3
           RESNET_ROTATION_EQUIVARIANCE: 8
           RESNET_ROTATION_RESTRICTION: 0
           RESNET_REFLECTION_EQUIVARIANCE: true
           RESNET_INITIAL_STRIDE: 2
         train_clr:
-          LEARNING_RATE: 0.001
-          L2_DECAY: 4e-05
+          LEARNING_RATE: 0.0001
+          L2_DECAY: 6e-05
           BETA_1: 0.9
           BETA_2: 0.999
-          LR_PATIENCE: 4
-          LR_DECAY: 0.7
-          BATCH_SIZE: 32
-          NUM_EPOCHS: 200
+          LR_PATIENCE: 16
+          LR_DECAY: 0.6
+          BATCH_SIZE: 24
+          NUM_EPOCHS: 300
           MAX_NUM_BATCHES_PER_EPOCH: 200
-          MAX_RUNTIME_SECONDS: 82800
-          PATIENCE: 50
+          MAX_RUNTIME_SECONDS: 60000
+          PATIENCE: 30
           DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
           CLR_TYPE: NNCLR
-          NNCLR_QUEUE_SIZE: 256
+          NNCLR_QUEUE_SIZE: 1024
           AUGMENTATION_PARAMS:
             ROTATION: 15
-            TRANSLATE: 0.15
-            SCALE: 1.2
+            TRANSLATE: 0.36
+            SCALE: 1.9
             FLIP: true
             GAUSSIAN_BLUR_SIGMA:
             - 0.001
-            - 5.0
+            - 6.5
             NOISE_STD:
             - 0.01
-            - 0.05
+            - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: 9c6ca910ed3ecaca9b3b5b17889a3c1c
-      size: 138536834
+      md5: e01a0befa40f2c216d10ac24ce0ca972
+      size: 137715580

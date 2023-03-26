@@ -149,14 +149,14 @@ stages:
       size: 127820056
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: 9c6ca910ed3ecaca9b3b5b17889a3c1c
-      size: 138536834
+      md5: e01a0befa40f2c216d10ac24ce0ca972
+      size: 137715580
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 6e53a36acacafdf8948115f59277aa7e
+      md5: 7fe744b52eb0f919e0b2126ada18ae4d
       size: 8919168
   create_UMAP:
     cmd: python3 -m scripts.postprocessing.create_UMAP

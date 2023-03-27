@@ -53,12 +53,12 @@ class BatchQueue(object):
         self._calc_sample() 
     
     def nn_search(self, x):
-        dist = torch.norm(self._rep_sample - x, dim=1, p=1)
+        dist = torch.norm(self._rep_sample - x.to('cpu'), dim=1, p=1)
         knn = dist.topk(1, largest=False)
         return self._img_sample[knn.indices]
     
     def multi_nn_search(self, x):
-        return torch.cat([self.nn_search(x_i) for x_i in torch.unbind(x, dim=0)], dim=0)
+        return torch.cat([self.nn_search(x_i) for x_i in torch.unbind(x.to('cpu'), dim=0)], dim=0)
     
 #Short test
 if __name__ == "__main__":

@@ -10,10 +10,10 @@ def init_batch_queue(model, dataloader, batch_queue_size):
         img = torch.cat(batch, dim=0)[0::2]
         
         with torch.no_grad():
-            rep = model(img.to(c.device)).to('cpu')
+            rep = model(img.to(c.device))
         
-        img_batch_list.append(img)
-        rep_batch_list.append(rep)
+        img_batch_list.append(img.to('cpu'))
+        rep_batch_list.append(rep.to('cpu'))
         
         if len(img_batch_list) == batch_queue_size:
             break

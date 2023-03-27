@@ -119,7 +119,7 @@ train_clr:
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.6
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 32
+    BATCH_SIZE: 50
     #Maximum number of training epochs
     NUM_EPOCHS: 200
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch

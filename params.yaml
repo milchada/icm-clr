@@ -15,7 +15,7 @@ extract:
       - "HSC_TNG100"
       - "HSC"
     SNAPSHOTS:
-      - [72, 78, 84, 91]
+      - [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91]
       - [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91]
       - None
     FIELDS: 
@@ -36,8 +36,8 @@ extract:
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets?
     LOAD:
-      - False
       - True
+      - False
       - False
     #Only use fractions of the overall set - not 
     FRACTION:
@@ -54,7 +54,7 @@ extract:
     #Set this to False if there are any problems during the loading
     USE_CACHE: True
     #Number of workers to use
-    NUM_WORKERS: 4
+    NUM_WORKERS: 8
     #Chunk size of the image loading
     SIZE_CHUNKS: 2000
 

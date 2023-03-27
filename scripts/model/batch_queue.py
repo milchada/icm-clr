@@ -7,10 +7,10 @@ def init_batch_queue(model, dataloader, batch_queue_size):
     
     for batch in dataloader:
         
-        img = torch.cat(batch, dim=0)[0::2].to(c.device)
+        img = torch.cat(batch, dim=0)[0::2]
         
         with torch.no_grad():
-            rep = model(img)
+            rep = model(img.to(c.device)).to('cpu')
         
         img_batch_list.append(img)
         rep_batch_list.append(rep)
@@ -43,12 +43,11 @@ class BatchQueue(object):
         assert len(img) == self.batch_size
         assert len(rep) == self.batch_size
         
-        self._img_batch_list.append(img.to(c.device))
-        
+        self._img_batch_list.append(img.to('cpu'))
         self._img_batch_list.pop(1)
         
         rep = rep.detach()
-        self._rep_batch_list.append(rep.to(c.device))
+        self._rep_batch_list.append(rep.to('cpu'))
         self._rep_batch_list.pop(1)
         
         self._calc_sample() 

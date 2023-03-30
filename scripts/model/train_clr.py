@@ -80,7 +80,8 @@ def train_clr(params={},
         
     model.to(c.device)
 
-    model = DataParallelWrapper(module=model)
+    if params["PARALLEL_TRAINING"]:
+        model = DataParallelWrapper(module=model)
     logger.info('Model loaded.')
 
     #Init the optimizer

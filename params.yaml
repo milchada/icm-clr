@@ -66,25 +66,27 @@ prepare:
     SETS:
       - ["HSC", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG100", [0.8, 0.0, 0.1, 0.1]]
-      #- ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
+      - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
     #Specify fields to match between the sets and the uncertainties they are matched with
     MATCHING_FIELDS:
       - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      #- ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     MATCHING_UNCERTAINTIES:
     - [0.05, 0.1, 5]
     #The source set is the set drawing samples from to match them to the target set.
     #I.e. we try to find a example in source for each example in the target. 
     MATCHING_SOURCE_SETS: ['HSC']
-    MATCHING_TARGET_SETS: ['HSC_TNG100']
+    MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
     OBSERVABLES: 
       - None
       - None
+      - None
     UNOBSERVABLES:
       - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     LABELS: ['z', 'i_band_mag', 'petro_90_radius']
     #Split According to root descendant
@@ -104,7 +106,7 @@ data:
     #Target edge size of the images
     IMAGE_SIZE: 128
     #Number of data loading workers
-    NUM_WORKERS: 18
+    NUM_WORKERS: 16
 
 train_clr:
     #Learning Rate for the SIMCLR training
@@ -119,7 +121,7 @@ train_clr:
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.6
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 64
+    BATCH_SIZE: 32
     #Maximum number of training epochs
     NUM_EPOCHS: 500
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
@@ -128,6 +130,11 @@ train_clr:
     MAX_RUNTIME_SECONDS: 82800
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 30
+    #Train model on multiple devices by splitting and distributing batches 
+    #(One can keep this true as torch.nn.DataParallel is automatically going to serial if only one gpu is present)
+    #Note also that the use of torch.nn.DataParallel is not recommended by Pytorch
+    #Updating this might bring a better performance
+    PARALLEL_TRAINING: True
     #Train CLR on training and domain set
     DOMAIN_TRAINING: True
     #Domain Adaption during the clr learning
@@ -135,7 +142,7 @@ train_clr:
     #Contrastive Learning Type (SIMCLR or NNCLR):
     CLR_TYPE: "NNCLR"
     #Size of Queue (i.e. number of batches) in case that NNCLR is used:
-    NNCLR_QUEUE_SIZE: 256
+    NNCLR_QUEUE_SIZE: 512
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 15 #In degree

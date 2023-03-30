@@ -5,6 +5,7 @@ import config as c
 import os
 from tqdm import tqdm
 from time import time
+from scripts.util.logging import logger
 
 class Trainer(object):
     def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, max_runtime_seconds=None, use_checkpoint=False):
@@ -187,9 +188,10 @@ def run_training(trainer, training_lossfunction, training_data, validation_lossf
     
     assert isinstance(trainer, Trainer)
 
+    logger.info('Start training...')
     for epoch_counter in tqdm(trainer):
-            
+        
         trainer.perform_training_step(training_lossfunction, training_data)
-        val_loss, _ = trainer.perform_validation_step(validation_lossfunction, validation_data)        
+        val_loss, _ = trainer.perform_validation_step(validation_lossfunction, validation_data)  
             
     return val_loss

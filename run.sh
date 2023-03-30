@@ -10,7 +10,7 @@
 #SBATCH --partition=p.gpu
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:a100:1
-#SBATCH --cpus-per-task=18
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=125000
 #
 #SBATCH --mail-type=none

@@ -6,6 +6,7 @@ from scripts.model.optimizer import Optimizer
 from scripts.model.training import Trainer, run_training
 from scripts.model.experiment_tracking import NeptuneExperimentTracking, VoidExperimentTracking
 from scripts.model.batch_queue import init_batch_queue
+from scripts.util.logging import logger
 
 import config as c
 
@@ -38,7 +39,7 @@ def accuracy(output, target, topk=(1,)):
 
 def images_2_device(x):
     x = torch.cat(x, dim=0)
-    return x.to(c.device)
+    return x #x.to(c.device)
 
 def loss_2_host(x):
     return x.cpu().detach().numpy()
@@ -66,12 +67,23 @@ def train_clr(params={},
         experiment_tracker = NeptuneExperimentTracking(params, tags=['clr'])
     else: 
         experiment_tracker = VoidExperimentTracking()
-    
+   
+    #PrepareDataPara
+    class DataParallelWrapper(torch.nn.DataParallel):
+        @property
+        def trainable_parameters(self):
+            return self.module.trainable_parameters
+
     #Load the model
+    logger.info('Load model...')
     model = ResNetSimCLR(params) 
         
     model.to(c.device)
-    
+
+    if params["PARALLEL_TRAINING"]:
+        model = DataParallelWrapper(module=model)
+    logger.info('Model loaded.')
+
     #Init the optimizer
     optimizer = Optimizer(model, params)
     
@@ -116,6 +128,7 @@ def train_clr(params={},
         domain_loss = lambda img, rep, model: loss_simclr(rep, N_VIEWS, params["BATCH_SIZE"])
     
     elif params['CLR_TYPE'] == 'NNCLR':
+        logger.info('Prepare NNCLR queue...')
         train_batch_queue = init_batch_queue(model, train_loader, params["NNCLR_QUEUE_SIZE"])
         val_batch_queue = init_batch_queue(model, val_loader, params["NNCLR_QUEUE_SIZE"])
         
@@ -125,6 +138,8 @@ def train_clr(params={},
         if params['DOMAIN_ADAPTION']:
             domain_batch_queue = init_batch_queue(model, domain_loader, params["NNCLR_QUEUE_SIZE"])
             domain_loss = lambda img, rep, model: loss_nnclr(img, rep, model, N_VIEWS, domain_batch_queue)
+            
+        logger.info('NNCLR queue prepared.')
             
     else:
         raise ValueError("Invalid CLR_TYPE given!")

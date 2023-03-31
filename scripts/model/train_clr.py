@@ -39,7 +39,7 @@ def accuracy(output, target, topk=(1,)):
 
 def images_2_device(x):
     x = torch.cat(x, dim=0)
-    return x #x.to(c.device)
+    return x.to(c.device)
 
 def loss_2_host(x):
     return x.cpu().detach().numpy()

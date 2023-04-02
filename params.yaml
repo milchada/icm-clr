@@ -131,10 +131,10 @@ train_clr:
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 30
     #Train model on multiple devices by splitting and distributing batches 
-    #(One can keep this true as torch.nn.DataParallel is automatically going to serial if only one gpu is present)
+    #If set to True the device in config.py should be set to the cpu ... torch will take care of the correct assignment
     #Note also that the use of torch.nn.DataParallel is not recommended by Pytorch
     #Updating this might bring a better performance
-    PARALLEL_TRAINING: True
+    PARALLEL_TRAINING: False
     #Train CLR on training and domain set
     DOMAIN_TRAINING: True
     #Domain Adaption during the clr learning

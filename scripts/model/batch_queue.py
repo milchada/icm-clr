@@ -58,7 +58,7 @@ class BatchQueue(object):
         return self._img_sample[knn.indices]
     
     def multi_nn_search(self, x):
-        return torch.cat([self.nn_search(x_i) for x_i in torch.unbind(x.to('cpu'), dim=0)], dim=0)
+        return torch.cat([self.nn_search(x_i) for x_i in torch.unbind(x.to('cpu'), dim=0)], dim=0).to(c.device)
     
 #Short test
 if __name__ == "__main__":

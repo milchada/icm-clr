@@ -3,10 +3,9 @@ stages:
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
-    - path: ./scripts/preprocessing/
-      md5: ecd67954b6831761574b89b1cf094754.dir
-      size: 49139767
-      nfiles: 23
+    - path: ./scripts/preprocessing/prepare.py
+      md5: 85d94ad2cbe1f8cdb2cd4c9d9045bc09
+      size: 21172
     params:
       params.yaml:
         prepare:
@@ -71,7 +70,7 @@ stages:
       size: 133777618
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: 18a4ec1512bcb33d092efc47bf350cfc.dir
+      md5: 30bb3c49a5cdcb7f7b386cfa6e2d5c30.dir
       size: 29564209
       nfiles: 10
   train_clr:
@@ -91,8 +90,8 @@ stages:
       md5: d1c4e86d37cb48fca285f3427a080556
       size: 4471
     - path: ./scripts/model/train_clr.py
-      md5: 6df656a5b2da48a51b3f0bde2d29bcf1
-      size: 8856
+      md5: a954a6eae77c52fb7b44ee76990a14e0
+      size: 8853
     - path: ./scripts/model/training.py
       md5: bc6fe2cf022141dbb3e161cb1379a511
       size: 6522
@@ -164,12 +163,12 @@ stages:
           BETA_2: 0.999
           LR_PATIENCE: 16
           LR_DECAY: 0.6
-          BATCH_SIZE: 24
+          BATCH_SIZE: 64
           NUM_EPOCHS: 500
           MAX_NUM_BATCHES_PER_EPOCH: 200
-          MAX_RUNTIME_SECONDS: 60000
+          MAX_RUNTIME_SECONDS: 43200
           PATIENCE: 30
-          PARALLEL_TRAINING: true
+          PARALLEL_TRAINING: false
           DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
           CLR_TYPE: NNCLR
@@ -187,5 +186,22 @@ stages:
             - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: 6e484e54d00f08c8589a27f32fe1794f
-      size: 137717436
+      md5: c8352f37f5bb25ef948d55388d58ff44
+      size: 137715580
+  write_representation:
+    cmd: python3 -m scripts.postprocessing.write_representation
+    deps:
+    - path: ./dataset/
+      md5: 4a1a464261de745e87b8cd1f3b6b084b.dir
+      size: 133777618
+      nfiles: 14
+    - path: ./model/resnet.pt
+      md5: c8352f37f5bb25ef948d55388d58ff44
+      size: 137715580
+    - path: ./scripts/postprocessing/write_representation.py
+      md5: 9920287255e7a4ce6bb6b3c2f67bbdba
+      size: 901
+    outs:
+    - path: ./postprocessing/representation.npy
+      md5: f645c88557e57daa8d7dfd7e34b7c750
+      size: 9334400

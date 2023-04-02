@@ -1,28 +1,28 @@
 # -*- coding: utf-8 -*-
 stages:
+  
+  #Preprocessing
+  #---------------------------------------------------------
 
-#  extract:
-#    cmd: python3 -m scripts.extract.extract
-#    params:
-#    - extract
-#    deps:
-#    - ./scripts/preprocessing/
-#    outs:
-#    - ./dataset_raw/:
-#        cache: false
-#    frozen: true
-    
-    
   prepare:
     cmd: python3 -m scripts.preprocessing.prepare
     params:
     - prepare
     deps:
     #- ./dataset_raw/
-    - ./scripts/preprocessing/
+    - ./scripts/preprocessing/prepare.py
     outs:
     - ./dataset/
     - ./plots/preprocessing/
+    
+  visualize_matching:
+    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
+    deps:
+    - ./scripts/preprocessing/visualize_matching.ipynb
+    - ./dataset/
+    
+  #Training
+  #---------------------------------------------------------
 
   train_clr:
     cmd: python3 -m scripts.model.train_clr
@@ -40,19 +40,6 @@ stages:
     - ./scripts/model/train_clr.py
     outs:
     - ./model/resnet.pt
-
-#  train_cinn:
-#    cmd: python3 -m scripts.model.train_cinn
-#    params:
-#    - data
-#    - train_cinn
-#    deps:
-#    - ./dataset/
-#    - ./dataset_raw/
-#    - ./scripts/model/
-#    outs:
-#    - ./model/cinn_0.pt
-#    frozen: true
 
   #Resnet Analysis
   #---------------------------------------------------------
@@ -77,73 +64,3 @@ stages:
     deps:
     - ./scripts/postprocessing/compare_distributions.ipynb
     - ./postprocessing/representation.npy
-
-  #Postprocessing
-  #---------------------------------------------------------
-#  sample_posterior:
-#    cmd: python3 -m scripts.postprocessing.sample_posterior
-#    params:
-#    - sample_posterior
-#    deps:
-#    - ./dataset/
-#    - ./model/
-#    - ./scripts/postprocessing/sample_posterior.py
-#    outs:
-#    - ./postprocessing/posterior.npy:
-#        cache: false
-#    frozen: true
-
-#  test_z:
-#    cmd: python3 -m scripts.postprocessing.test_z
-#    deps:
-#    - ./scripts/postprocessing/test_z.py
-#    - ./model/
-#    - ./dataset/
-#    outs:
-#    - ./plots/test_z/
-#    - ./postprocessing/z_norm.npy
-#    metrics:
-#    - ./metrics/test_z.json
-#    frozen: true
-
-#  peak_detection:
-#    cmd: python3 -m scripts.postprocessing.peak_detection
-#    params:
-#    - peak_detection
-#    deps:
-#    - ./postprocessing/posterior.npy
-#    - ./scripts/postprocessing/peak_detection.py
-#    outs:
-#    - ./postprocessing/map.npy
-#    - ./postprocessing/peak_number.npy
-#    - ./postprocessing/peak_position.npy
-#    - ./postprocessing/peak_prominence.npy
-#    metrics:
-#    - ./metrics/peak_detection.json
-#    frozen: true
-
-  #Plots
-  #---------------------------------------------------------
-#  plot_posterior:
-#    cmd: python3 -m scripts.plot.plot_posterior
-#    deps:
-#    - ./scripts/plot/plot_posterior.py
-#    - ./model/
-#    - ./dataset/
-#    outs:
-#    - ./plots/posterior_example.pdf
-#    frozen: true
-
-#  plot_map:
-#    cmd: python3 -m scripts.plot.plot_map
-#    deps:
-#    - ./scripts/plot/plot_map.py
-#    - ./postprocessing/peak_number.npy
-#    - ./postprocessing/peak_position.npy
-#    - ./postprocessing/map.npy
-#    - ./dataset/
-#    outs:
-#    - ./plots/map/
-#    metrics:
-#    - ./metrics/plot_map.json
-#    frozen: true

@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "production", 'with_petro_matching', 'distributed']
+    tags: ["nnclr", "production", 'with_petro_matching', 'TNG50']
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -121,19 +121,20 @@ train_clr:
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.6
     #Size of batches used for the training and evaluation
-    BATCH_SIZE: 24
+    BATCH_SIZE: 64
     #Maximum number of training epochs
     NUM_EPOCHS: 500
     #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
     MAX_NUM_BATCHES_PER_EPOCH: 200
     #Stop the training if a max runtime (in seconds) has been reached
-    MAX_RUNTIME_SECONDS: 60000
+    MAX_RUNTIME_SECONDS: 43200
     #Stop the training after validation loss has not improved for PATIENCE epochs
     PATIENCE: 30
     #Train model on multiple devices by splitting and distributing batches 
     #If set to True the device in config.py should be set to the cpu ... torch will take care of the correct assignment
     #Note also that the use of torch.nn.DataParallel is not recommended by Pytorch
     #Updating this might bring a better performance
+    #Furthermore there seems to be a problem when loading the parallelized model later on
     PARALLEL_TRAINING: False
     #Train CLR on training and domain set
     DOMAIN_TRAINING: True

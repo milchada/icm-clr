@@ -28,6 +28,12 @@ class BatchQueue(object):
         self._img_batch_list = img_batch_list
         self._rep_batch_list = rep_batch_list
         self._calc_sample()
+        
+        NUM_CORES = 16
+        self._pool = multiprocessing.Pool(NUM_CORES)
+        
+    def __del__(self):
+        self._pool.close()
     
     def _calc_sample(self):
         self._img_sample = torch.cat(self._img_batch_list, dim=0)
@@ -59,10 +65,7 @@ class BatchQueue(object):
         return self._img_sample[knn.indices]
     
     def multi_nn_search(self, x):
-        #Use fixed 16 workers 
-        with Pool(16) as p:
-            nn_search_results = p.map(self.nn_search, torch.unbind(x.to('cpu'), dim=0))
-        
+        nn_search_results = self._pool.map(self.nn_search, torch.unbind(x.to('cpu'), dim=0))    
         return torch.cat(nn_search_results, dim=0).to(c.device)
     
 #Short test

@@ -65,7 +65,7 @@ class BatchQueue(object):
         knn = dist.topk(1, largest=False)
         return img_sample[knn.indices]
     
-    def multi_nn_search(self, x):
+    def multi_nn_search(self, x, NUM_CORES = 16):
         f = partial(self._nn_search, self._rep_sample, self._img_sample)
         with Pool(NUM_CORES) as p:
             nn_search_results = p.map(f, torch.unbind(x.to('cpu'), dim=0))    

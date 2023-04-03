@@ -67,7 +67,7 @@ class BatchQueue(object):
     
     def multi_nn_search(self, x):
         f = partial(self._nn_search, self._rep_sample, self._img_sample)
-        with Pool(NUM_CORES) a p:
+        with Pool(NUM_CORES) as p:
             nn_search_results = p.map(f, torch.unbind(x.to('cpu'), dim=0))    
         return torch.cat(nn_search_results, dim=0).to(c.device)
     

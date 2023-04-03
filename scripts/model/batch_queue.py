@@ -1,7 +1,6 @@
 import torch
 import config as c
 from multiprocessing import Pool
-from functools import partial
 
 def init_batch_queue(model, dataloader, batch_queue_size):
     img_batch_list = []
@@ -60,14 +59,13 @@ class BatchQueue(object):
         
         self._calc_sample() 
     
-    def _nn_search(self, rep_sample, x):
-        dist = torch.norm(rep_sample - x.to('cpu'), dim=1, p=1)
+    def nn_search(self, x):
+        dist = torch.norm(self._rep_sample - x.to('cpu'), dim=1, p=1)
         knn = dist.topk(1, largest=False)
         return self._img_sample[knn.indices]
     
     def multi_nn_search(self, x):
-        f = partial(self._nn_search, self._rep_sample)
-        nn_search_results = self._pool.map(f, torch.unbind(x.to('cpu'), dim=0))    
+        nn_search_results = self._pool.map(self.nn_search, torch.unbind(x.to('cpu'), dim=0))    
         return torch.cat(nn_search_results, dim=0).to(c.device)
     
 #Short test

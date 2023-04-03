@@ -30,7 +30,7 @@ class BatchQueue(object):
         self._calc_sample()
         
         NUM_CORES = 16
-        self._pool = multiprocessing.Pool(NUM_CORES)
+        self._pool = Pool(NUM_CORES)
         
     def __del__(self):
         self._pool.close()

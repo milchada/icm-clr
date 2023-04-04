@@ -26,6 +26,8 @@ optuna_storage = metrics_path + 'optuna_journal.log'
 
 #Device to use
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#Device for the nnclr search
+device_nn_search = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #Label dict (code friendly -> human friendly)
 label_dict = {"fraction_disk_stars": "Fraction of Disk Stars [D/T]",

@@ -90,13 +90,13 @@ class BatchQueue(object):
         return torch.stack(img_out).to(c.device)
     
     def multi_nn_search(self, x, method='torch'):
-    '''
-    
-    Get the images which are closest in rep space to x (batch of reps)
-    
-    Numba seems to slower than torch
-    
-    '''
+        '''
+
+        Get the images which are closest in rep space to x (batch of reps)
+
+        Numba seems to slower than torch
+
+        '''
     
         x = x.to(c.device_nn_search)
         

@@ -4,8 +4,8 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/prepare.py
-      md5: 85d94ad2cbe1f8cdb2cd4c9d9045bc09
-      size: 21172
+      md5: 1b59bff783e37dafd132321dfb5a50a4
+      size: 21341
     params:
       params.yaml:
         prepare:
@@ -37,7 +37,7 @@ stages:
             - i_band_mag_dust_apparent
             - petro_90_light
           MATCHING_UNCERTAINTIES:
-          - - 0.05
+          - - 0.07
             - 0.1
             - 5
           MATCHING_SOURCE_SETS:
@@ -66,19 +66,19 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 4a1a464261de745e87b8cd1f3b6b084b.dir
-      size: 133777618
+      md5: 56dd072b3d12f68c69ebd4cf7d7ca6ac.dir
+      size: 140483535
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: 30bb3c49a5cdcb7f7b386cfa6e2d5c30.dir
-      size: 29564209
+      md5: 46723755e4f038389514c49150e3efb4.dir
+      size: 33410093
       nfiles: 10
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     deps:
     - path: ./dataset/
-      md5: 4a1a464261de745e87b8cd1f3b6b084b.dir
-      size: 133777618
+      md5: 56dd072b3d12f68c69ebd4cf7d7ca6ac.dir
+      size: 140483535
       nfiles: 14
     - path: ./scripts/model/losses.py
       md5: 36be0f287435a461abbcbcddd7226b95
@@ -163,11 +163,11 @@ stages:
           BETA_2: 0.999
           LR_PATIENCE: 16
           LR_DECAY: 0.6
-          BATCH_SIZE: 64
+          BATCH_SIZE: 32
           NUM_EPOCHS: 500
           MAX_NUM_BATCHES_PER_EPOCH: 200
           MAX_RUNTIME_SECONDS: 43200
-          PATIENCE: 30
+          PATIENCE: 5
           PARALLEL_TRAINING: false
           DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
@@ -186,22 +186,22 @@ stages:
             - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: c8352f37f5bb25ef948d55388d58ff44
+      md5: 034122231feb6882cd2724308644e212
       size: 137715580
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: 4a1a464261de745e87b8cd1f3b6b084b.dir
-      size: 133777618
+      md5: 56dd072b3d12f68c69ebd4cf7d7ca6ac.dir
+      size: 140483535
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: c8352f37f5bb25ef948d55388d58ff44
+      md5: 034122231feb6882cd2724308644e212
       size: 137715580
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: f645c88557e57daa8d7dfd7e34b7c750
-      size: 9334400
+      md5: 1cb32703fe54a4bdb51f1ea6d788765d
+      size: 9824384

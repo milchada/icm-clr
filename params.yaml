@@ -8,7 +8,7 @@ neptune:
 
 #Parameters for the loading of the data from various sources
 extract:
-    MIN_STELLAR_MASS: 1e10
+    MIN_STELLAR_MASS: 1e9
     MAX_STELLAR_MASS: 1e14
     DATASETS:
       - "HSC_TNG50"

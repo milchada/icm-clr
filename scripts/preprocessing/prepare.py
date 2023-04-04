@@ -466,7 +466,7 @@ class DatasetMatcher(object):
         #Get random
         rng = np.random.default_rng(SPLIT_SEED)
         
-        #Scale source and target to ensure a fair treatment of the variouse matching fields
+        #Ensure that we are dealing with numpy arrays
         source = np.array(source)
         target = np.array(target)
         
@@ -478,8 +478,14 @@ class DatasetMatcher(object):
         
         #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
         matched_target_mask = []
+
+        #Prepare indexes to walk randomly through the target set
+        random_indexes = np.arange(target.shape[0])
+        random_indexes = rng.shuffle(random_indexes)
         
-        for x in tqdm(target):
+        for i in tqdm(random_indexes):
+            
+            x = target[i]
             
             within_box = np.all(np.abs(source - x) <= MATCHING_UNCERTAINTIES, axis=1)
             within_box = np.logical_and(unused_source_mask, within_box)

@@ -15,11 +15,11 @@ stages:
     - ./dataset/
     - ./plots/preprocessing/
     
-  visualize_matching:
-    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
-    deps:
-    - ./scripts/preprocessing/visualize_matching.ipynb
-    - ./dataset/
+  #visualize_matching:
+  #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
+  #  deps:
+  #  - ./scripts/preprocessing/visualize_matching.ipynb
+  #  - ./dataset/
     
   #Training
   #---------------------------------------------------------
@@ -53,14 +53,14 @@ stages:
     outs:
     - ./postprocessing/representation.npy
 
-  visualize_UMAP:
-    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb
-    deps:
-    - ./scripts/postprocessing/visualize_UMAP.ipynb
-    - ./postprocessing/representation.npy
+  #visualize_UMAP:
+  #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb
+  #  deps:
+  #  - ./scripts/postprocessing/visualize_UMAP.ipynb
+  #  - ./postprocessing/representation.npy
     
-  compare_distributions:
-    cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/compare_distributions.ipynb
-    deps:
-    - ./scripts/postprocessing/compare_distributions.ipynb
-    - ./postprocessing/representation.npy
+  #compare_distributions:
+  #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/compare_distributions.ipynb
+  #  deps:
+  #  - ./scripts/postprocessing/compare_distributions.ipynb
+  #  - ./postprocessing/representation.npy

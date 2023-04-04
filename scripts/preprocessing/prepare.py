@@ -481,7 +481,7 @@ class DatasetMatcher(object):
 
         #Prepare indexes to walk randomly through the target set
         random_indexes = np.arange(target.shape[0])
-        random_indexes = rng.shuffle(random_indexes)
+        rng.shuffle(random_indexes)
         
         for i in tqdm(random_indexes):
             

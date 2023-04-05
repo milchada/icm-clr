@@ -477,7 +477,7 @@ class DatasetMatcher(object):
         matched_source_indexes = []
         
         #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
-        matched_target_mask = []
+        matched_target_mask = np.empty(target.shape[0])
 
         #Prepare indexes to walk randomly through the target set
         random_indexes = np.arange(target.shape[0])
@@ -495,9 +495,9 @@ class DatasetMatcher(object):
                 index = rng.choice(within_box_index)
                 unused_source_mask[index]= False
                 matched_source_indexes.append(index)
-                matched_target_mask.append(True)
+                matched_target_mask[i] = True
             else:
-                matched_target_mask.append(False)
+                matched_target_mask[i] = False
                 
         #Ensure that there are no double matched galaxies
         _, counts = np.unique(matched_source_indexes, return_counts=True)

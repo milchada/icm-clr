@@ -117,7 +117,7 @@ train_clr:
     BETA_1: 0.9
     BETA_2: 0.999
     #Reduce the Learning rate if the validation loss has not improved for this number of epochs
-    LR_PATIENCE: 16
+    LR_PATIENCE: 5
     #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
     LR_DECAY: 0.6
     #Size of batches used for the training and evaluation
@@ -129,7 +129,7 @@ train_clr:
     #Stop the training if a max runtime (in seconds) has been reached
     MAX_RUNTIME_SECONDS: 43200
     #Stop the training after validation loss has not improved for PATIENCE epochs
-    PATIENCE: 5
+    PATIENCE: 20
     #Train model on multiple devices by splitting and distributing batches 
     #If set to True the device in config.py should be set to the cpu ... torch will take care of the correct assignment
     #Note also that the use of torch.nn.DataParallel is not recommended by Pytorch

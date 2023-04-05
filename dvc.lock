@@ -161,13 +161,13 @@ stages:
           L2_DECAY: 6e-05
           BETA_1: 0.9
           BETA_2: 0.999
-          LR_PATIENCE: 16
+          LR_PATIENCE: 5
           LR_DECAY: 0.6
           BATCH_SIZE: 32
           NUM_EPOCHS: 500
           MAX_NUM_BATCHES_PER_EPOCH: 200
           MAX_RUNTIME_SECONDS: 43200
-          PATIENCE: 5
+          PATIENCE: 20
           PARALLEL_TRAINING: false
           DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
@@ -186,7 +186,7 @@ stages:
             - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: 034122231feb6882cd2724308644e212
+      md5: c17432e1a4bc67e30cf986a5415509a7
       size: 137715580
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
@@ -196,12 +196,12 @@ stages:
       size: 140483535
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: 034122231feb6882cd2724308644e212
+      md5: c17432e1a4bc67e30cf986a5415509a7
       size: 137715580
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 1cb32703fe54a4bdb51f1ea6d788765d
+      md5: 5316968f3dec6277791f425ee41e4a51
       size: 9824384

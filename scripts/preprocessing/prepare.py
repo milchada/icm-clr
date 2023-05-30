@@ -406,6 +406,8 @@ class DatasetMatcher(object):
         
         source = []
         target = []
+        source_label = []
+        target_label = []
         
         if MATCHING_FIELDS is None:
             return
@@ -417,24 +419,31 @@ class DatasetMatcher(object):
                 
             dataset = self._datasets[i]
             matching_data = dataset.df[fields]
+            label_data = dataset.df['dataset']
             
             if self._dataset_titles[i] in MATCHING_SOURCE_SETS:
                 source.append(matching_data)
+                source_label.append(label_data)
             elif self._dataset_titles[i] in MATCHING_TARGET_SETS:
                 target.append(matching_data)
+                target_label.append(label_data)
             else:
                 raise ValueError("Please specify if dataset is a target or source set in params.yaml")
 
         #Concat lists
         source_concat = np.concatenate(source, axis=0)
+        source_label_concat = np.concatenate(source_label, axis=0)
         target_concat = np.concatenate(target, axis=0)        
-                
+        target_label_concat = np.concatenate(target_label, axis=0)
+        
         #Match the source to the target
-        matched_source_mask, matched_target_mask = self._get_matched_masks(target_concat, source_concat)
+        matched_source_mask, matched_target_mask, matched_source_sets, matched_target_sets = self._get_matched_masks(source_concat, target_concat, source_label_concat, target_label_concat)
         
         #Split the 2 masks back to the shape of the original sets
         matched_source_mask = inv_concatenate(matched_source_mask, source)
         matched_target_mask = inv_concatenate(matched_target_mask, target)
+        matched_source_sets = inv_concatenate(matched_source_sets, source)
+        matched_target_sets = inv_concatenate(matched_target_sets, target)
         
         #Messy internal index for iterating separately through the source and target sets
         j = 0
@@ -448,16 +457,18 @@ class DatasetMatcher(object):
                 
             if dataset_title in MATCHING_SOURCE_SETS:
                 #Remove unmatched source galaxies
+                dataset.df['matched_set'] = matched_source_sets[j]
                 dataset.df = dataset.df[matched_source_mask[j]]
                 j += 1
             elif dataset_title in MATCHING_TARGET_SETS:
                 #Remove target galaxies which have no analogue in the source
+                dataset.df['matched_set'] = matched_target_sets[k]
                 dataset.df = dataset.df[matched_target_mask[k]]
                 k += 1
             else:
                 raise ValueError("Please specify if dataset is a target or source set in params.yaml")
  
-    def _get_matched_masks(self, target, source):
+    def _get_matched_masks(self, source, target, source_label, target_label):
         '''
         Match the set given by source to the set given by target. 
         Returns the masks of source and target datasets such that the distribution for the given fields are identical
@@ -473,11 +484,13 @@ class DatasetMatcher(object):
         #Set of already used indexes
         unused_source_mask = np.ones(source.shape[0])
         
-        #Output list containing the matched 
-        matched_source_indexes = []
+        #Output list containing the matched target sets to keep record of the matched pairs
+        matched_source_sets = np.array(['']*source.shape[0], dtype=object)
+        matched_target_sets = np.array(['']*target.shape[0], dtype=object)
         
-        #Output mask to remove targets which have no unique source that is within the Maximum matching radius 
-        matched_target_mask = np.empty(target.shape[0])
+        #Output mask to remove targets which have no partner
+        matched_source_mask = np.zeros(source.shape[0])
+        matched_target_mask = np.zeros(target.shape[0])
 
         #Prepare indexes to walk randomly through the target set
         random_indexes = np.arange(target.shape[0])
@@ -492,20 +505,12 @@ class DatasetMatcher(object):
             within_box_index = np.argwhere(within_box)
             
             if len(within_box_index) > 0:
-                index = rng.choice(within_box_index)
+                index = int(rng.choice(within_box_index)[0])
+                matched_source_sets[index] = target_label[i]
+                matched_target_sets[i] = source_label[index]
                 unused_source_mask[index]= False
-                matched_source_indexes.append(index)
+                matched_source_mask[index] = True 
                 matched_target_mask[i] = True
-            else:
-                matched_target_mask[i] = False
-                
-        #Ensure that there are no double matched galaxies
-        _, counts = np.unique(matched_source_indexes, return_counts=True)
-        assert(np.sum(counts > 1) == 0)
-        
-        #Translate the index list into a mask
-        matched_source_mask = np.zeros(source.shape[0], dtype=int)
-        matched_source_mask[matched_source_indexes] = 1
         
         #To boolean numpy array
         matched_source_mask = np.array(matched_source_mask, dtype=bool)
@@ -516,7 +521,7 @@ class DatasetMatcher(object):
         num_target = str(len(matched_target_mask))
         print("Number of matched galaxies: " + num_matched + " / " + num_target)
         
-        return matched_source_mask, matched_target_mask
+        return matched_source_mask, matched_target_mask, matched_source_sets, matched_target_sets
  
 
     

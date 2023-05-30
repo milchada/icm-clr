@@ -4,8 +4,8 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/prepare.py
-      md5: ae42c68546c5d33c0388021521fba830
-      size: 21358
+      md5: ba079f3f66a82197f72daa34291aa9fd
+      size: 21985
     params:
       params.yaml:
         prepare:
@@ -37,7 +37,7 @@ stages:
             - i_band_mag_dust_apparent
             - petro_90_light
           MATCHING_UNCERTAINTIES:
-          - - 0.07
+          - - 0.01
             - 0.1
             - 5
           MATCHING_SOURCE_SETS:
@@ -66,12 +66,12 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: ef161ff23404c3fb7f38e9bdc667fc1e.dir
-      size: 140661094
+      md5: f4e77f6cdcbed97a3d8b77ac888467b9.dir
+      size: 116762653
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: c23d711b72a4a5e82746d2f478984f5b.dir
-      size: 33454117
+      md5: a36648a90bb57459697d3e854dc9e94e.dir
+      size: 32284562
       nfiles: 10
   train_clr:
     cmd: python3 -m scripts.model.train_clr

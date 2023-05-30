@@ -73,7 +73,7 @@ prepare:
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
       - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     MATCHING_UNCERTAINTIES:
-    - [0.07, 0.1, 5]
+    - [0.01, 0.1, 5]
     #The source set is the set drawing samples from to match them to the target set.
     #I.e. we try to find a example in source for each example in the target. 
     MATCHING_SOURCE_SETS: ['HSC']

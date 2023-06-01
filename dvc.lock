@@ -66,19 +66,19 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: f4e77f6cdcbed97a3d8b77ac888467b9.dir
-      size: 116762653
+      md5: c899b38153461f64dad0be9450498b78.dir
+      size: 116762481
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: a36648a90bb57459697d3e854dc9e94e.dir
-      size: 32284562
+      md5: f740d8969aae770e3937cd18148f0d21.dir
+      size: 31454208
       nfiles: 10
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     deps:
     - path: ./dataset/
-      md5: ef161ff23404c3fb7f38e9bdc667fc1e.dir
-      size: 140661094
+      md5: c899b38153461f64dad0be9450498b78.dir
+      size: 116762481
       nfiles: 14
     - path: ./scripts/model/losses.py
       md5: 36be0f287435a461abbcbcddd7226b95
@@ -186,22 +186,22 @@ stages:
             - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: 8679750e3ed72ec3c730d991ccd6bd8f
+      md5: 7924172adb1b735b83d60007eddc5e44
       size: 137715580
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: ef161ff23404c3fb7f38e9bdc667fc1e.dir
-      size: 140661094
+      md5: c899b38153461f64dad0be9450498b78.dir
+      size: 116762481
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: 8679750e3ed72ec3c730d991ccd6bd8f
+      md5: 7924172adb1b735b83d60007eddc5e44
       size: 137715580
     - path: ./scripts/postprocessing/write_representation.py
       md5: 9920287255e7a4ce6bb6b3c2f67bbdba
       size: 901
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 97227235b94ab1bcbbadfcac034ce9fa
-      size: 9821568
+      md5: 627b5f692d20684b1d0417fed8b8c6f0
+      size: 7981696

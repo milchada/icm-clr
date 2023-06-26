@@ -90,6 +90,8 @@ def train_clr(params={},
     #Set the save path of the model
     if save_model:
         save_path = c.resnet_path
+    if isinstance(save_model, int):
+        save_path = c.model_path + 'optuna_run_' + save_model + '.pt'
     else:
         save_path = None
 

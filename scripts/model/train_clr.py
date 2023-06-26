@@ -91,7 +91,7 @@ def train_clr(params={},
     if save_model:
         save_path = c.resnet_path
     if isinstance(save_model, int):
-        save_path = c.model_path + 'optuna_run_' + int(save_model) + '.pt'
+        save_path = c.model_path + 'optuna_run_' + str(save_model) + '.pt'
     else:
         save_path = None
 

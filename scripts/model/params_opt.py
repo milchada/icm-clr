@@ -39,12 +39,11 @@ class ParameterOptimization:
         self.study = optuna.create_study(directions=self.direction,
                                          load_if_exists=opt_params['CONTINUE_STUDY'],
                                          storage=optuna_storage,
-                                         study_name=opt_params['STUDY_NAME'],
-                                         n_trials=opt_params['NUM_TRIALS'])
+                                         study_name=opt_params['STUDY_NAME'])
         
     def run(self):
         self._create_study()
-        self.study.optimize(self._objective, gc_after_trial=True, catch=(torch.cuda.OutOfMemoryError))
+        self.study.optimize(self._objective, gc_after_trial=True, n_trials=opt_params['NUM_TRIALS'], catch=(torch.cuda.OutOfMemoryError))
    
 
 class ParameterOptimizationCLR(ParameterOptimization):

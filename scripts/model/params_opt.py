@@ -34,7 +34,6 @@ class ParameterOptimization:
         pass
         
     def _create_study(self):
-        make_dir(c.optuna_storage)
         optuna_storage_lock = JournalFileSymlinkLock(c.optuna_storage)
         optuna_storage = JournalStorage(JournalFileStorage(c.optuna_storage, lock_obj=optuna_storage_lock))
         self.study = optuna.create_study(directions=self.direction,

@@ -13,16 +13,28 @@ stages:
     outs:
     - ./dataset/
     - ./plots/preprocessing/
+    frozen: true
 
   #visualize_matching:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
   #  deps:
   #  - ./scripts/preprocessing/visualize_matching.ipynb
   #  - ./dataset/
+  
+  #Parameter Optimization
+  #---------------------------------------------------------
+  params_opt:
+    cmd: sbatch -W run_params_opt.sh
+    params:
+    - params_opt
+    deps:
+    - ./dataset/
+    - ./scripts/model/
+    out:
+    - ./model/
+    - ./metrics/optuna_journal.log
   #Training
   #---------------------------------------------------------
-
-    frozen: true
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     params:
@@ -32,19 +44,14 @@ stages:
     - train_clr
     deps:
     - ./dataset/
-    - ./scripts/model/losses.py
-    - ./scripts/model/resnet.py
-    - ./scripts/model/resnet_simclr.py
-    - ./scripts/model/train_clr.py
-    - ./scripts/model/training.py
-    outs:
+    - ./scripts/model/
+    out:
     - ./model/resnet.pt
-
+    frozen: true
 
   #Resnet Analysis
   #---------------------------------------------------------
 
-    frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:

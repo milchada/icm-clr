@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 stages:
-  
   #Preprocessing
   #---------------------------------------------------------
 
@@ -14,50 +13,38 @@ stages:
     outs:
     - ./dataset/
     - ./plots/preprocessing/
-    
+
   #visualize_matching:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
   #  deps:
   #  - ./scripts/preprocessing/visualize_matching.ipynb
   #  - ./dataset/
-  
-  #Param Optimization
-  #---------------------------------------------------------
-
-  prepare:
-    cmd: python3 -m scripts.preprocessing.prepare
-    params:
-    - prepare
-    deps:
-    #- ./dataset_raw/
-    - ./scripts/preprocessing/prepare.py
-    outs:
-    - ./dataset/
-    - ./plots/preprocessing/
-    
   #Training
   #---------------------------------------------------------
 
+    frozen: true
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     params:
     - data
+    - losses
     - model
     - train_clr
-    - losses
     deps:
     - ./dataset/
     - ./scripts/model/losses.py
-    - ./scripts/model/training.py
     - ./scripts/model/resnet.py
     - ./scripts/model/resnet_simclr.py
     - ./scripts/model/train_clr.py
+    - ./scripts/model/training.py
     outs:
     - ./model/resnet.pt
+
 
   #Resnet Analysis
   #---------------------------------------------------------
 
+    frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
@@ -72,7 +59,6 @@ stages:
   #  deps:
   #  - ./scripts/postprocessing/visualize_UMAP.ipynb
   #  - ./postprocessing/representation.npy
-    
   #compare_distributions:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/compare_distributions.ipynb
   #  deps:

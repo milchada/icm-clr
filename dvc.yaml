@@ -31,7 +31,8 @@ stages:
     - ./dataset/
     - ./scripts/model/
     outs:
-    - ./model/
+    - ./model/optuna/
+    - ./postprocessing/optuna/
     - ./metrics/optuna_journal.log
   #Training
   #---------------------------------------------------------
@@ -59,7 +60,7 @@ stages:
     - ./model/
     - ./dataset/
     outs:
-    - ./postprocessing/
+    - ./postprocessing/representation.npy
 
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb

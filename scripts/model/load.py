@@ -89,14 +89,17 @@ def load_cinn_model(num_models=None, model_index=None):
             
         return Ensemble(models)
     
-def load_resnet_model():
+def load_resnet_model(path = None):
     """Load resnet model from the model folder"""
     
     from scripts.model.resnet_simclr import ResNetSimCLR 
     
+    if path is None:
+        path = c.resnet_path
+    
     model = ResNetSimCLR()
     model.to(c.device)
-    checkpoint = torch.load(c.resnet_path, map_location=torch.device(c.device))
+    checkpoint = torch.load(path, map_location=torch.device(c.device))
     model.load_state_dict(checkpoint)
     model.eval()
     return model

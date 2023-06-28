@@ -20,6 +20,20 @@ stages:
   #  deps:
   #  - ./scripts/preprocessing/visualize_matching.ipynb
   #  - ./dataset/
+  
+  #Param Optimization
+  #---------------------------------------------------------
+
+  prepare:
+    cmd: python3 -m scripts.preprocessing.prepare
+    params:
+    - prepare
+    deps:
+    #- ./dataset_raw/
+    - ./scripts/preprocessing/prepare.py
+    outs:
+    - ./dataset/
+    - ./plots/preprocessing/
     
   #Training
   #---------------------------------------------------------
@@ -48,10 +62,10 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - ./scripts/postprocessing/write_representation.py
-    - ./model/resnet.pt
+    - ./model/
     - ./dataset/
     outs:
-    - ./postprocessing/representation.npy
+    - ./postprocessing/
 
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb

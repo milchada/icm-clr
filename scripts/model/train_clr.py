@@ -49,6 +49,7 @@ def loss_dict_2_host(d):
     
 def train_clr(params={},
               save_model=True,
+              save_path=None
               experiment_tracking=True):
     """
     Function to set up and train the resnet with clr
@@ -89,9 +90,8 @@ def train_clr(params={},
     
     #Set the save path of the model
     if save_model:
-        save_path = c.resnet_path
-    if isinstance(save_model, int):
-        save_path = c.model_path + 'optuna_run_' + str(save_model) + '.pt'
+        if not isinstance(save_path, str):
+            save_path = c.resnet_path
     else:
         save_path = None
 

@@ -7,8 +7,6 @@ from tqdm import tqdm
 import numpy as np
 import os
 
-c.representation_path
-
 def write_representation(in_path, out_path):
     
     #Prepare data
@@ -41,7 +39,7 @@ if __name__ == "__main__":
     for in_path in os.listdir(path=c.model_path):
         print('Get representation for model ' + in_path)
         file_name = os.path.split(in_path)[1]
-        out_path = os.path.splitext(file_name)[0] + '.npy'
+        out_path = c.representation_path + os.path.splitext(file_name)[0] + '.npy'
         write_representation(in_path, out_path)
         
     

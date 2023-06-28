@@ -7,13 +7,13 @@ from tqdm import tqdm
 import numpy as np
 import os
 
-def write_representation(in_path, out_path):
+def write_representation(in_path, out_path, params={}):
     
     #Prepare data
     test_loader = data.get_test_loader(batch_size=128, labels=False, augmentation=None, n_views=1, shuffle=False, drop_last=False)
 
     #Load model
-    model = load_resnet_model(in_path)
+    model = load_resnet_model(in_path, params)
     model.eval()
 
     features_list = []
@@ -35,10 +35,6 @@ def write_representation(in_path, out_path):
       
     
 if __name__ == "__main__":
-    #Write representations for all models in the model folder
-    for in_path in os.listdir(path=c.model_path):
-        print('Get representation for model ' + in_path)
-        out_path = os.path.splitext(in_path)[0] + '.npy'
-        write_representation(c.model_path + in_path, c.representation_path + out_path)
+    write_representation(c.resnet_path, c.representation_path)
         
     

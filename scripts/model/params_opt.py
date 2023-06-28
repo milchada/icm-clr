@@ -13,8 +13,8 @@ import gc
 
 
 from scripts.model.train_clr import train_clr
-#from scripts.model.train_cinn import train_cinn
 from scripts.util.make_dir import make_dir
+from scripts.postprocessing.write_representation import write_representation
 import config as c
 
 class ParameterOptimization:
@@ -249,6 +249,7 @@ class ParameterOptimizationCLRv4(ParameterOptimization):
 
         try:
             loss = train_clr(params=params_trail, save_model=True, save_path=c.optuna_resnet_path(trail.number), experiment_tracking=True)
+            write_representation(c.optuna_resnet_path(trail.number), c.optuna_representation_path, params = params_trail)
             return loss
 
         except torch.cuda.OutOfMemoryError:

@@ -49,7 +49,7 @@ def loss_dict_2_host(d):
     
 def train_clr(params={},
               save_model=True,
-              save_path=None
+              save_path=None,
               experiment_tracking=True):
     """
     Function to set up and train the resnet with clr

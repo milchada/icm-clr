@@ -30,7 +30,7 @@ stages:
     deps:
     - ./dataset/
     - ./scripts/model/
-    out:
+    outs:
     - ./model/
     - ./metrics/optuna_journal.log
   #Training
@@ -45,7 +45,7 @@ stages:
     deps:
     - ./dataset/
     - ./scripts/model/
-    out:
+    outs:
     - ./model/resnet.pt
     frozen: true
 

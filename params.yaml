@@ -114,7 +114,6 @@ params_opt:
     NUM_TRIALS: 100
     SAVE_MODELS: True
     SAVE_REPRESENTATIONS: True
-    CONTINUE_STUDY: FALSE
 
 train_clr:
     #Learning Rate for the SIMCLR training

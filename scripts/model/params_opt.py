@@ -37,7 +37,7 @@ class ParameterOptimization:
         optuna_storage_lock = JournalFileSymlinkLock(c.optuna_storage)
         optuna_storage = JournalStorage(JournalFileStorage(c.optuna_storage, lock_obj=optuna_storage_lock))
         self.study = optuna.create_study(directions=self.direction,
-                                         load_if_exists=opt_params['CONTINUE_STUDY'],
+                                         load_if_exists=True,
                                          storage=optuna_storage,
                                          study_name=opt_params['STUDY_NAME'])
         

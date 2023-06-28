@@ -111,5 +111,5 @@ class ParameterOptimizationCLR_All(ParameterOptimizationCLR):
 if __name__ == "__main__":
     
     module = __import__("scripts.model.params_opt", globals(), locals(), opt_params['STUDY_OBJECT'])
-    opt = getattr(module, opt_params['STUDY_OBJECT'])
+    opt = getattr(module, opt_params['STUDY_OBJECT'])()
     opt.run()

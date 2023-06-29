@@ -111,7 +111,7 @@ data:
 params_opt:
     STUDY_NAME: 'Variation_Study'
     STUDY_OBJECT: 'ParameterOptimizationCLR_All'
-    NUM_TRIALS: 100
+    NUM_TRIALS: 30
     SAVE_MODELS: True
     SAVE_REPRESENTATIONS: True
 

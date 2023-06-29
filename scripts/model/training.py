@@ -6,6 +6,7 @@ import os
 from tqdm import tqdm
 from time import time
 from scripts.util.logging import logger
+from scripts.util.make_dir import make_dir
 
 class Trainer(object):
     def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, max_runtime_seconds=None, use_checkpoint=False):
@@ -152,10 +153,8 @@ class Trainer(object):
     
     def save(self):
         '''Save model'''
-        if not os.path.exists(c.model_path):
-            os.makedirs(c.model_path)
-
         if self._save_path is not None:
+            make_dir(self._save_path)
             torch.save(self.model.state_dict(), self._save_path)
             
     def load(self):

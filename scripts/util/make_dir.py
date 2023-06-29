@@ -1,5 +1,5 @@
 import os
 
 def make_dir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+    path = os.path.split(path)[0]
+    os.makedirs(path, exist_ok=True)

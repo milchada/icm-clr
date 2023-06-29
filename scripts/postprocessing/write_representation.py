@@ -1,6 +1,7 @@
 import torch
 import scripts.data.data as data
 from scripts.model.load import load_resnet_model
+from scripts.util.make_dir import make_dir
 from torch.cuda.amp import autocast
 import config as c
 from tqdm import tqdm
@@ -30,6 +31,7 @@ def write_representation(in_path, out_path, params={}):
     features = np.concatenate(features_list, axis=0)
 
     #Save
+    make_dir(out_path)
     with open(out_path, 'wb') as f:
         np.save(f, features)
       

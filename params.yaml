@@ -19,25 +19,27 @@ extract:
       - [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91]
       - None
     FIELDS: 
-      - ["snapshot_id", "subhalo_id", "root_descendant_id",
+      - ["root_descendant_id",
          "lookback", "z",
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "mass_exsitu", "half_mass_rad_physical",
          "snap_num_last_maj_merger", "mass_last_maj_merger",
          "mean_merger_lookback_time", "mean_merger_mass_ratio",
-         "color", "i_band_mag_dust_apparent"]
-      - ["snapshot_id", "subhalo_id", "root_descendant_id",
+         "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
+         'gini', 'm20', 'multimode', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
+      - ["root_descendant_id",
          "lookback", "z",
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "mass_exsitu", "half_mass_rad_physical",
          "snap_num_last_maj_merger", "mass_last_maj_merger",
          "mean_merger_lookback_time", "mean_merger_mass_ratio",
-         "color", "i_band_mag_dust_apparent"]
+         "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
+         'gini', 'm20', 'multimode', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets?
     LOAD:
       - True
-      - False
+      - True
       - False
     #Only use fractions of the overall set - not 
     FRACTION:
@@ -46,6 +48,8 @@ extract:
       - 0.75
     #Target image size to apply the augmentations to
     IMAGE_SIZE: 256
+    #Number of projections per Simualted Image
+    NUM_PROJECTIONS: 4
     #Filters to load from the raw images
     FILTERS: ['G', 'R', 'I']
     #Get Cutouts which are multiple of the petrosian radius

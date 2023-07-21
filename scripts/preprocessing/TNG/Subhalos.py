@@ -33,7 +33,7 @@ def get_subhalo_object(simulation):
 
 class Subhalos(object):
     
-    def __init__(self, subhalo_ids, snapshot_id, simulation, path):
+    def __init__(self, subhalo_ids, snapshot_id, simulation, path, projection=0):
         
         sim_dict = {"TNG50-1": "L35n2160TNG",
                     "TNG100-1": "L75n1820TNG",
@@ -41,6 +41,7 @@ class Subhalos(object):
 
         self._subhalo_ids = subhalo_ids
         self._snapshot_id = snapshot_id
+        self._projection = projection
         self._simulation = simulation
         self._full_qualifier = sim_dict[simulation]
         
@@ -56,6 +57,7 @@ class Subhalos(object):
         #Load additional paths to data which is not available in the basepath
         self.define_merger_paths()
         self.define_auxcat_paths()
+        self.define_statmorph_paths()
         
         #Hubble Constant
         self._H = 0.6774
@@ -79,6 +81,10 @@ class Subhalos(object):
         self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
         self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
         
+    def define_statmorph_paths(self):
+        statmorph_path = "/vera/ptmp/gc/vrg/HSC_morph/IllustrisTNG/" +  self._simulation + "/snapnum_%03d" % (self._snapshot_id)
+        self._morph_path = lambda x:  statmorph_path + "morphs_v" + x + ".hdf5"
+        
         
     #Basic properties of class
     #-------------------------------------------------------------------------
@@ -93,7 +99,17 @@ class Subhalos(object):
     @property
     def simulation(self):
         return [self._simulation]*len(self._subhalo_ids)
+    
+    @property
+    def projection(self):
+        return np.array([self._projection]*len(self._subhalo_ids))
 
+    #Choose projection 
+    #-------------------------------------------------------------------------
+    @projection.setter
+    def projection(self, projection):
+        assert isinstance(projection, int)
+        self._projection = projection
 
     #Functions to load data from the various Catalogues
     #-------------------------------------------------------------------------
@@ -122,6 +138,14 @@ class Subhalos(object):
                 result = result[np.argsort(sort_index)]
                 
         return result  
+    
+    def load_statmorph(self, field, band="HSC_R"):  
+        with h5py.File(self._morph_path(self._projection), 'r') as f:
+            #remove bad fits
+            mask = f[band]['flag'][self._subhalo_ids] >= 2
+            result = f[band][field][self._subhalo_ids]
+            result[mask] = np.nan                      
+        return result
     
     def load_merger_history(self, field):
         with h5py.File(self._history_path, 'r') as f:
@@ -461,6 +485,49 @@ class Subhalos(object):
     @property
     def fraction_disk_stars(self):
         return self.load_circularity("CircAbove07Frac")[:,0]
+ 
+
+    #Statmorph parameters
+    #-------------------------------------------------------------------------
+    @property
+    def asymmetry(self):
+        return self.load_statmorph('asymmetry')
+    
+    @property
+    def concentration(self):
+        return self.load_statmorph('concentration')
+    
+    @property
+    def deviation(self):
+        return self.load_statmorph('deviation')
+    
+    @property
+    def gini(self):
+        return self.load_statmorph('gini')
+    
+    @property
+    def m20(self):
+        return self.load_statmorph('m20')
+    
+    @property
+    def multimode(self):
+        return self.load_statmorph('multimode')
+    
+    @property
+    def multimode(self):
+        return self.load_statmorph('sersic_n')
+    
+    @property
+    def multimode(self):
+        return self.load_statmorph('sersic_rhalf')
+    
+    @property
+    def multimode(self):
+        return self.load_statmorph('sersic_ellip')
+    
+    @property
+    def multimode(self):
+        return self.load_statmorph('smoothness')
     
     
 # Here one can add special treatment of the different simulations. However, try to keep the code below this line as simple as possible!

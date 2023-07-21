@@ -30,6 +30,7 @@ PETRO_RADIUS_FACTOR = extract_params['PETRO_RADIUS_FACTOR']
 USE_CACHE = extract_params['USE_CACHE']
 NUM_WORKERS = extract_params['NUM_WORKERS']
 SIZE_CHUNKS = extract_params['SIZE_CHUNKS']
+NUM_PROJECTIONS = extract_params['NUM_PROJECTIONS']
 
 class DataExtractor(object):
     def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None, fraction=1.0):
@@ -162,10 +163,18 @@ class TNGDataExtractor(DataExtractor):
             halos = cat.get_subhalos()
 
             labels = []
+            
+            #Add necessary fields
+            fields += "snapshot_id"
+            fields += "subhalo_id"
+            fields += "projection"
 
-            for field in fields:
-                field_values = getattr(halos, field) 
-                labels.append(field_values)
+            for projection in range(NUM_PROJECTIONS):
+                halos.projection = projection
+                
+                for field in fields:
+                    field_values = getattr(halos, field) 
+                    labels.append(field_values)
 
             out.append(np.transpose(labels))
 
@@ -187,6 +196,7 @@ class TNGHSCExtractor(TNGDataExtractor):
         #~/simclr/dataset_raw/TNG50-1/images/059/shalo_059-101_v3_HSC_GRIZY.fits
         splitlist = list(map(lambda x: os.path.split(x), filelist))
         #shalo_059-101_v3_HSC_GRIZY.fits
+        projections = list(map(lambda x: x[2].split("_")[1], splitlist))
         snap_ids = list(map(lambda x: x[1].split("_")[1], splitlist))
         #059-101
         snapnums = list(map(lambda x: x.split("-")[0], snap_ids))
@@ -195,7 +205,7 @@ class TNGHSCExtractor(TNGDataExtractor):
         snapnums = np.array(snapnums, dtype=np.int32)
         sub_ids  = np.array(sub_ids, dtype=np.int32)
         
-        return snapnums, sub_ids
+        return snapnums, sub_ids, projections
         
     def _add_image_path(self, df):
         '''Add the path to the respective image for each entry in df. Multiply entrys if there are multiple images for the same galaxy and delete if there is no image'''
@@ -207,7 +217,7 @@ class TNGHSCExtractor(TNGDataExtractor):
             logger.info("No images available, extract images first!")
 
         #Get snapshot and id
-        snapnums, sub_ids = self._split_filenames(filelist)
+        snapnums, sub_ids, projections = self._split_filenames(filelist)
 
         logger.info("Assign Images to Labels")
         #Match the images with the data read from the csv (contained in df)
@@ -217,11 +227,12 @@ class TNGHSCExtractor(TNGDataExtractor):
 
         snapshot_ids = df["snapshot_id"].to_numpy(dtype=np.int32)
         subhalo_ids = df["subhalo_id"].to_numpy(dtype=np.int32)
+        projection_ids = df["projection"].to_numpy(dtype=np.int32)
 
         #Loop over all images
-        for j, (snap, i, filepath) in enumerate(zip(snapnums, sub_ids, filelist)):
+        for j, (snap, i, p, filepath) in enumerate(zip(snapnums, sub_ids, projections, filelist)):
             #Get matched df index for the image
-            index = np.argwhere(np.logical_and(snapshot_ids==snap, subhalo_ids==i))
+            index = np.argwhere(np.logical_and(np.logical_and(snapshot_ids==snap, subhalo_ids==i), projection_ids==p))
             assert len(index)<=1, "Multiple Data for one Image"
 
             #Check if there is data in df available for the given image
@@ -236,6 +247,7 @@ class TNGHSCExtractor(TNGDataExtractor):
         logger.info(str(np.sum(np.logical_not(mask))) + " images dropped.")
         df_matched = pd.DataFrame(np.array(target)[:,0,:], columns=df.columns)
         df_matched['image_path'] = np.array(filelist)[mask]
+        df_matched['projection'] = np.array(projections)[mask]
 
         return df_matched
     

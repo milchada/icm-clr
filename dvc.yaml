@@ -13,7 +13,6 @@ stages:
     outs:
     - ./dataset/
     - ./plots/preprocessing/
-    frozen: true
 
   #visualize_matching:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb

@@ -232,11 +232,7 @@ class TNGHSCExtractor(TNGDataExtractor):
         #Loop over all images
         for j, (snap, i, p, filepath) in enumerate(zip(snapnums, sub_ids, projections, filelist)):
             #Get matched df index for the image
-            print(p)
-            print(projection_ids)
-            print(np.logical_and(snapshot_ids==snap, subhalo_ids==i))
             index = np.argwhere(np.logical_and(np.logical_and(snapshot_ids==snap, subhalo_ids==i), projection_ids==p))
-            print(index)
             assert len(index)<=1, "Multiple Data for one Image"
 
             #Check if there is data in df available for the given image

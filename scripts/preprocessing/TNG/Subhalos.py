@@ -151,7 +151,9 @@ class Subhalos(object):
             result[~avail_mask] = np.nan
             
             #Now get the data from the file
-            index = np.where(np.isin(ids, self._subhalo_ids))   
+            index = np.where(np.isin(ids, self._subhalo_ids))  
+            print(len(index))
+            print(np.sum(avail_mask))
             assert len(index) == np.sum(avail_mask), "If this is not equal I made an coding error"
             #remove bad fits
             mask = f[band]['flag'][index] >= 2

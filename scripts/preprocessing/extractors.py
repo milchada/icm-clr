@@ -233,7 +233,7 @@ class TNGHSCExtractor(TNGDataExtractor):
             #Get matched df index for the image
             print(p)
             print(projection_ids)
-            index = np.argwhere(np.logical_and(np.logical_and(snapshot_ids==snap, subhalo_ids==i), projection_ids==p))
+            index = np.argwhere(np.logical_and(snapshot_ids==snap, subhalo_ids==i))
             print(index)
             assert len(index)<=1, "Multiple Data for one Image"
 

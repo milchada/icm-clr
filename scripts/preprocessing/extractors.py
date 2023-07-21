@@ -203,6 +203,7 @@ class TNGHSCExtractor(TNGDataExtractor):
 
         snapnums = np.array(snapnums, dtype=np.int32)
         sub_ids  = np.array(sub_ids, dtype=np.int32)
+        projections  = np.array(projections, dtype=np.int32)
         
         return snapnums, sub_ids, projections
         
@@ -235,7 +236,7 @@ class TNGHSCExtractor(TNGDataExtractor):
             print(projection_ids)
             print(np.logical_and(snapshot_ids==snap, subhalo_ids==i))
             index = np.argwhere(np.logical_and(np.logical_and(snapshot_ids==snap, subhalo_ids==i), projection_ids==p))
-            print(îndex)
+            print(index)
             assert len(index)<=1, "Multiple Data for one Image"
 
             #Check if there is data in df available for the given image

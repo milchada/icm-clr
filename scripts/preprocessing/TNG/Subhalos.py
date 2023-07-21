@@ -140,11 +140,27 @@ class Subhalos(object):
         return result  
     
     def load_statmorph(self, field, band="HSC_R"):  
+        
         with h5py.File(self._morph_path(self._projection), 'r') as f:
+            #Match ids
+            ids = f["subfind_id"][:]
+            
+            #Care for subhalos which have no avail data
+            avail_mask = np.isin(self._subhalo_ids, ids)
+            result = np.zeros(len(avail_mask))
+            result[~avail_mask] = np.nan
+            
+            #Now get the data from the file
+            index = np.where(np.isin(ids, self._subhalo_ids))   
+            assert len(index) == np.sum(avail_mask), "If this is not equal I made an coding error"
             #remove bad fits
-            mask = f[band]['flag'][self._subhalo_ids] >= 2
-            result = f[band][field][self._subhalo_ids]
-            result[mask] = np.nan                      
+            mask = f[band]['flag'][index] >= 2
+            result_t = f[band][field][index]
+            result_t[mask] = np.nan          
+            
+            #Now insert the date for the available subhalos
+            result[avail_mask] = result_t
+            
         return result
     
     def load_merger_history(self, field):

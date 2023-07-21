@@ -530,19 +530,19 @@ class Subhalos(object):
         return self.load_statmorph('multimode')
     
     @property
-    def multimode(self):
+    def sersic_n(self):
         return self.load_statmorph('sersic_n')
     
     @property
-    def multimode(self):
+    def sersic_rhalf(self):
         return self.load_statmorph('sersic_rhalf')
     
     @property
-    def multimode(self):
+    def sersic_ellip(self):
         return self.load_statmorph('sersic_ellip')
     
     @property
-    def multimode(self):
+    def smoothness(self):
         return self.load_statmorph('smoothness')
     
     

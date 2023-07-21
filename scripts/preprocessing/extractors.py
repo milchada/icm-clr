@@ -149,6 +149,11 @@ class TNGDataExtractor(DataExtractor):
     
     def _load_TNG_labels(self, fields):
         
+        #Add necessary fields
+        fields.append("snapshot_id")
+        fields.append("subhalo_id")
+        fields.append("projection")
+        
         out = []
         
         for snap in tqdm(self._snapshots, total=len(self._snapshots), disable=False):
@@ -164,20 +169,14 @@ class TNGDataExtractor(DataExtractor):
 
             labels = []
             
-            #Add necessary fields
-            fields.append("snapshot_id")
-            fields.append("subhalo_id")
-            fields.append("projection")
-
             for projection in range(NUM_PROJECTIONS):
                 halos.projection = projection
                 
-                print(fields)
                 for field in fields:
                     field_values = getattr(halos, field) 
                     labels.append(field_values)
 
-            out.append(np.transpose(labels))
+                out.append(np.transpose(labels))
 
         return pd.DataFrame(np.concatenate(out), columns=fields)
         

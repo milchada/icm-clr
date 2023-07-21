@@ -195,8 +195,8 @@ class TNGHSCExtractor(TNGDataExtractor):
         #~/simclr/dataset_raw/TNG50-1/images/059/shalo_059-101_v3_HSC_GRIZY.fits
         splitlist = list(map(lambda x: os.path.split(x), filelist))
         #shalo_059-101_v3_HSC_GRIZY.fits
-        projections = list(map(lambda x: x[2].split("_")[1], splitlist))
         snap_ids = list(map(lambda x: x[1].split("_")[1], splitlist))
+        projections = list(map(lambda x: x[1].split("_")[2][1], splitlist))
         #059-101
         snapnums = list(map(lambda x: x.split("-")[0], snap_ids))
         sub_ids  = list(map(lambda x: x.split("-")[1], snap_ids))

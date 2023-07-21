@@ -167,11 +167,10 @@ class TNGDataExtractor(DataExtractor):
 
             halos = cat.get_subhalos()
 
-            labels = []
-            
             for projection in range(NUM_PROJECTIONS):
                 halos.projection = projection
                 
+                labels = []
                 for field in fields:
                     field_values = getattr(halos, field) 
                     labels.append(field_values)

@@ -83,7 +83,7 @@ class Subhalos(object):
         
     def define_statmorph_paths(self):
         statmorph_path = "/vera/ptmp/gc/vrg/HSC_morph/IllustrisTNG/" +  self._simulation + "/snapnum_%03d" % (self._snapshot_id)
-        self._morph_path = lambda x:  statmorph_path + "morphs_v" + str(x) + ".hdf5"
+        self._morph_path = lambda x:  statmorph_path + "/morphs_v" + str(x) + ".hdf5"
         
         
     #Basic properties of class

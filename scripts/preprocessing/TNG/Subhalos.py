@@ -154,9 +154,13 @@ class Subhalos(object):
             index = np.where(np.isin(ids, self._subhalo_ids))[0] 
             assert len(index) == np.sum(avail_mask), "If this is not equal I made an coding error"
             #remove bad fits
-            mask = f[band]['flag'][index] >= 2
-            result_t = f[band][field][index]
-            result_t[mask] = np.nan          
+            try:
+                mask = f[band]['flag'][index] >= 2
+                result_t = f[band][field][index]
+                result_t[mask] = np.nan 
+            except KeyError:
+                print("Missing Fields in File: " + self._morph_path(self._projection))
+                result_t = np.nan
             
             #Now insert the date for the available subhalos
             result[avail_mask] = result_t
@@ -553,7 +557,7 @@ class Subhalos(object):
 class SubhalosTNG100(Subhalos):
     
     def define_auxcat_paths(self):
-        auxcat_path = "/ptmp/leisert/image_cache/TNG100-1/auxCat"
+        auxcat_path = "/vera/ptmp/gc/dnelson/sims.TNG/L75n1820TNG/data.files/auxCat"
         self._stellar_phot_dust_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
         self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
         self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)

@@ -318,7 +318,7 @@ class TNGHSCExtractor(TNGDataExtractor):
         self.save_labels(df)
         
     def extract(self):
-        #self._extract_images()
+        self._extract_images()
         self._extract_labels()
     
 class HSCDataExtractor(DataExtractor):

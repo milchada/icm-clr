@@ -66,12 +66,12 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: c899b38153461f64dad0be9450498b78.dir
-      size: 116762481
+      md5: 0afb987ce39ab70194df0d1b2ac8ab43.dir
+      size: 127061470
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: f740d8969aae770e3937cd18148f0d21.dir
-      size: 31454208
+      md5: a64631fc8311e31a5b8980f37df53d88.dir
+      size: 32668760
       nfiles: 10
   train_clr:
     cmd: python3 -m scripts.model.train_clr

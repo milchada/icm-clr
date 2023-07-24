@@ -34,7 +34,7 @@ extract:
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets?
     LOAD:
-      - True
+      - False
       - True
       - False
     #Only use fractions of the overall set - not 

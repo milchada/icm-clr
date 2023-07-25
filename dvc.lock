@@ -192,19 +192,19 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
-      md5: c899b38153461f64dad0be9450498b78.dir
-      size: 116762481
+      md5: 0afb987ce39ab70194df0d1b2ac8ab43.dir
+      size: 127061470
       nfiles: 14
     - path: ./model/resnet.pt
       md5: 7924172adb1b735b83d60007eddc5e44
       size: 137715580
     - path: ./scripts/postprocessing/write_representation.py
-      md5: 9920287255e7a4ce6bb6b3c2f67bbdba
-      size: 901
+      md5: 442ab6763d87ec824eab91847254cb5d
+      size: 1173
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 627b5f692d20684b1d0417fed8b8c6f0
-      size: 7981696
+      md5: 4610ef079549bc0e139c38dc61ba1a63
+      size: 8031872
   params_opt:
     cmd: sbatch -W run_params_opt.sh
     deps:

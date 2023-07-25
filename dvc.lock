@@ -232,3 +232,22 @@ stages:
       md5: c7a5575e3488f6607fa27dcb3f08354b.dir
       size: 7972785304
       nfiles: 114
+  write_optuna_representation:
+    cmd: python3 -m scripts.postprocessing.write_optuna_representation
+    deps:
+    - path: ./dataset/
+      md5: 0afb987ce39ab70194df0d1b2ac8ab43.dir
+      size: 127061470
+      nfiles: 14
+    - path: ./model/optuna/
+      md5: c7a5575e3488f6607fa27dcb3f08354b.dir
+      size: 7972785304
+      nfiles: 114
+    - path: ./scripts/postprocessing/write_optuna_representation.py
+      md5: 4eb9a0e96a65f0e2e4301aa39fba40f3
+      size: 1232
+    outs:
+    - path: ./postprocessing/optuna/
+      md5: 306a0578608c141b2e1d3e90e3aa534d.dir
+      size: 1558171776
+      nfiles: 105

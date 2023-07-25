@@ -19,7 +19,7 @@ trials = study.get_trials()
 logger.info(str(len(trials)) + ' trials found.')
 
 for trial in trials:
-    if trial.state != 'COMPLETE':
+    if not trial.state.COMPLETE:
         logger.info(str(trial.number) + ' not completed. Skipping...')
         continue
     

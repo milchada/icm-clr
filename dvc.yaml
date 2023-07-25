@@ -56,10 +56,19 @@ stages:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - ./scripts/postprocessing/write_representation.py
-    - ./model/
+    - ./model/resnet.pt
     - ./dataset/
     outs:
     - ./postprocessing/representation.npy
+    
+  write_optuna_representation:
+    cmd: python3 -m scripts.postprocessing.write_optuna_representation
+    deps:
+    - ./scripts/postprocessing/write_optuna_representation.py
+    - ./model/optuna/
+    - ./dataset/
+    outs:
+    - ./postprocessing/optuna/
 
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb

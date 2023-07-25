@@ -3,6 +3,7 @@ from optuna.storages import JournalStorage, JournalFileStorage, JournalFileSymli
 from scripts.util.logging import logger
 import config as c
 from scripts.postprocessing.write_representation import write_representation
+import os
 
 import yaml
 
@@ -21,6 +22,9 @@ logger.info(str(len(trials)) + ' trials found.')
 for trial in trials:
     if not trial.state.COMPLETE:
         logger.info(str(trial.number) + ' not completed. Skipping...')
+        continue
+    if not os.path.isfile(c.optuna_resnet_path(trial.number)) :
+        logger.info(str(trial.number) + ' not saved. Skipping...')
         continue
     
     logger.info(str(trial.number) + ' is loaded and representations calculated.')

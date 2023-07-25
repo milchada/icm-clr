@@ -1,5 +1,5 @@
 [core]
-    remote = https
+    remote = datashare
 ['remote "gdrive"']
     url = gdrive://1chnE-agguECOBnb46Q7lmtah5meV2_hA
     gdrive_client_id = 760612119832-eudk537ka9r891pc8ael9b2efn07thkd.apps.googleusercontent.com

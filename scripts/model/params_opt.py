@@ -39,6 +39,7 @@ class ParameterOptimization:
         self.study = optuna.create_study(directions=self.direction,
                                          load_if_exists=True,
                                          storage=optuna_storage,
+                                         pruner=optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=20, interval_steps=5),
                                          study_name=opt_params['STUDY_NAME'])
         
     def run(self):
@@ -61,10 +62,13 @@ class ParameterOptimizationCLR(ParameterOptimization):
         if params_trail['LR_PATIENCE'] > params_trail['PATIENCE']:
             raise optuna.TrialPruned()
 
+        if params_trail['BATCH_SIZE']*params_trail['NNCLR_QUEUE_SIZE'] > 16384:
+            raise optuna.TrialPruned()
+
         try:
             loss = train_clr(params=params_trail, save_model=opt_params['SAVE_MODELS'], save_path=c.optuna_resnet_path(trail.number), experiment_tracking=True)
             if opt_params['SAVE_REPRESENTATIONS']:
-                write_representation(c.optuna_resnet_path(trail.number), c.optuna_representation_path, params = params_trail)
+                write_representation(c.optuna_resnet_path(trail.number), c.optuna_representation_path(trail.number), params = params_trail)
             return loss
 
         except torch.cuda.OutOfMemoryError:
@@ -85,22 +89,25 @@ class ParameterOptimizationCLR_All(ParameterOptimizationCLR):
                                'TRANSLATE': trail.suggest_float('TRANSLATE', 0.05, 0.5),
                                'SCALE': trail.suggest_float('SCALE', 1.2, 2.5),
                                'FLIP': True,
-                               'GAUSSIAN_BLUR_SIGMA': [0.001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.01, 10)],
+                               'GAUSSIAN_BLUR_SIGMA': [0.001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.01, 10, log=True)],
                                'NOISE_STD': [0.01, trail.suggest_float('NOISE_STD', 0.02, 0.1)]}
 
-        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 16, 128, log=True),
+        params_trail = {'BATCH_SIZE': trail.suggest_int('BATCH_SIZE', 4, 128, log=True),
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.1, 0.5),
-                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256,512]),
+                        'RESNET_DEPTH': trail.suggest_categorical('RESNET_DEPTH', [10, 16]), #6n+4
+                        'RESNET_WIDTH': trail.suggest_int('RESNET_WIDTH', 1, 2),
+                        'RESNET_REPRESENTATION_DIM': trail.suggest_categorical('RESNET_REPRESENTATION_DIM', [64, 128, 256, 512]),
                         'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
-                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256,512]),
+                        'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256, 512]),
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
-                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 4096),
-                        'nce_temperature': trail.suggest_float('nce_temperature', 0.01, 0.1),
+                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 4096, log=True),
+                        'nce_temperature': trail.suggest_float('nce_temperature', 0.01, 0.1, log=True),
                         'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
                         'LR_PATIENCE': trail.suggest_int('LR_PATIENCE', 3, 20),
                         'LR_DECAY': trail.suggest_float('LR_DECAY', 0.2, 0.8),
                         'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.00001, 0.001, log=True),
-                        'PATIENCE': 30,
+                        'PATIENCE': 10,
+                        'MAX_RUNTIME_SECONDS': 7200,
                         'AUGMENTATION_PARAMS': AUGMENTATION_PARAMS}
 
         return params_trail

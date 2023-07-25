@@ -205,3 +205,30 @@ stages:
     - path: ./postprocessing/representation.npy
       md5: 627b5f692d20684b1d0417fed8b8c6f0
       size: 7981696
+  params_opt:
+    cmd: sbatch -W run_params_opt.sh
+    deps:
+    - path: ./dataset/
+      md5: 0afb987ce39ab70194df0d1b2ac8ab43.dir
+      size: 127061470
+      nfiles: 14
+    - path: ./scripts/model/
+      md5: 083e4745b3561117ab4af8cc2029d8d0.dir
+      size: 169894
+      nfiles: 31
+    params:
+      params.yaml:
+        params_opt:
+          STUDY_NAME: Variation_Study
+          STUDY_OBJECT: ParameterOptimizationCLR_All
+          NUM_TRIALS: 200
+          SAVE_MODELS: true
+          SAVE_REPRESENTATIONS: false
+    outs:
+    - path: ./metrics/optuna_journal.log
+      md5: fa0906dbde98204c499c2f1237a4c45a
+      size: 917517
+    - path: ./model/optuna/
+      md5: c7a5575e3488f6607fa27dcb3f08354b.dir
+      size: 7972785304
+      nfiles: 114

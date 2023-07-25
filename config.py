@@ -21,9 +21,9 @@ postprocessing_path = "./postprocessing/"
 metrics_path = "./metrics/"
 plots_path = "./plots/"
 resnet_path = model_path + 'resnet.pt'
-optuna_resnet_path = lambda x: model_path + 'optuna/run_' + str(x) + '.pt'
+optuna_resnet_path = lambda x: model_path + 'optuna/run_%04d.pt' % (x)
 representation_path = postprocessing_path + 'representation.npy'
-optuna_representation_path = lambda x:  postprocessing_path + 'optuna/run_representation_' + str(x) + '.npy'
+optuna_representation_path = lambda x:  postprocessing_path + 'optuna/run_representation__%04d.npy' % (x)
 cinn_path = model_path + 'cinn.pt'
 optuna_storage = metrics_path + 'optuna_journal.log'
 

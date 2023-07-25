@@ -19,7 +19,6 @@ stages:
   #  deps:
   #  - ./scripts/preprocessing/visualize_matching.ipynb
   #  - ./dataset/
-  
   #Parameter Optimization
   #---------------------------------------------------------
   params_opt:
@@ -30,11 +29,12 @@ stages:
     - ./dataset/
     - ./scripts/model/
     outs:
-    - ./model/optuna/
-    - ./postprocessing/optuna/
     - ./metrics/optuna_journal.log
+    #- ./postprocessing/optuna/
+    - ./model/optuna/
   #Training
   #---------------------------------------------------------
+    frozen: true
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     params:

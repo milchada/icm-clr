@@ -111,9 +111,9 @@ data:
 params_opt:
     STUDY_NAME: 'Variation_Study'
     STUDY_OBJECT: 'ParameterOptimizationCLR_All'
-    NUM_TRIALS: 30
+    NUM_TRIALS: 200
     SAVE_MODELS: True
-    SAVE_REPRESENTATIONS: True
+    SAVE_REPRESENTATIONS: False
 
 train_clr:
     #Learning Rate for the SIMCLR training

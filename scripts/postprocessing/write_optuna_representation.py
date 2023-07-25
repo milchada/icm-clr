@@ -20,11 +20,11 @@ logger.info(str(len(trials)) + ' trials found.')
 
 for trial in trials:
     if trial.state != 'COMPLETE':
-        logger.info(str(trail.number) + ' not completed. Skipping...')
+        logger.info(str(trial.number) + ' not completed. Skipping...')
         continue
     
-    logger.info(str(trail.number) + ' is loaded and representations calculated.')
-    write_representation(c.optuna_resnet_path(trail.number), c.optuna_representation_path(trail.number), params = trial.params)
+    logger.info(str(trial.number) + ' is loaded and representations calculated.')
+    write_representation(c.optuna_resnet_path(trial.number), c.optuna_representation_path(trial.number), params = trial.params)
     
     
 

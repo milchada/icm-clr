@@ -549,6 +549,14 @@ class Subhalos(object):
     def smoothness(self):
         return self.load_statmorph('smoothness')
     
+    @property
+    def gini_m20_bulge(self):
+        return self.load_statmorph('gini_m20_bulge')
+    
+    @property
+    def gini_m20_merger(self):
+        return self.load_statmorph('gini_m20_merger')
+    
     
 # Here one can add special treatment of the different simulations. However, try to keep the code below this line as simple as possible!
 # In an ideal world there should be nothing here at all

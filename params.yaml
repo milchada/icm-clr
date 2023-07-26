@@ -24,17 +24,17 @@ extract:
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
          "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini', 'm20', 'multimode', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
+         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
       - ["root_descendant_id",
          "lookback", "z",
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
          "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini', 'm20', 'multimode', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
+         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets?
     LOAD:
-      - False
+      - True
       - True
       - False
     #Only use fractions of the overall set - not 

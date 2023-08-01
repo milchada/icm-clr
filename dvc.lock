@@ -66,11 +66,13 @@ stages:
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
-      md5: 0afb987ce39ab70194df0d1b2ac8ab43.dir
-      size: 127061470
+      hash: md5
+      md5: b1d95131fa11f3ce069e6800057da465.dir
+      size: 124893974
       nfiles: 14
     - path: ./plots/preprocessing/
-      md5: a64631fc8311e31a5b8980f37df53d88.dir
+      hash: md5
+      md5: f30572b34ad9acc19e3b553358f23466.dir
       size: 32668760
       nfiles: 10
   train_clr:
@@ -209,12 +211,14 @@ stages:
     cmd: sbatch -W run_params_opt.sh
     deps:
     - path: ./dataset/
-      md5: 0afb987ce39ab70194df0d1b2ac8ab43.dir
-      size: 127061470
+      hash: md5
+      md5: b1d95131fa11f3ce069e6800057da465.dir
+      size: 124893974
       nfiles: 14
     - path: ./scripts/model/
-      md5: 083e4745b3561117ab4af8cc2029d8d0.dir
-      size: 169894
+      hash: md5
+      md5: cfba83a752acf27986ee17fd61efbd69.dir
+      size: 169973
       nfiles: 31
     params:
       params.yaml:
@@ -226,12 +230,14 @@ stages:
           SAVE_REPRESENTATIONS: false
     outs:
     - path: ./metrics/optuna_journal.log
-      md5: fa0906dbde98204c499c2f1237a4c45a
-      size: 917517
+      hash: md5
+      md5: 7730a12c585d8429ddc0b8fad450e050
+      size: 1774386
     - path: ./model/optuna/
-      md5: c7a5575e3488f6607fa27dcb3f08354b.dir
-      size: 7972785304
-      nfiles: 114
+      hash: md5
+      md5: bc5574b84da0b8a99def61f5818de427.dir
+      size: 14304825840
+      nfiles: 206
   write_optuna_representation:
     cmd: python3 -m scripts.postprocessing.write_optuna_representation
     deps:

@@ -19,12 +19,21 @@ trials = study.get_trials()
 
 logger.info(str(len(trials)) + ' trials found.')
 
+values = []
+for trial in trials:
+    values.append(trial.value)
+    
+limit_value = sorted(values)[min(20, len(trials))]
+    
 for trial in trials:
     if not trial.state.COMPLETE:
         logger.info(str(trial.number) + ' not completed. Skipping...')
         continue
     if not os.path.isfile(c.optuna_resnet_path(trial.number)) :
         logger.info(str(trial.number) + ' not saved. Skipping...')
+        continue
+    if trial.value > limit_value:
+        logger.info(str(trial.number) + ' too bad. Skipping...')
         continue
     
     logger.info(str(trial.number) + ' is loaded and representations calculated.')

@@ -80,4 +80,3 @@ stages:
   #  deps:
   #  - ./scripts/postprocessing/compare_distributions.ipynb
   #  - ./postprocessing/representation.npy
-    frozen: true

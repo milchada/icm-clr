@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "production", 'with_petro_matching', 'TNG50']
+    tags: ["nnclr", "production", 'with_petro_matching', 'TNG50', 'Final']
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -109,7 +109,7 @@ data:
     NUM_WORKERS: 16
 
 params_opt:
-    STUDY_NAME: 'Variation_Study'
+    STUDY_NAME: 'Final_Variation_Study'
     STUDY_OBJECT: 'ParameterOptimizationCLR_All'
     NUM_TRIALS: 200
     SAVE_MODELS: True

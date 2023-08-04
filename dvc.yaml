@@ -30,11 +30,9 @@ stages:
     - ./scripts/model/
     outs:
     - ./metrics/optuna_journal.log
-    #- ./postprocessing/optuna/
     - ./model/optuna/
   #Training
   #---------------------------------------------------------
-    frozen: true
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     params:

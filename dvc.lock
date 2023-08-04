@@ -67,13 +67,13 @@ stages:
     outs:
     - path: ./dataset/
       hash: md5
-      md5: b1d95131fa11f3ce069e6800057da465.dir
-      size: 124893974
+      md5: ae3d3c536ea8df227d354bc93193614b.dir
+      size: 251064135
       nfiles: 14
     - path: ./plots/preprocessing/
       hash: md5
-      md5: f30572b34ad9acc19e3b553358f23466.dir
-      size: 32668760
+      md5: b4232fd78b6e5c941dc1bdd9f9f228b0.dir
+      size: 57990892
       nfiles: 10
   train_clr:
     cmd: python3 -m scripts.model.train_clr

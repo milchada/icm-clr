@@ -50,6 +50,7 @@ stages:
   #Resnet Analysis
   #---------------------------------------------------------
 
+    frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:

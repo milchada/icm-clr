@@ -19,10 +19,10 @@ trials = study.get_trials()
 
 logger.info(str(len(trials)) + ' trials found.')
 
-limit_value = 0.2
+limit_value = 0.3
     
 for trial in trials:
-    if not trial.state.COMPLETE:
+    if not trial.state == optuna.trial.TrialState.COMPLETE:
         logger.info(str(trial.number) + ' not completed. Skipping...')
         continue
     if not os.path.isfile(c.optuna_resnet_path(trial.number)) :

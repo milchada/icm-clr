@@ -33,6 +33,7 @@ stages:
     - ./model/optuna/
   #Training
   #---------------------------------------------------------
+    frozen: true
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     params:
@@ -45,7 +46,6 @@ stages:
     - ./scripts/model/
     outs:
     - ./model/resnet.pt
-    frozen: true
 
   #Resnet Analysis
   #---------------------------------------------------------

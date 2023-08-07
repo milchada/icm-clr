@@ -1,6 +1,7 @@
 import torch
 
 from scripts.model.resnet_simclr import ResNetSimCLR
+from scripts.model.load import load_resnet_model
 from scripts.model.losses import loss_simclr, loss_nnclr, loss_adaption, lambd_simclr_train, lambd_simclr_domain, lambd_simclr_adaption
 from scripts.model.optimizer import Optimizer
 from scripts.model.training import Trainer, run_training
@@ -9,6 +10,7 @@ from scripts.model.batch_queue import init_batch_queue
 from scripts.util.logging import logger
 
 import config as c
+import os
 
 from scripts.data import data
 from scripts.data.augmentations import SimCLRAugmentation, FlipAugmentation
@@ -50,7 +52,9 @@ def loss_dict_2_host(d):
 def train_clr(params={},
               save_model=True,
               save_path=None,
-              experiment_tracking=True):
+              continue_training=False,
+              experiment_tracking=True,
+              optuna_trial=None):
     """
     Function to set up and train the resnet with clr
 
@@ -77,8 +81,12 @@ def train_clr(params={},
 
     #Load the model
     logger.info('Load model...')
-    model = ResNetSimCLR(params) 
-        
+    if continue_training and os.path.isfile(save_path):
+        model = load_resnet_model(save_path, params)
+        logger.info('Resume Model Training of ' + save_path)
+    else:
+        model = ResNetSimCLR(params)
+
     model.to(c.device)
 
     if params["PARALLEL_TRAINING"]:
@@ -104,7 +112,8 @@ def train_clr(params={},
                       save_path,
                       max_num_batches = params["MAX_NUM_BATCHES_PER_EPOCH"],
                       max_runtime_seconds = params["MAX_RUNTIME_SECONDS"],
-                      use_checkpoint=False)
+                      use_checkpoint=False,
+                      optuna_trial=optuna_trial)
     
     #Prepare training data 
     augmentation = SimCLRAugmentation(params["AUGMENTATION_PARAMS"])

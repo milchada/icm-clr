@@ -56,6 +56,7 @@ class BatchQueue(object):
         self._img_batch_list.pop(1)
         
         rep = rep.detach()
+        rep = torch.nn.functional.normalize(rep, dim=1)
         self._rep_batch_list.append(rep.to(c.device_nn_search))
         self._rep_batch_list.pop(1)
         
@@ -67,6 +68,7 @@ class BatchQueue(object):
         return self._img_sample[knn.indices]
     
     def _multi_nn_search_torch(self, x):
+        x = torch.nn.functional.normalize(x, dim=1)
         return torch.cat([self.nn_search(x_i) for x_i in torch.unbind(x, dim=0)], dim=0).to(c.device)
     
     @jit(nopython=True)

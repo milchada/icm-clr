@@ -1,3 +1,4 @@
+import optuna
 import torch
 from torch.cuda.amp import autocast
 import numpy as np
@@ -9,7 +10,17 @@ from scripts.util.logging import logger
 from scripts.util.make_dir import make_dir
 
 class Trainer(object):
-    def __init__(self, model, optimizer, experiment_tracker, patience, num_epochs, save_path, max_num_batches=None, max_runtime_seconds=None, use_checkpoint=False):
+    def __init__(self,
+                 model,
+                 optimizer,
+                 experiment_tracker,
+                 patience,
+                 num_epochs,
+                 save_path,
+                 max_num_batches=None,
+                 max_runtime_seconds=None,
+                 use_checkpoint=False,
+                 optuna_trial=None):
         
         self._epoch = 0
         self._val_loss_memory = []
@@ -20,6 +31,7 @@ class Trainer(object):
         self._max_num_batches = max_num_batches
         self._max_runtime_seconds = max_runtime_seconds
         self._time_start = time()
+        self._optuna_trial = optuna_trial
 
         self.model = model
         self.optimizer = optimizer
@@ -30,11 +42,21 @@ class Trainer(object):
     
     @property
     def epoch(self):
-        return self._epoch
+        return self._epoch 
 
     @property
     def runtime_seconds(self):
         return (time() - self._time_start)
+
+    def optuna_report(self, intermediate_value):
+        if self._optuna_trial is not None:
+            #To keep the pruning independent from the batch size we report as #step# the runtime in bins of 20min
+            self._optuna_trial.report(intermediate_value, int(self.runtime_seconds/1200))
+
+    def optuna_should_prune(self):
+        if self._optuna_trial is not None:
+            if self._optuna_trial.should_prune():
+              raise optuna.TrialPruned()
 
     def step(self):
         self._epoch += 1
@@ -112,7 +134,7 @@ class Trainer(object):
         for batch in zip(*datasets):
             
             #Run only a max number of batches per epoch
-            if batch_num < self._max_num_batches:
+            if batch_num < self._max_num_batches*0.125 or batch_num < 10:
                 batch_num += 1
             else:
                 break
@@ -129,6 +151,8 @@ class Trainer(object):
         self._val_loss_memory.append(loss_mean)
         self.optimizer.lr_step(loss_mean)
         
+        self.optuna_report(loss_mean)
+
         return loss_mean, lossdict_mean
     
     def early_stopping_criterion(self):
@@ -150,7 +174,7 @@ class Trainer(object):
     def stopping_criterion(self):
         '''Test stopping criteria'''
         return self.early_stopping_criterion() or self.max_epochs_criterion() or self.max_time_criterion()
-    
+
     def save(self):
         '''Save model'''
         if self._save_path is not None:
@@ -176,6 +200,9 @@ class Trainer(object):
         #Check if stopping criterions are reached
         if self.stopping_criterion():
             raise StopIteration
+
+        #Prune the optuna run if it is marked
+        self.optuna_should_prune()
         
         #Next epoch
         self.step()

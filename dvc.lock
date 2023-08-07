@@ -79,24 +79,15 @@ stages:
     cmd: python3 -m scripts.model.train_clr
     deps:
     - path: ./dataset/
-      md5: c899b38153461f64dad0be9450498b78.dir
-      size: 116762481
+      hash: md5
+      md5: ae3d3c536ea8df227d354bc93193614b.dir
+      size: 251064135
       nfiles: 14
-    - path: ./scripts/model/losses.py
-      md5: 36be0f287435a461abbcbcddd7226b95
-      size: 6012
-    - path: ./scripts/model/resnet.py
-      md5: 120d0671926e2a1d48588c01eff15109
-      size: 16265
-    - path: ./scripts/model/resnet_simclr.py
-      md5: d1c4e86d37cb48fca285f3427a080556
-      size: 4471
-    - path: ./scripts/model/train_clr.py
-      md5: a954a6eae77c52fb7b44ee76990a14e0
-      size: 8853
-    - path: ./scripts/model/training.py
-      md5: bc6fe2cf022141dbb3e161cb1379a511
-      size: 6522
+    - path: ./scripts/model/
+      hash: md5
+      md5: d7a3ef3eb2252a6670847c59df809788.dir
+      size: 174352
+      nfiles: 33
     params:
       params.yaml:
         data:
@@ -129,7 +120,7 @@ stages:
           lambd_mmd_back: 0.0
           lambd_mae: 0.0
           lambd_mse: 0.0
-          nce_temperature: 0.07
+          nce_temperature: 0.04
         model:
           CLAMP: 1.0
           NUM_COUPLING_LAYERS: 12
@@ -149,9 +140,9 @@ stages:
           RESNET_DEPTH: 16
           RESNET_WIDTH: 2
           RESNET_DROPOUT: 0.3
-          RESNET_REPRESENTATION_DIM: 128
-          RESNET_REPRESENTATION_DEPTH: 3
-          RESNET_PROJECTION_DIM: 64
+          RESNET_REPRESENTATION_DIM: 256
+          RESNET_REPRESENTATION_DEPTH: 2
+          RESNET_PROJECTION_DIM: 256
           RESNET_PROJECTION_DEPTH: 2
           RESNET_NUM_CHANNELS: 3
           RESNET_ROTATION_EQUIVARIANCE: 8
@@ -159,17 +150,17 @@ stages:
           RESNET_REFLECTION_EQUIVARIANCE: true
           RESNET_INITIAL_STRIDE: 2
         train_clr:
-          LEARNING_RATE: 0.00015
-          L2_DECAY: 6e-05
+          LEARNING_RATE: 0.001
+          L2_DECAY: 1e-06
           BETA_1: 0.9
           BETA_2: 0.999
-          LR_PATIENCE: 7
-          LR_DECAY: 0.6
+          LR_PATIENCE: 3
+          LR_DECAY: 0.8
           BATCH_SIZE: 32
           NUM_EPOCHS: 500
-          MAX_NUM_BATCHES_PER_EPOCH: 200
-          MAX_RUNTIME_SECONDS: 43200
-          PATIENCE: 40
+          MAX_NUM_BATCHES_PER_EPOCH: 350
+          MAX_RUNTIME_SECONDS: 86400
+          PATIENCE: 15
           PARALLEL_TRAINING: false
           DOMAIN_TRAINING: true
           DOMAIN_ADAPTION: false
@@ -177,81 +168,83 @@ stages:
           NNCLR_QUEUE_SIZE: 512
           AUGMENTATION_PARAMS:
             ROTATION: 15
-            TRANSLATE: 0.36
-            SCALE: 1.9
+            TRANSLATE: 0.25
+            SCALE: 1.1
             FLIP: true
             GAUSSIAN_BLUR_SIGMA:
-            - 0.001
-            - 6.5
+            - 0.0001
+            - 0.1
             NOISE_STD:
             - 0.01
             - 0.08
     outs:
     - path: ./model/resnet.pt
-      md5: 7924172adb1b735b83d60007eddc5e44
-      size: 137715580
+      hash: md5
+      md5: 75b7064b05dc49792659b76f72f34950
+      size: 138930562
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
       hash: md5
-      md5: b1d95131fa11f3ce069e6800057da465.dir
-      size: 124893974
+      md5: ae3d3c536ea8df227d354bc93193614b.dir
+      size: 251064135
       nfiles: 14
     - path: ./model/resnet.pt
-      md5: 7924172adb1b735b83d60007eddc5e44
-      size: 137715580
+      hash: md5
+      md5: 75b7064b05dc49792659b76f72f34950
+      size: 138930562
     - path: ./scripts/postprocessing/write_representation.py
       md5: 442ab6763d87ec824eab91847254cb5d
       size: 1173
     outs:
     - path: ./postprocessing/representation.npy
-      md5: 4610ef079549bc0e139c38dc61ba1a63
-      size: 8031872
+      hash: md5
+      md5: badc3124cce3af80569ad7919d2dbee0
+      size: 32334464
   params_opt:
     cmd: sbatch -W run_params_opt.sh
     deps:
     - path: ./dataset/
       hash: md5
-      md5: b1d95131fa11f3ce069e6800057da465.dir
-      size: 124893974
+      md5: ae3d3c536ea8df227d354bc93193614b.dir
+      size: 251064135
       nfiles: 14
     - path: ./scripts/model/
       hash: md5
-      md5: 240dc29667dc5afeb175f6b83d95c32a.dir
-      size: 169970
-      nfiles: 31
+      md5: 93fa1d1b612997510fc49a7d669c1429.dir
+      size: 174268
+      nfiles: 33
     params:
       params.yaml:
         params_opt:
-          STUDY_NAME: Variation_Study
+          STUDY_NAME: Final_Variation_Study
           STUDY_OBJECT: ParameterOptimizationCLR_All
           NUM_TRIALS: 200
           SAVE_MODELS: true
-          SAVE_REPRESENTATIONS: false
     outs:
     - path: ./metrics/optuna_journal.log
       hash: md5
-      md5: cd410e22268b04a07036589dd5655f70
-      size: 1785005
+      md5: 7d22d271e7a5a5121d0396db5269375f
+      size: 3054684
     - path: ./model/optuna/
       hash: md5
-      md5: bc5574b84da0b8a99def61f5818de427.dir
-      size: 14304825840
-      nfiles: 206
+      md5: 043360741c27ac12b7be3d696ebb8eb0.dir
+      size: 10003616636
+      nfiles: 161
   write_optuna_representation:
     cmd: python3 -m scripts.postprocessing.write_optuna_representation
     deps:
     - path: ./dataset/
       hash: md5
-      md5: b1d95131fa11f3ce069e6800057da465.dir
-      size: 124893974
+      md5: ae3d3c536ea8df227d354bc93193614b.dir
+      size: 251064135
       nfiles: 14
     - path: ./model/optuna/
       hash: md5
-      md5: bc5574b84da0b8a99def61f5818de427.dir
-      size: 14304825840
-      nfiles: 206
+      md5: 043360741c27ac12b7be3d696ebb8eb0.dir
+      size: 10003616636
+      nfiles: 161
     - path: ./scripts/postprocessing/write_optuna_representation.py
       hash: md5
       md5: fee4126fbf70a732c1ab56b2f17cc4ec
@@ -259,6 +252,6 @@ stages:
     outs:
     - path: ./postprocessing/optuna/
       hash: md5
-      md5: d67e668f4c234adaa50c84704267836b.dir
-      size: 337335808
-      nfiles: 20
+      md5: f603880520b529ae20879922906785dc.dir
+      size: 16167296
+      nfiles: 1

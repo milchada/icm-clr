@@ -39,6 +39,7 @@ class ParameterOptimization:
         self.study = optuna.create_study(directions=self.direction,
                                          load_if_exists=True,
                                          storage=optuna_storage,
+                                         pruner=self.pruner,
                                          study_name=opt_params['STUDY_NAME'])
         
     def run(self):
@@ -65,9 +66,7 @@ class ParameterOptimizationCLR(ParameterOptimization):
             raise optuna.TrialPruned()
 
         try:
-            loss = train_clr(params=params_trail, save_model=opt_params['SAVE_MODELS'], save_path=c.optuna_resnet_path(trail.number), experiment_tracking=True)
-            if opt_params['SAVE_REPRESENTATIONS']:
-                write_representation(c.optuna_resnet_path(trail.number), c.optuna_representation_path(trail.number), params = params_trail)
+            loss = train_clr(params=params_trail, save_model=opt_params['SAVE_MODELS'], save_path=c.optuna_resnet_path(trail.number), continue_training=True, experiment_tracking=True, optuna_trial=trail)
             return loss
 
         except torch.cuda.OutOfMemoryError:
@@ -81,18 +80,20 @@ class ParameterOptimizationCLR_All(ParameterOptimizationCLR):
     
     def __init__(self):
         self.direction = ['minimize']
+        #Steps are here the runtime in multiples of 20mins
+        self.pruner = pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=7, interval_steps=1)
     
     def _params(self, trail):
 
         AUGMENTATION_PARAMS = {'ROTATION': 15,
-                               'TRANSLATE': trail.suggest_float('TRANSLATE', 0.05, 0.5),
-                               'SCALE': trail.suggest_float('SCALE', 1.0, 2.5),
+                               'TRANSLATE': trail.suggest_float('TRANSLATE', 0.1, 0.4),
+                               'SCALE': trail.suggest_float('SCALE', 1.0, 1.5),
                                'FLIP': True,
-                               'GAUSSIAN_BLUR_SIGMA': [0.00001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.001, 10, log=True)],
+                               'GAUSSIAN_BLUR_SIGMA': [0.00001, trail.suggest_float('GAUSSIAN_BLUR_SIGMA', 0.001, 0.1, log=True)],
                                'NOISE_STD': [0.00001, trail.suggest_float('NOISE_STD', 0.01, 0.1)]}
 
         LR_PATIENCE = trail.suggest_int('LR_PATIENCE', 2, 10)
-        BATCH_SIZE = trail.suggest_int('BATCH_SIZE', 4, 128, log=True),
+        BATCH_SIZE = trail.suggest_int('BATCH_SIZE', 8, 128, log=True)
 
         params_trail = {'BATCH_SIZE': BATCH_SIZE,
                         'RESNET_DROPOUT':  trail.suggest_float('RESNET_DROPOUT', 0.0, 0.5),
@@ -102,15 +103,15 @@ class ParameterOptimizationCLR_All(ParameterOptimizationCLR):
                         'RESNET_REPRESENTATION_DEPTH': trail.suggest_int('RESNET_REPRESENTATION_DEPTH', 1, 3),
                         'RESNET_PROJECTION_DIM': trail.suggest_categorical('RESNET_PROJECTION_DIM', [64, 128, 256, 512]),
                         'RESNET_PROJECTION_DEPTH': trail.suggest_int('RESNET_PROJECTION_DEPTH', 1, 3),
-                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 64, 4096, log=True),
+                        'NNCLR_QUEUE_SIZE': trail.suggest_int('NNCLR_QUEUE_SIZE', 128, 4096, log=True),
                         'nce_temperature': trail.suggest_float('nce_temperature', 0.01, 0.1, log=True),
                         'LEARNING_RATE': trail.suggest_float('LEARNING_RATE', 0.0001, 0.005, log=True),
                         'LR_PATIENCE': LR_PATIENCE,
-                        'LR_DECAY': trail.suggest_float('LR_DECAY', 0.2, 0.9),
-                        'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.000001, 0.001, log=True),
-                        'PATIENCE': int(LR_PATIENCE*3.5),
+                        'LR_DECAY': trail.suggest_float('LR_DECAY', 0.5, 0.9),
+                        'L2_DECAY':  trail.suggest_float('L2_DECAY',  0.000001, 0.0001, log=True),
+                        'PATIENCE': int(LR_PATIENCE*2.0),
                         'MAX_RUNTIME_SECONDS': 3600*24,
-                        'MAX_NUM_BATCHES_PER_EPOCH': int(50000/BATCH_SIZE),
+                        'MAX_NUM_BATCHES_PER_EPOCH': int(10000/BATCH_SIZE),
                         'AUGMENTATION_PARAMS': AUGMENTATION_PARAMS}
 
         return params_trail

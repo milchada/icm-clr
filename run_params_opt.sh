@@ -8,7 +8,7 @@
 #SBATCH -J ergo_params_opt
 #
 #SBATCH --partition=p.gpu
-#SBATCH --ntasks=11
+#SBATCH --ntasks=12
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=18
 #SBATCH --mem=125000

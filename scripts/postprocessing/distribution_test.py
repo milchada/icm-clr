@@ -7,7 +7,7 @@ class DistributionTest(object):
         
     def reshape_inputs(x, df):
         '''Function to reshape list of inputs x to same size by selecting random rows from the larger arrays.'''
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(42)
         
         for i in range(len(x)):
             assert x[i].ndim == 2 #x should be list of 2D Tensors: First Dim Objects, Second Dim Representation Dimension

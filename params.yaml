@@ -176,6 +176,11 @@ train_cinn:
     NUM_EPOCHS: 200
     #Stop the training after validation loss has not improved for this number of epochs
     PATIENCE: 20
+    
+    #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
+    MAX_NUM_BATCHES_PER_EPOCH: 350
+    #Stop the training if a max runtime (in seconds) has been reached
+    MAX_RUNTIME_SECONDS: 86400
 
     #Use the simclr pretrained resnet
     USE_PRETRAINED_RESNET: True

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim
 
-import scripts.data as data
+from scripts.data import data
 import config as c
 import numpy as np
 

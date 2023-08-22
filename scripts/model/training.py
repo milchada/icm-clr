@@ -75,6 +75,8 @@ class Trainer(object):
             datasets (list):         List of datasets to use for training
         """
         
+        assert isinstance(datasets, list)
+        
         self.model.train()        
         
         batch_num = 0
@@ -124,6 +126,9 @@ class Trainer(object):
                                      and a lossdict with losses as floats in host memory
             datasets (list): List of datasets to use for validation
         """
+        
+        assert isinstance(datasets, list)
+        
         self.model.eval()
         
         loss_list = []

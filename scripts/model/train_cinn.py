@@ -213,9 +213,8 @@ def train_cinn(params={},
             loss.append(mae * losses.lambd_mae)
 
         #Also save statistics about the z
-        z_val = z.cpu().numpy()
-        loss_dict = {**loss_dict, 'Val_z_Mean': float(np.max(np.abs(np.mean(z_val, axis=0))))}
-        loss_dict = {**loss_dict, 'Val_z_Std': float(np.max(np.std(z_val, axis=0)))}
+        loss_dict = {**loss_dict, 'Val_z_Mean': tf.math.reduce_max(tf.math.abs(tf.math.reduce_mean(z, axis=0)))}
+        loss_dict = {**loss_dict, 'Val_z_Std': tf.reduce_max(tf.math.reduce_std(z, axis=0))}
         
         #Use all losses (!=0) to perform the error propagation
         loss = sum(loss)

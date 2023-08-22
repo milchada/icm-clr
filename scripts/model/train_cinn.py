@@ -104,6 +104,8 @@ def train_cinn(params={},
         image = torch.cat(image, dim=0)
         image = image.to(c.device)
         label = label.to(c.device)
+        
+        print(label)
 
         #Augmentation
         label += params["NOISE"] * torch.randn_like(label)
@@ -213,8 +215,8 @@ def train_cinn(params={},
             loss.append(mae * losses.lambd_mae)
 
         #Also save statistics about the z
-        loss_dict = {**loss_dict, 'Val_z_Mean': tf.math.reduce_max(tf.math.abs(tf.math.reduce_mean(z, axis=0)))}
-        loss_dict = {**loss_dict, 'Val_z_Std': tf.reduce_max(tf.math.reduce_std(z, axis=0))}
+        loss_dict = {**loss_dict, 'Val_z_Mean': torch.max(torch.abs(torch.mean(z, 0)))}
+        loss_dict = {**loss_dict, 'Val_z_Std': torch.max(torch.std(z, 0))}
         
         #Use all losses (!=0) to perform the error propagation
         loss = sum(loss)

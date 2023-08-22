@@ -100,12 +100,12 @@ def train_cinn(params={},
     
     def training_lossfunction(model, batch):
 
+        print(batch)
+        
         image, label = batch[0]
         image = torch.cat(image, dim=0)
         image = image.to(c.device)
         label = label.to(c.device)
-        
-        print(label)
 
         #Augmentation
         label += params["NOISE"] * torch.randn_like(label)

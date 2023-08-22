@@ -234,7 +234,7 @@ def train_cinn(params={},
         #        print("Unfix RESNET")
 
     #Perform training
-    return run_training(trainer, training_lossfunction, training_data, validation_lossfunction, validation_data)
+    return run_training(trainer, training_lossfunction, [training_data], validation_lossfunction, [validation_data])
 
 
 if __name__ == "__main__":

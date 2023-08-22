@@ -58,8 +58,9 @@ stages:
     deps:
     - ./dataset/
     - ./scripts/model/
+    - ./model/resnet.pt
     outs:
-    - ./model/cinn.pt
+    - ./model/cinn/*
     metrics:
     - ./metrics/train_cinn.json
 

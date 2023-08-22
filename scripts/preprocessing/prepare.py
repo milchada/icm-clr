@@ -543,7 +543,7 @@ class DatasetMatcher(object):
         
         #Get scaler first
         first_dataset = self._datasets[0]
-        first_dataset.scale_split(self._dataset_fractions[0], self._dataset_observables[0], self._dataset_unobservables[0])
+        first_dataset.scale_split(self._dataset_fractions[0], self._dataset_unobservables[0], self._dataset_observables[0])
         x_scaler = first_dataset.x_scaler
         y_scaler = first_dataset.y_scaler
         
@@ -560,7 +560,7 @@ class DatasetMatcher(object):
         for s, frac, obs, unobs in zip(self._datasets, self._dataset_fractions, self._dataset_observables, self._dataset_unobservables):
             s.x_scaler = x_scaler
             s.y_scaler = y_scaler
-            x_split, y_split, m_split = s.scale_split(frac, obs, unobs)
+            x_split, y_split, m_split = s.scale_split(frac, unobs, obs)
             
             #Go through each of the splits for x, y and m
             train.append([x_split[0], y_split[0], m_split[0]])

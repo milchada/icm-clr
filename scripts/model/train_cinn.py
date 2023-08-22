@@ -35,7 +35,7 @@ def train_cinn(params={},
                save_model=True,
                save_path=None,
                use_checkpoint=False,
-               optuna_trial=None
+               optuna_trial=None,
                experiment_tracking=True):
     """
     Function to set up and train the cINN

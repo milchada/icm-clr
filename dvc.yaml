@@ -48,7 +48,7 @@ stages:
     - ./model/resnet.pt
     frozen: true
 
-  train:
+  train_cinn:
     cmd: python3 -m scripts.model.train_cinn
     params:
     - data

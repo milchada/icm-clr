@@ -183,7 +183,7 @@ train_cinn:
     FIX_RESNET_PARAMS: True
     #Unfix the RESNET params if the cINN training has reached this learning rate
     #(set to 0 if RESNET should be always fixed)
-    RESNET_LR_THRESHOLD: 0.00005
+    RESNET_LR_THRESHOLD: 0
     
     #Size of batches used for the training (and validation)
     BATCH_SIZE: 128

@@ -46,11 +46,27 @@ stages:
     - ./scripts/model/
     outs:
     - ./model/resnet.pt
+    frozen: true
+
+  train:
+    cmd: python3 -m scripts.model.train_cinn
+    params:
+    - data
+    - losses
+    - model
+    - train_cinn
+    deps:
+    - ./dataset/
+    - ./scripts/model/
+    outs:
+    - ./model/cinn.pt
+    metrics:
+    - ./metrics/train_cinn.json
+
 
   #Resnet Analysis
   #---------------------------------------------------------
 
-    frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:

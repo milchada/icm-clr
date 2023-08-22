@@ -180,12 +180,14 @@ class Trainer(object):
         if self._save_path is not None:
             make_dir(self._save_path)
             torch.save(self.model.state_dict(), self._save_path)
+            logger.info('Model saved.')
             
     def load(self):
         '''Load model'''
-        if self._save_path is not None and os.path.exists(self._save_path):
+        if self._save_path is not None and os.path.isfile(self._save_path):
             checkpoint = torch.load(self._save_path, map_location=torch.device(c.device))
             self.model.load_state_dict(checkpoint)
+            logger.info('Existing Model loaded.')
         
     def __iter__(self):
         self._epoch = 0

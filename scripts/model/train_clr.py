@@ -52,7 +52,7 @@ def loss_dict_2_host(d):
 def train_clr(params={},
               save_model=True,
               save_path=None,
-              continue_training=False,
+              use_checkpoint=False,
               experiment_tracking=True,
               optuna_trial=None):
     """
@@ -80,18 +80,13 @@ def train_clr(params={},
             return self.module.trainable_parameters
 
     #Load the model
-    logger.info('Load model...')
-    if continue_training and os.path.isfile(save_path):
-        model = load_resnet_model(save_path, params)
-        logger.info('Resume Model Training of ' + save_path)
-    else:
-        model = ResNetSimCLR(params)
-
+    logger.info('Create model...')
+    model = ResNetSimCLR(params)
     model.to(c.device)
 
     if params["PARALLEL_TRAINING"]:
         model = DataParallelWrapper(module=model)
-    logger.info('Model loaded.')
+    logger.info('Model created.')
 
     #Init the optimizer
     optimizer = Optimizer(model, params)
@@ -112,7 +107,7 @@ def train_clr(params={},
                       save_path,
                       max_num_batches = params["MAX_NUM_BATCHES_PER_EPOCH"],
                       max_runtime_seconds = params["MAX_RUNTIME_SECONDS"],
-                      use_checkpoint=False,
+                      use_checkpoint=use_checkpoint,
                       optuna_trial=optuna_trial)
     
     #Prepare training data 

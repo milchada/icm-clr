@@ -24,7 +24,7 @@ resnet_path = model_path + 'resnet.pt'
 optuna_resnet_path = lambda x: model_path + 'optuna/run_%04d.pt' % (x)
 representation_path = postprocessing_path + 'representation.npy'
 optuna_representation_path = lambda x:  postprocessing_path + 'optuna/run_representation_%04d.npy' % (x)
-cinn_path = model_path + 'cinn.pt'
+cinn_path = lambda x: model_path + 'cinn/cinn_%02d.pt' % (x)
 optuna_storage = metrics_path + 'optuna_journal.log'
 
 #Device to use

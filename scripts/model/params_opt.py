@@ -66,7 +66,7 @@ class ParameterOptimizationCLR(ParameterOptimization):
             raise optuna.TrialPruned()
 
         try:
-            loss = train_clr(params=params_trail, save_model=opt_params['SAVE_MODELS'], save_path=c.optuna_resnet_path(trail.number), continue_training=True, experiment_tracking=True, optuna_trial=trail)
+            loss = train_clr(params=params_trail, save_model=opt_params['SAVE_MODELS'], save_path=c.optuna_resnet_path(trail.number), use_checkpoint=True, experiment_tracking=True, optuna_trial=trail)
             return loss
 
         except torch.cuda.OutOfMemoryError:

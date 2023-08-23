@@ -55,13 +55,13 @@ def load_cinn_model(num_models=None, model_index=None):
     def load_single(i):
         cinn = CombinedModel()
         cinn.to(device)
-        state_dict = {k:v for k,v in torch.load('model/cinn_' + str(i) + '.pt', map_location=device).items() if 'tmp_var' not in k}
+        state_dict = {k:v for k,v in torch.load(c.cinn_path(i), map_location=device).items() if 'tmp_var' not in k}
         cinn.load_state_dict(state_dict)
         cinn.eval()
         return cinn
         
     #Look for model sin the model path
-    filelist = glob.glob(c.model_path + "/cinn_*.pt")
+    filelist = glob.glob(c.model_path + "/cinn/cinn_*.pt")
     
     #Check if a specific index is asked for
     if model_index is not None:

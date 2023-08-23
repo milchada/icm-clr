@@ -61,7 +61,7 @@ stages:
     - ./scripts/model/
     - ./model/resnet.pt
     outs:
-    - ./model/cinn/*
+    - ./model/cinn/
     frozen: true
 
 

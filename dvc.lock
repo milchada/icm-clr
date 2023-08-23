@@ -368,3 +368,29 @@ stages:
       md5: 155455c065cda16b4cb27719066be496.dir
       size: 144165251
       nfiles: 1
+  sample_posterior:
+    cmd: python3 -m scripts.postprocessing.sample_posterior
+    deps:
+    - path: ./dataset/
+      hash: md5
+      md5: 7251ba129945983eda5613cff8a1af77.dir
+      size: 251064135
+      nfiles: 14
+    - path: ./model/cinn/
+      hash: md5
+      md5: 155455c065cda16b4cb27719066be496.dir
+      size: 144165251
+      nfiles: 1
+    - path: ./scripts/postprocessing/sample_posterior.py
+      hash: md5
+      md5: 34ff6c7254b976227471cb3db3216d5a
+      size: 3281
+    params:
+      params.yaml:
+        sample_posterior:
+          NUM_SAMPLES: 400
+    outs:
+    - path: ./postprocessing/posterior.npy
+      hash: md5
+      md5: 2055b2fcb2c84962fce50784f59bf21b
+      size: 606268928

@@ -76,6 +76,7 @@ stages:
     - ./dataset/
     outs:
     - ./postprocessing/representation.npy
+    frozen: true
 
   write_optuna_representation:
     cmd: python3 -m scripts.postprocessing.write_optuna_representation
@@ -85,6 +86,7 @@ stages:
     - ./scripts/postprocessing/write_optuna_representation.py
     outs:
     - ./postprocessing/optuna/
+    frozen: true
 
   sample_posterior:
     cmd: python3 -m scripts.postprocessing.sample_posterior
@@ -95,8 +97,8 @@ stages:
     - ./model/cinn/
     - ./scripts/postprocessing/sample_posterior.py
     outs:
-    - ./postprocessing/posterior.npy:
-        cache: false
+    - ./postprocessing/posterior.npy
+    frozen: true
 
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb

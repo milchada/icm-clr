@@ -13,7 +13,6 @@ from scipy.signal import find_peaks, peak_prominences
 
 import config as c
 
-from scripts.postprocessing.sample_posterior import posterior_path
 from scripts.util import kde
 from scripts.data import data
 
@@ -93,7 +92,7 @@ def peak_detection(posterior):
 
 
 if __name__ == "__main__":
-    posterior = np.load(posterior_path)
+    posterior = np.load(c.posterior_path)
     positions, prominences = peak_detection(posterior)
 
     np.save(peak_position_path, positions, allow_pickle=True)

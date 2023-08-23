@@ -19,7 +19,6 @@ from scripts.util import make_dir
 from scripts.data import data
 
 from scripts.postprocessing.peak_detection import map_path, peak_number_path, peak_position_path
-from scripts.postprocessing.sample_posterior import posterior_path
 
 font = {'size'   : 26,
         'family' : 'Roboto'}
@@ -46,7 +45,7 @@ STD_C = "k"
 output_path = c.plots_path + "map/"
 
 
-def plot_map(gt, pre, header, sigma=None, vmin=0.1, vmax=10, sample_mode=False, error_mode=False, sigma_mode=False, sigma_error_mode=False):
+def plot_map(gt, pre, header, sigma=None, vmin=1, vmax=100, sample_mode=False, error_mode=False, sigma_mode=False, sigma_error_mode=False):
     """
     Function to plot MAPs, Errors and Sigmas
     This function is able to handle NaNs by plotting them into extra bins
@@ -360,7 +359,7 @@ if __name__ == "__main__":
     fig.savefig(output_path + "map_best_peak.pdf")
     
     #Plot total posterior
-    posterior = np.load(posterior_path)
+    posterior = np.load(c.posterior_path)
     posterior_subsample = np.concatenate(posterior[:,:NUM_SAMPLES,:])
     gt_ext = np.repeat(gt, NUM_SAMPLES, axis=0)
     fig = plot_map(gt_ext, posterior_subsample, data.x_header, sample_mode=True)

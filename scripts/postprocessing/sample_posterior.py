@@ -17,9 +17,7 @@ import config as c
 from scripts.model.load import load_cinn_model
 import scripts.data.data as data
 from torch.cuda.amp import autocast
-
-#Define path to save posterior
-posterior_path = c.postprocessing_path + "posterior.npy"    
+  
 
 # Method(s) to sample the posterior
 #----------------------------------------------------------------------------
@@ -102,7 +100,7 @@ if __name__ == "__main__":
     post = sample_all_posteriors(NUM_SAMPLES, cinn)
     
     #Save them 
-    np.save(posterior_path, post)
+    np.save(c.posterior_path, post)
 
 
 

@@ -18,6 +18,7 @@ dataset_raw_path = "./dataset_raw/"
 dataset_path = "./dataset/"
 model_path = "./model/"
 postprocessing_path = "./postprocessing/"
+posterior_path = postprocessing_path + "posterior.npy"  
 metrics_path = "./metrics/"
 plots_path = "./plots/"
 resnet_path = model_path + 'resnet.pt'
@@ -33,7 +34,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device_nn_search = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #Label dict (code friendly -> human friendly)
-label_dict = {"fraction_disk_stars": "Fraction of Disk Stars [D/T]",
+label_dict = {'z': 'Redshift',
+              'i_band_mag': 'I-Band Magnitude [mag]',
+              'petro_90_radius': 'Petrosian Radius [pixel]',
+              "fraction_disk_stars": "Fraction of Disk Stars [D/T]",
               "mass": "Stellar Mass [log $M_\odot$]",
               "lookback": "Lookback Time [Gyr]",
               "half_light_rad": "Half Light Radius [kpc]",

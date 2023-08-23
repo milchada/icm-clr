@@ -79,6 +79,17 @@ class Data():
     def l_scaler(self):
         return load(open(c.dataset_path + "y_scaler.pkl", 'rb'))
     
+    def x_transform(self, x):
+        return self.x_scaler.transform(x)
+    
+    def l_transform(self, l):
+        return self.x_scaler.transform(l)
+    
+    def x_inverse_transform(self, x):
+        return self.x_scaler.inverse_transform(x)
+    
+    def l_inverse_transform(self, l):
+        return self.x_scaler.inverse_transform(l)
     
     #Load Dataframes
     # x = Scaled Unobservables

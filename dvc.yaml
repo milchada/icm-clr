@@ -96,7 +96,7 @@ stages:
     - ./scripts/postprocessing/sample_posterior.py
     outs:
     - ./postprocessing/posterior.npy:
-      cache: false
+        cache: false
 
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb

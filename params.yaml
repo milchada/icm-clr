@@ -201,10 +201,10 @@ train_cinn:
     #Augmentation parameters
     AUGMENTATION_PARAMS:
         ROTATION: 10
-        TRANSLATE: 0.15
-        SCALE: 1.2
+        TRANSLATE: 0.11
+        SCALE: 1.1
         FLIP: True
-        GAUSSIAN_BLUR_SIGMA: [0.1, 5]
+        GAUSSIAN_BLUR_SIGMA: [0.000001, 0.1]
         NOISE_STD: [0.0, 0.05]
 
 model:

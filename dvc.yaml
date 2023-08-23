@@ -62,8 +62,7 @@ stages:
     - ./model/resnet.pt
     outs:
     - ./model/cinn/*
-    metrics:
-    - ./metrics/train_cinn.json
+    frozen: true
 
 
   #Resnet Analysis
@@ -86,6 +85,18 @@ stages:
     - ./scripts/postprocessing/write_optuna_representation.py
     outs:
     - ./postprocessing/optuna/
+
+  sample_posterior:
+    cmd: python3 -m scripts.postprocessing.sample_posterior
+    params:
+    - sample_posterior
+    deps:
+    - ./dataset/
+    - ./model/cinn/
+    - ./scripts/postprocessing/sample_posterior.py
+    outs:
+    - ./postprocessing/posterior.npy:
+      cache: false
 
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb

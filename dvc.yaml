@@ -100,6 +100,16 @@ stages:
     - ./postprocessing/posterior.npy
     frozen: true
 
+  plot_posterior:
+    cmd: python3 -m scripts.plot.plot_posterior
+    deps:
+    - ./scripts/plot/plot_posterior.py
+    - ./model/cinn/
+    - ./dataset/
+    outs:
+    - ./plots/posterior_example.pdf
+
+
   #visualize_UMAP:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_UMAP.ipynb
   #  deps:

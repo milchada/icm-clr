@@ -9,8 +9,6 @@ Parameters for scripts which have to be traced by DVC are stored in params.yaml
 @author: Lukas Eisert 
 """
 
-import torch
-
 #Paths
 image_cache_path = "/ptmp/leisert/image_cache/"
 illustris_path = "/virgotng/universe/IllustrisTNG/"
@@ -28,10 +26,17 @@ optuna_representation_path = lambda x:  postprocessing_path + 'optuna/run_repres
 cinn_path = lambda x: model_path + 'cinn/cinn_%02d.pt' % (x)
 optuna_storage = metrics_path + 'optuna_journal.log'
 
-#Device to use
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#Device for the nnclr search
-device_nn_search = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+try:
+    import torch
+    
+    #Device to use
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #Device for the nnclr search
+    device_nn_search = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+except ModuleNotFoundError:
+    pass
+
 
 #Label dict (code friendly -> human friendly)
 label_dict = {'z': 'Redshift',

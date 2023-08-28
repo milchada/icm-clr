@@ -437,7 +437,7 @@ class DatasetMatcher(object):
         target_label_concat = np.concatenate(target_label, axis=0)
         
         #Match the source to the target
-        matched_source_mask, matched_target_mask, matched_source_sets, matched_target_sets = self._get_matched_masks(source_concat, target_concat, source_label_concat, target_label_concat)
+        matched_source_mask, matched_target_mask, matched_source_sets, matched_target_sets = DatasetMatcher.get_matched_masks(source_concat, target_concat, source_label_concat, target_label_concat)
         
         #Split the 2 masks back to the shape of the original sets
         matched_source_mask = inv_concatenate(matched_source_mask, source)
@@ -468,7 +468,8 @@ class DatasetMatcher(object):
             else:
                 raise ValueError("Please specify if dataset is a target or source set in params.yaml")
  
-    def _get_matched_masks(self, source, target, source_label, target_label):
+    @staticmethod
+    def get_matched_masks(source, target, source_label, target_label):
         '''
         Match the set given by source to the set given by target. 
         Returns the masks of source and target datasets such that the distribution for the given fields are identical

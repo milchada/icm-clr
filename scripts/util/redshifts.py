@@ -8,7 +8,6 @@ containing the list of redshifts for each snapshot
 @author: Lukas Eisert
 """
 
-import illustris_python as il
 import numpy as np
 
 TNG_PATH = "/virgo/simulations/IllustrisTNG/TNG100-1/output"
@@ -18,6 +17,8 @@ REDSHIFT_PATH = "./scripts/util/RedshiftsIllustrisTNG.txt"
 def save_redshift():
     '''Get Redshift from simulation header and write it in a txt file'''
     z = np.zeros(100)
+    
+    import illustris_python as il
     
     for i in range(100):
         z[i] = il.groupcat.loadHeader(TNG_PATH, i)["Redshift"]

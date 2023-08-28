@@ -215,15 +215,30 @@ class DatasetPreparator(object):
         return split_x
 
     def scale(self, df, fields, scaler=None):
-        '''Scale the input, if avail with a given scaler otherwise create a new one based on the given data'''
+        '''
+            Select and scale the input, if avail with a given scaler otherwise create a new one based on the given data
+            
+            Args:
+            df (pandas Dataframe):   Data to be scaled
+            fields (list): List of fields to be selected from df and scaled; if None a array of length len(df) with np.nan is                                    returned. If an entry in the list is None, the respective field will be filled with np.nan (usefull when a                            static is not available for all datasets)  
+            scaler (sklearn scaler): Used to scale, if None a new Standard Scaler is created and fitted.
+        '''
         
         if fields is None:
-            x = np.empty((len(df)))
-            x[:] = np.nan
-            return pd.DataFrame(x, columns=["None"]), None
-        
-        x = df.loc[:, fields].values
-                
+            nan_array = np.empty((len(df)))
+            nan_array[:] = np.nan
+            return pd.DataFrame(nan_array, columns=["None"]), None
+            
+        x = []
+        for field in fields:
+            if field is not None:
+                x.append(df.loc[:, field].values)
+            else:
+                nan_array = np.empty((len(df)))
+                nan_array[:] = np.nan
+                x.append(nan_array)
+            
+        # If there is a nan in x the scaler is throwing a RuntimeWarning: invalid value encountered in true_divide 
         if scaler is None:
             scaler = StandardScaler()
             scaler.fit(x)

@@ -24,20 +24,23 @@ extract:
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
          "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
+         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness', 'mass_exsitu', 'stellar_exsitu_fraction']
       - ["root_descendant_id",
          "lookback", "z",
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
          "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
+         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness', 'stellar_exsitu_fraction']
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
-    #Load datasets?
+    #Load datasets flag: Usefull if not all datasets have to be reloaded
     LOAD:
       - True
       - True
       - False
-    #Only use fractions of the overall set - not 
+    #Load images flag: Usefull if only labels have to be updated (atm only affecting TNG)
+    LOAD_IMAGES:
+      - False
+    #Only use fractions of the overall available set to save time 
     FRACTION:
       - 1.0
       - 1.0
@@ -85,10 +88,10 @@ prepare:
       - None
       - None
     UNOBSERVABLES:
-      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-    LABELS: ['z', 'i_band_mag', 'petro_90_radius']
+      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light', 'None']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light', 'stellar_exsitu_fraction']
+      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light', 'stellar_exsitu_fraction']
+    LABELS: ['z', 'i_band_mag', 'petro_90_radius', 'exsitu']
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
     

@@ -207,7 +207,15 @@ class Subhalos(object):
     @property
     def mass_exsitu(self):
         return self.load_stellar_assembly("StellarMassExSitu") * 1e10 / self._H
-
+    
+    @property
+    def mass_total(self):
+        return self.load_stellar_assembly("StellarMassTotal") * 1e10 / self._H 
+    
+    @property
+    def stellar_exsitu_fraction(self):
+        return self.mass_exsitu / self.mass_total
+    
     @property
     def mass_merger(self):
         return self.load_stellar_assembly("StellarMassFromCompletedMergers") * 1e10 / self._H

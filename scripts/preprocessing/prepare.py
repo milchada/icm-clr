@@ -131,10 +131,6 @@ class DatasetPreparator(object):
             mass = np.log10(mass)
 
             df['mass_last_maj_merger'] = mass
-            
-        #Calulate exsitu fraction
-        if "mass_exsitu" in df.head(0) and "mass_in_rad" in df.head(0):
-            df["exsitu"] = df["mass_exsitu"]/df["mass_in_rad"]
 
         #Clip away some bad behaving galaxies
         #if "mean_merger_mass_ratio" in df.head(0):

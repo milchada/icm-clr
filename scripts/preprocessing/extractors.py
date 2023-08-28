@@ -31,6 +31,7 @@ USE_CACHE = extract_params['USE_CACHE']
 NUM_WORKERS = extract_params['NUM_WORKERS']
 SIZE_CHUNKS = extract_params['SIZE_CHUNKS']
 NUM_PROJECTIONS = extract_params['NUM_PROJECTIONS']
+LOAD_IMAGES = extract_params['LOAD_IMAGES']
 
 class DataExtractor(object):
     def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None, fraction=1.0):
@@ -318,7 +319,9 @@ class TNGHSCExtractor(TNGDataExtractor):
         self.save_labels(df)
         
     def extract(self):
-        self._extract_images()
+        if LOAD_IMAGES:
+            self._extract_images()
+            
         self._extract_labels()
     
 class HSCDataExtractor(DataExtractor):

@@ -38,8 +38,7 @@ extract:
       - True
       - False
     #Load images flag: Usefull if only labels have to be updated (atm only affecting TNG)
-    LOAD_IMAGES:
-      - False
+    LOAD_IMAGES: False
     #Only use fractions of the overall available set to save time 
     FRACTION:
       - 1.0

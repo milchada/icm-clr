@@ -186,7 +186,7 @@ class TNGDataExtractor(DataExtractor):
 
      
 class TNGHSCExtractor(TNGDataExtractor):
-    '''Class to load the TNG data incl the HSC Mocks'''
+    '''Class to load the TNG mocks'''
     
     @property
     def filter_dict(self):

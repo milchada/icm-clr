@@ -66,7 +66,7 @@ prepare:
     #Datasets to use with the split fractions: Training, Validation, Testing
     #Note, that feature scaling is determined by the first set
     SETS:
-      - ["HSC", [0.8, 0.0, 0.1, 0.1]]
+      - ["HSC", [0.0, 0.8, 0.1, 0.1]]
       - ["HSC_TNG100", [0.8, 0.0, 0.1, 0.1]]
       - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
     #Specify fields to match between the sets and the uncertainties they are matched with

@@ -79,6 +79,9 @@ class DataExtractor(object):
         if not os.path.exists(self._image_path):
             os.makedirs(self._image_path)
             
+    def load_labels(self, df):
+        return pd.read_csv(self._label_path)
+    
     def save_labels(self, df):
         df["dataset"] = self._dataset
         df.to_csv(self._label_path, index=False)
@@ -155,6 +158,12 @@ class TNGDataExtractor(DataExtractor):
         fields.append("subhalo_id")
         fields.append("projection")
         
+        #If existing, load already cached labels (usefull if additional labels are added)
+        if USE_CACHE:
+            df = self.load_labels()
+        else:
+            df = pd.DataFrame(columns=fields)
+        
         out = []
         
         for snap in tqdm(self._snapshots, total=len(self._snapshots), disable=False):
@@ -173,9 +182,10 @@ class TNGDataExtractor(DataExtractor):
                 
                 labels = []
                 for field in fields:
-                    field_values = getattr(halos, field) 
-                    labels.append(field_values)
-
+                    if field not in df.head(0):
+                        field_values = getattr(halos, field) 
+                        labels.append(field_values)
+                        
                 out.append(np.transpose(labels))
 
         return pd.DataFrame(np.concatenate(out), columns=fields)

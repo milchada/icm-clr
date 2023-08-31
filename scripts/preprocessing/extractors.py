@@ -199,8 +199,9 @@ class TNGDataExtractor(DataExtractor):
                 out.append(np.transpose(labels))
                 
         df_loaded = pd.DataFrame(np.concatenate(out), columns=fields)
-
-        return df_loaded.update(df_cached)
+        df_loaded.update(df_cached)
+        
+        return df_loaded
         
     def extract(self):
         df = self._load_TNG_labels(self._fields)

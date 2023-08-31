@@ -80,7 +80,7 @@ class DataExtractor(object):
         if not os.path.exists(self._image_path):
             os.makedirs(self._image_path)
             
-    def load_labels(self, df):
+    def load_labels(self):
         return pd.read_csv(self._label_path)
     
     def save_labels(self, df):

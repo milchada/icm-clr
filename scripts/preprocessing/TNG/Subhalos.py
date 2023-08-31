@@ -104,7 +104,6 @@ class Subhalos(object):
     def projection(self):
         return np.array([self._projection]*len(self._subhalo_ids))
     
-    @property
     def __len__(self):
         return len(self._subhalo_ids)
 

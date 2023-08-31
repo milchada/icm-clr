@@ -168,9 +168,9 @@ class TNGDataExtractor(DataExtractor):
         
         #If existing, load already cached labels (usefull if additional labels are added)
         if USE_CACHE:
-            df = self.load_labels()
+            df_cached = self.load_labels()
         else:
-            df = pd.DataFrame(columns=fields)
+            df_cached = pd.DataFrame(columns=[])
         
         out = []
         
@@ -190,13 +190,17 @@ class TNGDataExtractor(DataExtractor):
                 
                 labels = []
                 for field in fields:
-                    if field not in df.head(0):
+                    if field not in df_cached.head(0):
                         field_values = get_field(halos, field) 
                         labels.append(field_values)
-
+                    else:
+                        labels.append([np.nan]*len(halos))
+                        
                 out.append(np.transpose(labels))
+                
+            df_loaded = pd.DataFrame(np.concatenate(out), columns=fields)
 
-        return pd.DataFrame(np.concatenate(out), columns=fields)
+        return df_loaded.update(df_cached)
         
     def extract(self):
         df = self._load_TNG_labels(self._fields)

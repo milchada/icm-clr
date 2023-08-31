@@ -19,6 +19,7 @@ import glob
 from astropy.io import fits
 import numpy as np
 import pandas as pd
+import time
 
 import config as c
 
@@ -157,6 +158,13 @@ class TNGDataExtractor(DataExtractor):
         fields.append("snapshot_id")
         fields.append("subhalo_id")
         fields.append("projection")
+
+        #Helper method to get fields and measure time
+        def get_field(halos, field):
+            t = time.time()
+            out = getattr(halos, field)
+            logger.info('Load ' + field + ' : ' + str(time.time() - t) + ' [s]')
+            return out
         
         #If existing, load already cached labels (usefull if additional labels are added)
         if USE_CACHE:
@@ -183,9 +191,9 @@ class TNGDataExtractor(DataExtractor):
                 labels = []
                 for field in fields:
                     if field not in df.head(0):
-                        field_values = getattr(halos, field) 
+                        field_values = get_field(halos, field) 
                         labels.append(field_values)
-                        
+
                 out.append(np.transpose(labels))
 
         return pd.DataFrame(np.concatenate(out), columns=fields)

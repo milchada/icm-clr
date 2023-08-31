@@ -8,7 +8,7 @@ neptune:
 
 #Parameters for the loading of the data from various sources
 extract:
-    MIN_STELLAR_MASS: 1e9
+    MIN_STELLAR_MASS: 1e10
     MAX_STELLAR_MASS: 1e14
     DATASETS:
       - "HSC_TNG50"
@@ -34,7 +34,7 @@ extract:
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets flag: Usefull if not all datasets have to be reloaded
     LOAD:
-      - True
+      - False
       - True
       - False
     #Load images flag: Usefull if only labels have to be updated (atm only affecting TNG)

@@ -45,8 +45,6 @@ import os
 import glob
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
-
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import shuffle
 from astropy.io import fits
@@ -210,7 +208,8 @@ class DatasetPreparator(object):
 
         return split_x
 
-    def scale(self, df, fields, scaler=None):
+    @staticmethod
+    def scale(df, fields, scaler=None):
         '''
             Select and scale the input, if avail with a given scaler otherwise create a new one based on the given data
             
@@ -234,6 +233,8 @@ class DatasetPreparator(object):
                 nan_array = np.empty((len(df)))
                 nan_array[:] = np.nan
                 x.append(nan_array)
+                
+        x = np.array(x).transpose()
             
         # If there is a nan in x the scaler is throwing a RuntimeWarning: invalid value encountered in true_divide 
         if scaler is None:
@@ -246,8 +247,8 @@ class DatasetPreparator(object):
         '''Select, scale and split the data according to the given fractions'''
         
         #Select fields asked for and scale them
-        df_x, self.x_scaler = self.scale(self.df, unobservable, self.x_scaler)
-        df_y, self.y_scaler = self.scale(self.df, observable, self.y_scaler)
+        df_x, self.x_scaler = DatasetPreparator.scale(self.df, unobservable, self.x_scaler)
+        df_y, self.y_scaler = DatasetPreparator.scale(self.df, observable, self.y_scaler)
         
         #Keep all fields also as unscaled metadata
         df_m = self.df
@@ -280,9 +281,7 @@ class DatasetMatcher(object):
         self._dataset_unobservables = []
         
         self.load_datasets()
-        self.plot_matching_fields("raw")
         self.match_datasets()
-        self.plot_matching_fields("matched")
         self.scale_split_save()
             
             
@@ -304,74 +303,6 @@ class DatasetMatcher(object):
             
     def __len__(self):
         return len(self._datasets)
-       
-
-    # Plotting
-    #------------------------------------------------------------------------------------------
-    
-    def plot_matching_fields(self, title):
-        
-        plot_base = c.plots_path + "preprocessing/"
-        make_dir(plot_base)
-        
-        for j in range(len(MATCHING_FIELDS[0])):
-            path = plot_base + title + "_" + MATCHING_FIELDS[0][j] + ".pdf"
-            fields = [r[j] for r in MATCHING_FIELDS]
-            self.plot_dataset_hist(fields, path)
-            
-        for j in range(len(MATCHING_FIELDS[0])-1):
-            path = plot_base + title + "_" + MATCHING_FIELDS[0][j] + "_" + MATCHING_FIELDS[0][j+1] + ".pdf"
-            fields = [[r[j], r[j+1]] for r in MATCHING_FIELDS]
-            self.plot_dataset_scatter2d(fields, path)
-        
-    
-    def plot_dataset_hist(self, field, path, bins=50):
-        '''
-        Plot the hist of a given field (str) for all datasets
-        If the field is a list, plot different fields for each dataset in the same histogram 
-        '''
-        
-        assert isinstance(field, str) or (isinstance(field, list) and len(field)==len(self))
-        
-        fig, ax = plt.subplots()
-        
-        for i, (data, title) in enumerate(zip(self._datasets, self._dataset_titles)):
-            
-            if isinstance(field, str):
-                ax.hist(data.df[field], density=True, alpha=0.5, label=title, bins=bins)
-            else:
-                ax.hist(data.df[field[i]], density=True, alpha=0.5, label=title, bins=bins)
-        
-        if isinstance(field, str):
-            ax.set_xlabel(field)
-        else:
-            ax.set_xlabel(field[0])
-            
-        ax.legend()
-        fig.savefig(path)
-        
-    def plot_dataset_scatter2d(self, fields, path):
-        '''
-        Plot the 2d scatter of two fields
-        fields should be a list of list with the str of the header to plot
-        with dimensions: (num_simulations, 2)
-        '''
-        
-        assert isinstance(fields, list) and len(fields)==len(self)
-        for i in fields:
-            assert isinstance(i, list)
-            assert len(i)==2
-        
-        fig, ax = plt.subplots()
-        
-        for i, (data, title) in enumerate(zip(self._datasets, self._dataset_titles)):
-            ax.scatter(data.df[fields[i][0]], data.df[fields[i][1]], s=1, label=title)
-            ax.set_xlabel(fields[0][0])
-            ax.set_ylabel(fields[0][1])
-            
-        ax.legend()
-        fig.savefig(path)
-        
     
         
     # Matching

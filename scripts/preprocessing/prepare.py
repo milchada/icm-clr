@@ -226,6 +226,7 @@ class DatasetPreparator(object):
             return pd.DataFrame(nan_array, columns=["None"]), None
             
         x = []
+
         for field in fields:
             if field is not None:
                 x.append(df.loc[:, field].values)

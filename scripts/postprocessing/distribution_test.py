@@ -45,7 +45,7 @@ class DistributionTest(object):
         raise NotImplementedError("This function is supposed to be overwritten!")
         
 class NeighborDistance(DistributionTest):
-    def __init__(self, x, n_neighbor=8, p=1):
+    def __init__(self, x, n_neighbor=8, p=2):
         super().__init__(x)
         
         self._n_neighbor = n_neighbor

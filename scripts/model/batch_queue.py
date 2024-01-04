@@ -63,7 +63,7 @@ class BatchQueue(object):
         self._calc_sample() 
     
     def nn_search(self, x):
-        dist = torch.norm(self._rep_sample - x, dim=1, p=1)
+        dist = torch.norm(self._rep_sample - x, dim=1, p=2)
         knn = dist.topk(1, largest=False)
         return self._img_sample[knn.indices]
     

@@ -4,7 +4,7 @@
 neptune:
     project_name: "lukas.eisert/simclr"
     api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "production", 'with_petro_matching', 'TNG50', 'Final']
+    tags: ["nnclr", "debug", 'entropies']
 
 #Parameters for the loading of the data from various sources
 extract:
@@ -30,14 +30,14 @@ extract:
          "stellar_age_2rhalf_lumw", "fraction_disk_stars",
          "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
          "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness', 'stellar_exsitu_fraction']
+         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness', 'stellar_exsitu_fraction', 'merger_entropy_star']
       - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets flag: Usefull if not all datasets have to be reloaded
     LOAD:
       - False
       - True
       - False
-    #Load images flag: Usefull if only labels have to be updated (atm only affecting TNG)
+    #Load images flag: Usefull if only labels have to be updated (only affecting TNG as loading labels for HSC is not very timeconsuming)
     LOAD_IMAGES: False
     #Only use fractions of the overall available set to save time 
     FRACTION:
@@ -228,14 +228,14 @@ model:
 
     #Width and Depth of the conditional network
     NUM_HIDDEN_NODES_COND: 128    
-    NUM_HIDDEN_LAYERS_COND: 2
+    NUM_HIDDEN_LAYERS_COND: 3
     #Dropout and Batch Norm between the layers in the conditional network
     DROPOUT_COND: 0.0
     BATCH_NORM_COND: False
 
     #Width and Depth of the MLP network
     NUM_HIDDEN_NODES_MLP: 128    
-    NUM_HIDDEN_LAYERS_MLP: 2
+    NUM_HIDDEN_LAYERS_MLP: 0
     #Dropout and Batch Norm between the layers in the MLP network
     DROPOUT_MLP: 0.0
     BATCH_NORM_MLP: False

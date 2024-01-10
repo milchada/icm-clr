@@ -9,6 +9,7 @@ Return data of the subhalos specified by the subhalo_ids
 """
 import illustris_python as il
 from scripts.util.redshifts import load_redshift
+import config as c
 
 from functools import partial
 
@@ -27,6 +28,8 @@ def get_subhalo_object(simulation):
         
     if simulation in {"TNG100-1"}:
         return SubhalosTNG100
+    if simulation in {"TNG50-1"}:
+        return SubhalosTNG50
     else:
         return Subhalos
 
@@ -58,6 +61,7 @@ class Subhalos(object):
         self.define_merger_paths()
         self.define_auxcat_paths()
         self.define_statmorph_paths()
+        self.define_single_cat_paths()
         
         #Hubble Constant
         self._H = 0.6774
@@ -121,6 +125,29 @@ class Subhalos(object):
                                         self._snapshot_id,
                                         fields=[field])[self._subhalo_ids]
     
+    def load_entropies(self, path):
+        ''' Load entropies and match them for the asked IDs '''
+        with h5py.File(path, 'r') as f:
+            snap_str = "Snapshot%03d" % (self._snapshot_id)
+            
+        #Check if snapshot is contained in file
+        if snap_str is in f['Subhalos'].keys():
+            
+            ids = np.array(f['Subhalos'][snap_str]['SubhaloNumber'])
+            index = np.where(np.isin(ids, self._subhalo_ids))
+            result = np.array(f['Subhalos'][snap_str]['TreeEntropyStars'][index])
+            
+            #Not sure if the ids are always sorted so fix that by "entsorting" the result
+            sort_index = np.argsort(self._subhalo_ids)
+            result = result[np.argsort(sort_index)]
+            
+            return result
+                
+        else:
+                
+            return np.full_like(self._subhalo_ids, np.nan)
+            
+    
     def load_auxcat(self, path, field):
         
         #As sometimes the empty fields are np.nan and sometimes completely missing
@@ -136,7 +163,7 @@ class Subhalos(object):
                 index = np.where(np.isin(ids, self._subhalo_ids))
                 result = f[field][index]
 
-                #Not sure if they are always sorted so fix that by "entsorting" the result
+                #Not sure if the ids are always sorted so fix that by "entsorting" the result
                 sort_index = np.argsort(self._subhalo_ids)
                 result = result[np.argsort(sort_index)]
                 
@@ -333,6 +360,10 @@ class Subhalos(object):
     @property
     def mean_merger_mass_ratio(self):
         return self.load_merger_history_bonus("MeanMassRatio")
+    
+    @property
+    def merger_entropy_star(self):
+        return self.load_entropies(self._tree_entropy_path)
 
 
     #RootDescendantID
@@ -580,3 +611,12 @@ class SubhalosTNG100(Subhalos):
         self._stellar_phot_dust_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
         self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
         self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
+        
+    def define_single_cat_paths(self):
+        self._tree_entropy_path = image_cache_path + "/TreeEntropies_TNG100.hdf5"
+
+                
+class SubhalosTNG50(Subhalos):
+        
+    def define_single_cat_paths(self):
+        self._tree_entropy_path = image_cache_path + "/TreeEntropies_TNG50.hdf5"

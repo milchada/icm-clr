@@ -130,22 +130,17 @@ class Subhalos(object):
         with h5py.File(path, 'r') as f:
             snap_str = "Snapshot%03d" % (self._snapshot_id)
             
-        #Check if snapshot is contained in file
-        if snap_str is in f['Subhalos'].keys():
-            
-            ids = np.array(f['Subhalos'][snap_str]['SubhaloNumber'])
-            index = np.where(np.isin(ids, self._subhalo_ids))
-            result = np.array(f['Subhalos'][snap_str]['TreeEntropyStars'][index])
-            
-            #Not sure if the ids are always sorted so fix that by "entsorting" the result
-            sort_index = np.argsort(self._subhalo_ids)
-            result = result[np.argsort(sort_index)]
+            result = np.full_like(self._subhalo_ids, np.nan)
+
+            #Check if snapshot is contained in file
+            if snap_str in f['Subhalos'].keys():
+
+                ids = np.array(f['Subhalos'][snap_str]['SubhaloNumber'])
+                avail_mask = np.isin(self._subhalo_ids, ids)
+                index = np.where(np.isin(ids, self._subhalo_ids))[0]
+                result[avail_mask] = np.array(f['Subhalos'][snap_str]['TreeEntropyStars'][index])
             
             return result
-                
-        else:
-                
-            return np.full_like(self._subhalo_ids, np.nan)
             
     
     def load_auxcat(self, path, field):
@@ -613,10 +608,10 @@ class SubhalosTNG100(Subhalos):
         self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
         
     def define_single_cat_paths(self):
-        self._tree_entropy_path = image_cache_path + "/TreeEntropies_TNG100.hdf5"
+        self._tree_entropy_path = c.image_cache_path + "TreeEntropies_TNG100.hdf5"
 
                 
 class SubhalosTNG50(Subhalos):
         
     def define_single_cat_paths(self):
-        self._tree_entropy_path = image_cache_path + "/TreeEntropies_TNG50.hdf5"
+        self._tree_entropy_path = c.image_cache_path + "TreeEntropies_TNG50.hdf5"

@@ -130,7 +130,7 @@ class Subhalos(object):
         with h5py.File(path, 'r') as f:
             snap_str = "Snapshot%03d" % (self._snapshot_id)
             
-            result = np.full_like(self._subhalo_ids, np.nan)
+            result = np.full_like(self._subhalo_ids, np.nan, dtype=float)
 
             #Check if snapshot is contained in file
             if snap_str in f['Subhalos'].keys():

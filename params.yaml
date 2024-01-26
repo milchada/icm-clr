@@ -1,55 +1,48 @@
 # -*- coding: utf-8 -*-
-
-#Parameter for the metric tracking with neptune
-neptune:
-    project_name: "lukas.eisert/simclr"
-    api: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiNzI4NDUzNWQtODdhZi00NjAzLWJkMGYtOGZkYWEzZmJhYzUxIn0="
-    tags: ["nnclr", "production", 'with_petro_matching', 'TNG50', 'Final']
-
 #Parameters for the loading of the data from various sources
 extract:
-    MIN_STELLAR_MASS: 1e9
-    MAX_STELLAR_MASS: 1e14
+    MIN_STELLAR_MASS: 1e10
+    MAX_STELLAR_MASS: 1e12
     DATASETS:
-      - "HSC_TNG50"
-      - "HSC_TNG100"
-      - "HSC"
+      - "simba"
+      - "eagle"
+      - "illustristng"
     SNAPSHOTS:
-      - [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91]
-      - [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91]
-      - None
+      - [151]
+      - [28]
+      - [99]
     FIELDS: 
       - ["root_descendant_id",
-         "lookback", "z",
-         "stellar_age_2rhalf_lumw", "fraction_disk_stars",
-         "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
-         "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
+         "stellar_mass", "gas_mass", "hot_gas_mass", "bh_mass", "bh_einj_cum", "bh_accr", 
+         "mass_in_rad", "half_mass_rad_physical",
+         "color", "sfr", 'gini_m20_merger']
       - ["root_descendant_id",
-         "lookback", "z",
-         "stellar_age_2rhalf_lumw", "fraction_disk_stars",
-         "stellar_mass", "mass_in_rad", "half_mass_rad_physical",
-         "color", "i_band_mag_dust_apparent", 'asymmetry', 'concentration', 'deviation',
-         'gini_m20_bulge', 'gini_m20_merger', 'sersic_n', 'sersic_rhalf', 'sersic_ellip', 'smoothness']
-      - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
+         "stellar_mass", "gas_mass", "hot_gas_mass", "bh_mass", "bh_einj_cum", "bh_accr", 
+         "mass_in_rad", "half_mass_rad_physical",
+         "color", "sfr", 'gini_m20_merger']
+      - ["root_descendant_id",
+         "stellar_mass", "gas_mass", "hot_gas_mass", "bh_mass", "bh_einj_cum", "bh_accr", 
+         "mass_in_rad", "half_mass_rad_physical",
+         "color", "sfr", 'gini_m20_merger']
+#      - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
     #Load datasets?
     LOAD:
       - True
       - True
-      - False
+      - True
     #Only use fractions of the overall set - not 
     FRACTION:
       - 1.0
       - 1.0
-      - 0.75
+      - 1.0
     #Target image size to apply the augmentations to
     IMAGE_SIZE: 256
-    #Number of projections per Simualted Image
+    #Number of projections per Simulated Image
     NUM_PROJECTIONS: 4
     #Filters to load from the raw images
-    FILTERS: ['G', 'R', 'I']
+    FILTERS: ['0.5-2.0', '2.0-7.0', '0.5-7.0']
     #Get Cutouts which are multiple of the petrosian radius
-    PETRO_RADIUS_FACTOR: 4
+    PETRO_RADIUS_FACTOR: 10
     #Use cached data, useful if images are added to a dataset later on or if there was a minor bug while running
     #Set this to False if there are any problems during the loading
     USE_CACHE: True
@@ -64,20 +57,20 @@ prepare:
     #Datasets to use with the split fractions: Training, Validation, Testing
     #Note, that feature scaling is determined by the first set
     SETS:
-      - ["HSC", [0.8, 0.0, 0.1, 0.1]]
-      - ["HSC_TNG100", [0.8, 0.0, 0.1, 0.1]]
-      - ["HSC_TNG50", [0.8, 0.0, 0.1, 0.1]]  
+      - ["simba", [0.8, 0.0, 0.1, 0.1]]
+      - ["eagle", [0.8, 0.0, 0.1, 0.1]]
+      - ["illustristng", [0.8, 0.0, 0.1, 0.1]]  
     #Specify fields to match between the sets and the uncertainties they are matched with
     MATCHING_FIELDS:
-      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+      - None #["z", "i_cmodel_mag_ge", 'petro_90_light']
+      - None #['z', 'i_band_mag_dust_apparent', 'petro_90_light']
+      - None #['z', 'i_band_mag_dust_apparent', 'petro_90_light']
     MATCHING_UNCERTAINTIES:
-    - [0.01, 0.1, 5]
+    - None #[0.01, 0.1, 5]
     #The source set is the set drawing samples from to match them to the target set.
     #I.e. we try to find a example in source for each example in the target. 
-    MATCHING_SOURCE_SETS: ['HSC']
-    MATCHING_TARGET_SETS: ['HSC_TNG100', 'HSC_TNG50']
+    MATCHING_SOURCE_SETS: None #['HSC']
+    MATCHING_TARGET_SETS: None #['HSC_TNG100', 'HSC_TNG50']
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
     OBSERVABLES: 
@@ -85,12 +78,12 @@ prepare:
       - None
       - None
     UNOBSERVABLES:
-      - ["photoz", "i_cmodel_mag_ge", 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - ['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-    LABELS: ['z', 'i_band_mag', 'petro_90_radius']
+      - ["gas_mass", "hot_gas_mass", 'bh_mass', 'bh_einj_cum', 'bh_accr']
+      - ["gas_mass", "hot_gas_mass", 'bh_mass', 'bh_einj_cum', 'bh_accr']
+      - ["gas_mass", "hot_gas_mass", 'bh_mass', 'bh_einj_cum', 'bh_accr']
+    LABELS: ['gas_mass', 'hot_gas_mass', 'bh_mass', 'bh_einj_cum', 'bh_accr']
     #Split According to root descendant
-    ROOT_DESCENDANT_SPLIT: True
+    ROOT_DESCENDANT_SPLIT: False
     
 data:
     #Valid range for the UNOBSERVABLE parameters; if samples are outside of this interval, results are treated as categorical 
@@ -102,14 +95,14 @@ data:
     #Choose the Dataset Object which determines how the images are loaded and streched
     DATASET: 'SingleStretchDataset'
     #Target filters to use
-    FILTERS: ['I','R','G'] 
+    FILTERS: ['0.5-2.0','2.0-7.0','0.5-7.0'] 
     #Target edge size of the images
     IMAGE_SIZE: 128
     #Number of data loading workers
     NUM_WORKERS: 16
 
 params_opt:
-    STUDY_NAME: 'Final_Variation_Study'
+    STUDY_NAME: 'First_Test_Study'
     STUDY_OBJECT: 'ParameterOptimizationCLR_All'
     NUM_TRIALS: 200
     SAVE_MODELS: True

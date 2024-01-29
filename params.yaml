@@ -78,10 +78,10 @@ prepare:
       - None
       - None
     UNOBSERVABLES:
-      - ["gas_mass", "hot_gas_mass", 'bh_mass', 'bh_einj_cum', 'bh_accr']
-      - ["gas_mass", "hot_gas_mass", 'bh_mass', 'bh_einj_cum', 'bh_accr']
-      - ["gas_mass", "hot_gas_mass", 'bh_mass', 'bh_einj_cum', 'bh_accr']
-    LABELS: ['gas_mass', 'hot_gas_mass', 'bh_mass', 'bh_einj_cum', 'bh_accr']
+      - ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"] 
+      - ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"]
+      - ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"]
+    LABELS: ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"]
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: False
     
@@ -97,7 +97,7 @@ data:
     #Target filters to use
     FILTERS: ['XRAY_LUMINOSITY_0.2_7.0_KEV'] #['0.5-2.0','2.0-7.0','0.5-7.0'] 
     #Target edge size of the images
-    IMAGE_SIZE: 128
+    IMAGE_SIZE: 256
     #Number of data loading workers
     NUM_WORKERS: 16
 

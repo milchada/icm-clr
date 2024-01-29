@@ -35,10 +35,10 @@ device_nn_search = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #Label dict (code friendly -> human friendly)
 label_dict = {"mgas": "Gas Mass [log $M_\odot$]",
               "mstar": "Stellar Mass [log $M_\odot$]",
+              "mbh": "BH Mass [log $M_\odot$]",
+              "bh_einj_cum": "BH Cumulative Energy Injection (erg)",
+              "bh_accr": "BH instantaneous accretion rate [log $M_\odot/Gyr$]",
               "half_gas_mass_rad": "Half Gas Mass Radius [kpc]",
-              "lookback": "Lookback Time [Gyr]",
-              "half_light_rad": "Half Light Radius [kpc]",
-              "color": "g-r Color [mag]",
               "metalicity_star": "Stellar Metallicity [log $Z_\odot$]",
               "stellar_age": "Stellar Ages [Gyr]",
               "mean_merger_mass_ratio": "Mean Merger Mass Ratio",

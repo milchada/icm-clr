@@ -12,7 +12,7 @@ Parameters for scripts which have to be traced by DVC are stored in params.yaml
 import torch
 
 #Paths
-image_cache_path = "/ptmp/leisert/image_cache/"
+image_cache_path = "./image_cache/"
 illustris_path = "/virgotng/universe/IllustrisTNG/"
 dataset_raw_path = "./dataset_raw/"
 dataset_path = "./dataset/"
@@ -20,11 +20,11 @@ model_path = "./model/"
 postprocessing_path = "./postprocessing/"
 metrics_path = "./metrics/"
 plots_path = "./plots/"
-resnet_path = model_path + 'resnet.pt'
-optuna_resnet_path = lambda x: model_path + 'optuna/run_%04d.pt' % (x)
+resnet_path = model_path + 'resnet.py'
+optuna_resnet_path = lambda x: model_path + 'optuna/run_%04d.py' % (x)
 representation_path = postprocessing_path + 'representation.npy'
 optuna_representation_path = lambda x:  postprocessing_path + 'optuna/run_representation_%04d.npy' % (x)
-cinn_path = model_path + 'cinn.pt'
+cinn_path = model_path + 'cinn.py'
 optuna_storage = metrics_path + 'optuna_journal.log'
 
 #Device to use
@@ -33,14 +33,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device_nn_search = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #Label dict (code friendly -> human friendly)
-label_dict = {"fraction_disk_stars": "Fraction of Disk Stars [D/T]",
-              "mass": "Stellar Mass [log $M_\odot$]",
+label_dict = {"mgas": "Gas Mass [log $M_\odot$]",
+              "mstar": "Stellar Mass [log $M_\odot$]",
+              "half_gas_mass_rad": "Half Gas Mass Radius [kpc]",
               "lookback": "Lookback Time [Gyr]",
               "half_light_rad": "Half Light Radius [kpc]",
               "color": "g-r Color [mag]",
               "metalicity_star": "Stellar Metallicity [log $Z_\odot$]",
               "stellar_age": "Stellar Ages [Gyr]",
-              "exsitu": "Stellar Ex-Situ Fraction",
               "mean_merger_mass_ratio": "Mean Merger Mass Ratio",
               "mean_merger_lookback_time": "Mean Merger Time [Gyr ago]",
               "lookback_time_last_maj_merger": "Last Major Merger Time [Gyr ago]",
@@ -48,19 +48,9 @@ label_dict = {"fraction_disk_stars": "Fraction of Disk Stars [D/T]",
               }
 
 #Label dict without units
-normalized_label_dict = {"fraction_disk_stars": "Fraction of Disk Stars",
-                         "mass": "Stellar Mass",
-                         "lookback": "Lookback Time",
-                         "half_light_rad": "Half Light Radius",
-                         "color": "g-r Color",
-                         "metalicity_star": "Stellar Metallicity",
-                         "stellar_age": "Stellar Ages",
-                         "exsitu": "Fraction of Ex-Situ Stars",
-                         "mean_merger_mass_ratio": "Mean Merger Mass Ratio",
-                         "mean_merger_lookback_time": "Mean Merger Lookback Time",
-                         "lookback_time_last_maj_merger": "Last Major Merger Lookback Time",
-                         "mass_last_maj_merger": "Last Major Merger Mass"
-                         }
+normalized_label_dict = {}
+for key in label_dict.keys():
+    normalized_label_dict[key] = label_dict[key].split(' [')[0]
 
 
 

@@ -143,12 +143,13 @@ class DatasetPreparator(object):
             
         #Remove galaxies with bad petro fit or other missing fields
         #df = dropna(df, 'petro_half_light')
-        df = dropna(df, 'petro_90_light')
+        # df = dropna(df, 'petro_90_light')
         
         matching_fields = np.unique(MATCHING_FIELDS)
-        for m in matching_fields:
-            if m in df.head(0):
-                df = dropna(df, m)
+        if matching_fields:
+            for m in matching_fields:
+                if m in df.head(0):
+                    df = dropna(df, m)
 
         return df
 
@@ -268,9 +269,10 @@ class DatasetMatcher(object):
         self._dataset_unobservables = []
         
         self.load_datasets()
-        self.plot_matching_fields("raw")
-        self.match_datasets()
-        self.plot_matching_fields("matched")
+        if MATCHING_FIELDS: 
+            self.plot_matching_fields("raw")
+            self.match_datasets()
+            self.plot_matching_fields("matched")
         self.scale_split_save()
             
             

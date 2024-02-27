@@ -1,51 +1,39 @@
 # -*- coding: utf-8 -*-
+
+#Parameter for the metric tracking with neptune
+neptune:
+  project_name: "milchada/simclr"
+  api_token: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJmMmIzZWE2Zi01MjhhLTQ1OTAtOWFiYi0yZTBjOTRjODAxZjYifQ=="
+  tags: ["nnclr", "dev", 'gas', 'TNGCluster', 'v0']
+
 #Parameters for the loading of the data from various sources
 extract:
-    MIN_STELLAR_MASS: 1e10
-    MAX_STELLAR_MASS: 1e12
+    MIN_MASS: 5e14
+    MAX_MASS: 5e15
     DATASETS:
-      - "simba"
-      - "eagle"
-      - "illustristng"
+      - "Xray-TNG-Cluster"
     SNAPSHOTS:
-      - [151]
-      - [28]
-      - [99]
+      - [50, 59, 67, 72, 78, 84, 91, 99]
     FIELDS: 
-      - ["root_descendant_id",
-         "stellar_mass", "gas_mass", "hot_gas_mass", "bh_mass", "bh_einj_cum", "bh_accr", 
-         "mass_in_rad", "half_mass_rad_physical",
-         "color", "sfr", 'gini_m20_merger']
-      - ["root_descendant_id",
-         "stellar_mass", "gas_mass", "hot_gas_mass", "bh_mass", "bh_einj_cum", "bh_accr", 
-         "mass_in_rad", "half_mass_rad_physical",
-         "color", "sfr", 'gini_m20_merger']
-      - ["root_descendant_id",
-         "stellar_mass", "gas_mass", "hot_gas_mass", "bh_mass", "bh_einj_cum", "bh_accr", 
-         "mass_in_rad", "half_mass_rad_physical",
-         "color", "sfr", 'gini_m20_merger']
-#      - ["photoz", "petroR90_r", "r_cmodel_mag_ge", "g_cmodel_mag_ge", "i_cmodel_mag_ge", "z_cmodel_mag_ge"]
+      - ["z", "stellar_mass", "gas_mass","m200c", "m500c",
+         "bh_mass", "bh_accr"] #, "bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum"]
     #Load datasets?
     LOAD:
-      - True
-      - True
       - True
     #Only use fractions of the overall set - not 
     FRACTION:
       - 1.0
-      - 1.0
-      - 1.0
     #Target image size to apply the augmentations to
     IMAGE_SIZE: 256
-    #Number of projections per Simulated Image
-    NUM_PROJECTIONS: 4
+    #Number of projections per Simualted Image
+    NUM_PROJECTIONS: 3 #3 for Xray, 4 for stellar; number of copies of each galaxy in catalogue
     #Filters to load from the raw images
-    FILTERS: ['0.5-2.0', '2.0-7.0', '0.5-7.0']
-    #Get Cutouts which are multiple of the petrosian radius
-    PETRO_RADIUS_FACTOR: 10
-    #Use cached data, useful if images are added to a dataset later on or if there was a minor bug while running
-    #Set this to False if there are any problems during the loading
-    USE_CACHE: True
+    #this should be set to None if we are creating catalogues; only set if working with images
+    FILTERS: ['0.5-5.0']
+    #Get Cutouts which are multiple of Petrosian radius; for stellar light only
+    PETRO_RADIUS_FACTOR: None # 4
+    #Use cache = True means the training images have already been resized. 
+    USE_CACHE: False
     #Number of workers to use
     NUM_WORKERS: 8
     #Chunk size of the image loading
@@ -57,52 +45,47 @@ prepare:
     #Datasets to use with the split fractions: Training, Validation, Testing
     #Note, that feature scaling is determined by the first set
     SETS:
-      - ["simba", [0.8, 0.0, 0.1, 0.1]]
-      - ["eagle", [0.8, 0.0, 0.1, 0.1]]
-      - ["illustristng", [0.8, 0.0, 0.1, 0.1]]  
-    #Specify fields to match between the sets and the uncertainties they are matched with
-    MATCHING_FIELDS:
-      - None #["z", "i_cmodel_mag_ge", 'petro_90_light']
-      - None #['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-      - None #['z', 'i_band_mag_dust_apparent', 'petro_90_light']
-    MATCHING_UNCERTAINTIES:
-    - None #[0.01, 0.1, 5]
+      - ["Xray-TNG-Cluster", [0.8, 0.0, 0.1, 0.1]]  
     #The source set is the set drawing samples from to match them to the target set.
     #I.e. we try to find a example in source for each example in the target. 
-    MATCHING_SOURCE_SETS: None #['HSC']
-    MATCHING_TARGET_SETS: None #['HSC_TNG100', 'HSC_TNG50']
+    MATCHING_SOURCE_SETS: [None]                # ['HSC_TNG50'] #['HSC']
+    MATCHING_TARGET_SETS: [None]                #['HSC_TNG100'] #['HSC_TNG100', 'HSC_TNG50']
+    #Specify fields to match between the sets and the uncertainties they are matched with
+    MATCHING_FIELDS:
+       "None"
+    MATCHING_UNCERTAINTIES:
+      "None"
     #List of observables and unobservables used
     #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
+    #'''Observables vs Unobservables are NOT needed for CLR part, rather for the INN (or any inference)'''
     OBSERVABLES: 
-      - None
-      - None
-      - None
+      - None #['z'] #,'Lx_0.5_5.0kev', 'Tx_0.5_5.0kev']
     UNOBSERVABLES:
-      - ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"] 
-      - ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"]
-      - ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"]
-    LABELS: ["mgas", "mstar", "mbh", "bh_einj_cum", "bh_accr", "half_gas_mass_rad", "metallicity_star", "stellar_age", "lookback_time_last_maj_merger", "mass_last_maj_merger"]
+      - None #['gas_mass', 'stellar_mass', 'bh_mass', 'm200c','m500c','bh_accr',"bh_einj_cum", "bh_kinj_cum", "bh_ting_cum"]
+    
+    #These Labels are only because observed datasets may have different names for the same fields. This is not used in the CLR bit. 
+    #Ideally we modify this eventually 
+
+    LABELS:  ['z', 'gas_mass', 'stellar_mass', 'bh_mass', 'm200c','m500c','bh_accr'] #,"bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum"]
     #Split According to root descendant
-    ROOT_DESCENDANT_SPLIT: False
+    ROOT_DESCENDANT_SPLIT: True
     
 data:
     #Valid range for the UNOBSERVABLE parameters; if samples are outside of this interval, results are treated as categorical 
     #Used to identify galaxies with no major mergers
     VALID_RANGE:
       - None
-      - None
-      - None
     #Choose the Dataset Object which determines how the images are loaded and streched
     DATASET: 'SingleStretchDataset'
     #Target filters to use
-    FILTERS: ['XRAY_LUMINOSITY_0.2_7.0_KEV'] #['0.5-2.0','2.0-7.0','0.5-7.0'] 
+    FILTERS: ['0.5-5.0'] 
     #Target edge size of the images
-    IMAGE_SIZE: 256
+    IMAGE_SIZE: 128
     #Number of data loading workers
     NUM_WORKERS: 16
 
 params_opt:
-    STUDY_NAME: 'First_Test_Study'
+    STUDY_NAME: 'Gas_Test_Study'
     STUDY_OBJECT: 'ParameterOptimizationCLR_All'
     NUM_TRIALS: 200
     SAVE_MODELS: True
@@ -235,7 +218,7 @@ model:
     RESNET_REPRESENTATION_DEPTH: 2
     RESNET_PROJECTION_DIM: 256
     RESNET_PROJECTION_DEPTH: 2
-    RESNET_NUM_CHANNELS: 3
+    RESNET_NUM_CHANNELS: 1
     
     #The Number of discrete rotations the RESNET is initially equivariant
     RESNET_ROTATION_EQUIVARIANCE: 8

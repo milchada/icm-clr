@@ -14,7 +14,10 @@ import numpy as np
 
 class Catalogue:
 
-    def __init__(self, simulation, snapshot_id, path, min_stellar_mass=None, max_stellar_mass=None, centrals_only=False, random=False):
+    def __init__(self, simulation, snapshot_id, path, min_mass=None, max_mass=None, centrals_only=False, random=False, grouptype = 'FoF'):
+        self._grouptype = grouptype
+        assert self._grouptype in ['FoF','SubFind'], "Invalid group type! Must be either FoF or SubFind"
+        
         self._snapshot_id = snapshot_id
         self._simulation = simulation
         self._path = path
@@ -29,41 +32,51 @@ class Catalogue:
                                                    self._snapshot_id,
                                                    fields=["GroupFirstSub"])
             
-        stellar_mass = il.groupcat.loadSubhalos(self._base_path,
-                                                self._snapshot_id,
-                                                fields=["SubhaloMassType"])[:,4]
+        if self._grouptype == 'FoF':
+            mass = il.groupcat.loadHalos(self._base_path, self._snapshot_id, fields=['Group_M_Crit200'])
+        else:
+            mass = il.groupcat.loadSubhalos(self._base_path,
+                                            self._snapshot_id,
+                                            fields=["SubhaloMassType"])[:,4]
 
-
-        flag = il.groupcat.loadSubhalos(self._base_path,
-                                        self._snapshot_id,
-                                        fields=["SubhaloFlag"])
+            flag = il.groupcat.loadSubhalos(self._base_path,
+                                            self._snapshot_id,
+                                            fields=["SubhaloFlag"])
 
         #Fix units
-        stellar_mass *= 1e10 / self._H
+        mass *= 1e10 / self._H
 
         #Apply criterion
         #Get first a mask for all subhalos which fit to the criterion
-        if min_stellar_mass is not None and max_stellar_mass is not None:
-            mass_mask = np.logical_and(stellar_mass >= min_stellar_mass,
-                                       stellar_mass <= max_stellar_mass)
-        elif min_stellar_mass is not None:
-            mass_mask = stellar_mass >= min_stellar_mass
-        elif max_stellar_mass is not None:
-            mass_mask = stellar_mass <= max_stellar_mass
+        if min_mass is not None and max_mass is not None:
+            mass_mask = np.logical_and(mass >= min_mass,
+                                       mass <= max_mass)
+        elif min_mass is not None:
+            mass_mask = mass >= min_mass
+        elif max_mass is not None:
+            mass_mask = mass <= max_mass
         else:
-            mass_mask = np.ones_like(stellar_mass)
+            mass_mask = np.ones_like(mass)
 
-        mask = np.logical_and(mass_mask, flag)
+        if self._grouptype == 'SubFind':
+            mask = np.logical_and(mass_mask, flag)
+        else:
+            mask = mass_mask
 
         #Get index of subhalos which are fine
         mask_index = np.nonzero(mask)
 
         #Get all subhalo ids which are centrals and fullfill requirements
-        if centrals_only:
-            self._galaxies = np.intersect1d(self._centrals, mask_index)
+        if self._grouptype == 'SubFind':
+            if centrals_only:
+                self._galaxies = np.intersect1d(self._centrals, mask_index)
+            else:
+                self._galaxies = mask_index[0]        
         else:
-            self._galaxies = mask_index[0]
-            
+            self._galaxies = il.groupcat.loadHalos(path+self._simulation+'/output/', 
+                                                   self._snapshot_id,
+                                                   fields = ['GroupFirstSub']) [mask_index[0]]
+        
         if random is True:
             np.random.shuffle(self._galaxies)
 
@@ -77,9 +90,5 @@ class Catalogue:
         return self.num_galaxies
 
     def get_subhalos(self):
-        
         sub = Subhalos.get_subhalo_object(self._simulation)
-        
         return sub(self._galaxies, self._snapshot_id, self._simulation, self._path)
-
-

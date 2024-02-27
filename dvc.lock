@@ -4,58 +4,28 @@ stages:
     cmd: python3 -m scripts.preprocessing.prepare
     deps:
     - path: ./scripts/preprocessing/prepare.py
-      md5: ba079f3f66a82197f72daa34291aa9fd
-      size: 21985
+      hash: md5
+      md5: a2c4131a57447985301e22c211f5d594
+      size: 22028
     params:
       params.yaml:
         prepare:
           SPLIT_SEED: 42
           SETS:
-          - - HSC
-            - - 0.8
-              - 0.0
-              - 0.1
-              - 0.1
-          - - HSC_TNG100
-            - - 0.8
-              - 0.0
-              - 0.1
-              - 0.1
           - - HSC_TNG50
             - - 0.8
               - 0.0
               - 0.1
               - 0.1
-          MATCHING_FIELDS:
-          - - photoz
-            - i_cmodel_mag_ge
-            - petro_90_light
-          - - z
-            - i_band_mag_dust_apparent
-            - petro_90_light
-          - - z
-            - i_band_mag_dust_apparent
-            - petro_90_light
-          MATCHING_UNCERTAINTIES:
-          - - 0.01
-            - 0.1
-            - 5
+          MATCHING_FIELDS: None
+          MATCHING_UNCERTAINTIES: None
           MATCHING_SOURCE_SETS:
-          - HSC
+          - None
           MATCHING_TARGET_SETS:
-          - HSC_TNG100
-          - HSC_TNG50
+          - None
           OBSERVABLES:
           - None
-          - None
-          - None
           UNOBSERVABLES:
-          - - photoz
-            - i_cmodel_mag_ge
-            - petro_90_light
-          - - z
-            - i_band_mag_dust_apparent
-            - petro_90_light
           - - z
             - i_band_mag_dust_apparent
             - petro_90_light
@@ -67,33 +37,26 @@ stages:
     outs:
     - path: ./dataset/
       hash: md5
-      md5: ae3d3c536ea8df227d354bc93193614b.dir
-      size: 251064135
+      md5: 4308b21bd1abd4beb00f038c9eee7811.dir
+      size: 138551724
       nfiles: 14
-    - path: ./plots/preprocessing/
-      hash: md5
-      md5: b4232fd78b6e5c941dc1bdd9f9f228b0.dir
-      size: 57990892
-      nfiles: 10
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     deps:
     - path: ./dataset/
       hash: md5
-      md5: ae3d3c536ea8df227d354bc93193614b.dir
-      size: 251064135
+      md5: 4308b21bd1abd4beb00f038c9eee7811.dir
+      size: 138551724
       nfiles: 14
     - path: ./scripts/model/
       hash: md5
-      md5: d7a3ef3eb2252a6670847c59df809788.dir
-      size: 174352
-      nfiles: 33
+      md5: ec92c0ab1973c6aa424108cb7c85c022.dir
+      size: 192351
+      nfiles: 34
     params:
       params.yaml:
         data:
           VALID_RANGE:
-          - None
-          - None
           - None
           DATASET: SingleStretchDataset
           FILTERS:
@@ -180,19 +143,19 @@ stages:
     outs:
     - path: ./model/resnet.pt
       hash: md5
-      md5: 75b7064b05dc49792659b76f72f34950
+      md5: 745a10f09d9518376654c2b3007fe91f
       size: 138930562
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
       hash: md5
-      md5: ae3d3c536ea8df227d354bc93193614b.dir
-      size: 251064135
+      md5: 4308b21bd1abd4beb00f038c9eee7811.dir
+      size: 138551724
       nfiles: 14
     - path: ./model/resnet.pt
       hash: md5
-      md5: 75b7064b05dc49792659b76f72f34950
+      md5: 745a10f09d9518376654c2b3007fe91f
       size: 138930562
     - path: ./scripts/postprocessing/write_representation.py
       md5: 442ab6763d87ec824eab91847254cb5d
@@ -200,8 +163,8 @@ stages:
     outs:
     - path: ./postprocessing/representation.npy
       hash: md5
-      md5: badc3124cce3af80569ad7919d2dbee0
-      size: 32334464
+      md5: d894cf2cd4357296f6505087c62fd123
+      size: 12158592
   params_opt:
     cmd: sbatch -W run_params_opt.sh
     deps:

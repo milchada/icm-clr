@@ -27,17 +27,19 @@ def get_subhalo_object(simulation):
         
     if simulation in {"TNG100-1"}:
         return SubhalosTNG100
-    else:
+    elif simulation in {"TNG-Cluster"}:
         return Subhalos
-
-
+    else: 
+        return SubhalosStellar
+    
 class Subhalos(object):
     
     def __init__(self, subhalo_ids, snapshot_id, simulation, path, projection=0):
         
         sim_dict = {"TNG50-1": "L35n2160TNG",
                     "TNG100-1": "L75n1820TNG",
-                    "TNG300-1": "L205n2500TNG"}
+                    "TNG300-1": "L205n2500TNG",
+                    "TNG-Cluster": "TNG-Cluster"}
 
         self._subhalo_ids = subhalo_ids
         self._snapshot_id = snapshot_id
@@ -49,42 +51,9 @@ class Subhalos(object):
         self._base_path = path + simulation
         self._groupcat_path = self._base_path + "/output"
         self._tree_path = self._base_path + "/postprocessing/"
-        self._assembly_path = self._base_path + "/postprocessing/StellarAssembly/galaxies_%03d.hdf5" % (snapshot_id)
-        self._circularity_path = self._base_path + "/postprocessing/circularities/circularities_aligned_10Re_" + self._full_qualifier + "%03d.hdf5" % (snapshot_id)
-        self._stellar_ages_path = self._base_path + "/postprocessing/stellar_ages/stellar_ages_%03d.hdf5" % (snapshot_id)
-        self._stellar_phot_path = self._base_path + "/postprocessing/stellar_light/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (snapshot_id)
-        
-        #Load additional paths to data which is not available in the basepath
-        self.define_merger_paths()
-        self.define_auxcat_paths()
-        self.define_statmorph_paths()
         
         #Hubble Constant
         self._H = 0.6774
-        
-        
-    #Path definitions
-    #-------------------------------------------------------------------------
-    def define_merger_paths(self):
-        '''Define alternative paths until the cleaned mergercats are in the general repo'''
-        clean_merger_base_path = '/u/leisert/mergerhistorycleanup/output/' + self._simulation
-        
-        self._history_path = clean_merger_base_path + "/postprocessing/MergerHistory/merger_history_cleaned_%03d.hdf5" % (self._snapshot_id)
-        self._history_addons_path = clean_merger_base_path + "/postprocessing/MergerHistory/merger_history_addons_cleaned_%03d.hdf5" % (self._snapshot_id)
-        self._history_bonus_path = clean_merger_base_path + "/postprocessing/MergerHistory/merger_history_bonus_cleaned_%03d.hdf5" % (self._snapshot_id)
-    
-    def define_auxcat_paths(self):
-        '''Add here additional paths which are not in the base path of the simulation'''
-        
-        auxcat_path = self._base_path + "/postprocessing/dnelson/auxCat"
-        self._stellar_phot_dust_path = self._base_path + "/postprocessing/stellar_light/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
-        self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
-        self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
-        
-    def define_statmorph_paths(self):
-        statmorph_path = "/vera/ptmp/gc/vrg/HSC_morph/IllustrisTNG/" +  self._simulation + "/snapnum_%03d" % (self._snapshot_id)
-        self._morph_path = lambda x:  statmorph_path + "/morphs_v" + str(x) + ".hdf5"
-        
         
     #Basic properties of class
     #-------------------------------------------------------------------------
@@ -117,6 +86,313 @@ class Subhalos(object):
         return il.groupcat.loadSubhalos(self._groupcat_path,
                                         self._snapshot_id,
                                         fields=[field])[self._subhalo_ids]
+   
+    def load_fofcat(self, field):
+        halo_ids = il.groupcat.loadSubhalos(self._groupcat_path,
+                                        self._snapshot_id,
+                                        fields=['SubhaloGrNr'])[self._subhalo_ids]
+        return il.groupcat.loadHalos(self._groupcat_path,
+                                       self._snapshot_id,
+                                       fields=[field])[halo_ids]
+    def load_bhcat(self, field):
+        prop = []
+        for subid in self._subhalo_ids:
+            bh = il.snapshot.loadSubhalo(self._groupcat_path,
+                                        self._snapshot_id,
+                                        subid, 'bh', fields=[field])
+            try:
+                prop.append(bh.sum())
+            except AttributeError:
+                prop.append(0)
+        return prop
+    #RootDescendantID
+    #For spliting according to Branches
+    #-------------------------------------------------------------------------
+    @property
+    def root_descendant_id(self):
+        treeName = "SubLink"
+        
+        search_path = il.sublink.treePath(self._tree_path, treeName, '*')
+        numTreeFiles = len(glob.glob(search_path))
+        
+        offsetFile = il.sublink.offsetPath(self._tree_path, self._snapshot_id)
+        prefix = 'Subhalo/' + treeName + '/'
+
+        with h5py.File(offsetFile, 'r') as f:
+            # load the merger tree offsets of this subgroup
+            RowNum = f[prefix+'RowNum'][self._subhalo_ids]
+            
+        #Get offsets
+        offsets = il.sublink.subLinkOffsets(self._tree_path, treeName)
+    
+        # find the tree file chunk containing this row
+        rowOffsets = RowNum[:,np.newaxis] - offsets
+        
+        def get_fileNum(exception_value, x):
+            try:
+                index = np.where(x>=0)
+                return np.max(index)
+            except ValueError:
+                #Set to an index which is never reached by the loop, i.e. they stay nan
+                print("Weird Value Error when loading the root_descendant_id")
+                return exception_value
+        
+        fileNum_Off = np.apply_along_axis(partial(get_fileNum, 0), 1, rowOffsets)
+        fileNum = np.apply_along_axis(partial(get_fileNum, numTreeFiles), 1, rowOffsets)
+
+        #Calculate the index within the files
+        fileOff = rowOffsets[range(len(rowOffsets)), fileNum_Off]
+        
+        #Now go through the files
+        result = np.full_like(self._subhalo_ids, np.nan, dtype=int)
+        
+        for i in range(numTreeFiles):
+            
+            #Look only at subhalos which are contained in this file
+            file_index = np.where(i==fileNum)
+            
+            with h5py.File(il.sublink.treePath(self._tree_path, treeName, i),'r') as f:
+                
+                #Get data (sort because h5py insists on an increasing order)
+                file_offset = fileOff[file_index]
+                j = np.argsort(file_offset)
+                sort = file_offset[j]
+                file_rd_id = f['RootDescendantID'][sort]
+                
+                #Now reverse the sorting
+                file_rd_id = file_rd_id[np.argsort(j)]
+                
+            result[file_index] = file_rd_id
+            
+        return result
+    
+
+    #Integrated properties of Subhalo
+    #-------------------------------------------------------------------------
+    @property
+    def z(self):
+        return load_redshift(self.snapshot_id)
+
+    @property
+    def a(self):
+        return 1.0/(1.0 + self.z)
+    
+    @property
+    def luminosity_distance(self):
+        return cosmo.luminosity_distance(self.z).to(u.pc).value
+    
+    @property
+    def distance_modulus(self):
+        return 5*np.log10(self.luminosity_distance/10.0)
+    
+    @property
+    def lookback(self):
+        zeros = [0]*len(self._subhalo_ids)
+        return np.array(cosmo.age(zeros) - cosmo.age(self.z))
+    
+    @property
+    def m200c(self):
+        return self.load_fofcat("Group_M_Crit200") * 1e10 / self._H
+    
+    @property
+    def m500c(self):
+        return self.load_fofcat("Group_M_Crit500") * 1e10 / self._H
+    
+    
+    @property
+    def num_dm_particles(self):
+        return self.load_groupcat("SubhaloLenType")[:,1]
+    
+    @property
+    def stellar_mass(self):
+        return self.load_groupcat("SubhaloMassType")[:,4] * 1e10 / self._H
+
+    @property
+    def gas_mass(self):
+        return self.load_groupcat("SubhaloMassType")[:,0] * 1e10 / self._H
+
+    @property
+    def bh_mass(self):
+        return self.load_groupcat("SubhaloBHMass") * 1e10 / self._H
+    
+    @property
+    def bh_accr(self):
+        return self.load_groupcat("SubhaloBHMdot")* 1e10 / 0.978 #msun/gyr
+
+    @property
+    def bh_tinj_cum(self):
+        return self.load_bhcat("BH_CumEgyInjection_QM") * 1e10 / (0.978 * self._H) 
+    
+    @property
+    def bh_kinj_cum(self):
+        return self.load_bhcat("BH_CumEgyInjection_RM") * 1e10 / (0.978 * self._H) 
+    
+    @property
+    def bh_einj_cum(self):
+        return self.bh_kinj_cum + self.bh_tinj_cum
+
+    @property
+    def z_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,7]
+    
+    @property
+    def i_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,6]
+    
+    @property
+    def r_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,5]
+
+    @property
+    def g_band_mag(self):
+        return self.load_groupcat("SubhaloStellarPhotometrics")[:,4]
+    
+    @property
+    def color(self):
+        return self.g_band_mag - self.r_band_mag
+
+    @property
+    def metallicity_star(self):
+        return self.load_auxcat(self._stellar_metalicity_path, "Subhalo_StellarZ_2rhalf_rBandLumWt")
+    
+    @property
+    def metallicity_gas(self):
+        return self.load_groupcat("SubhaloStarMetallicityHalfRad")
+
+    @property
+    def sfr(self):
+        return self.load_groupcat("SubhaloSFRinHalfRad")
+    
+    @property
+    def log_sfr(self):
+        '''Log the sfr, replace 0 by minimum'''
+        sfr = np.array(self.sfr)
+        mask = (sfr == 0)
+        min_sfr = np.min(sfr[~mask])
+        sfr[mask] = min_sfr
+        return np.log10(sfr)
+    
+    @property
+    def velocity_dispersion(self):
+        return self.load_groupcat("SubhaloVelDisp")
+
+    @property
+    def half_mass_rad_physical(self):
+        return self.load_groupcat("SubhaloHalfmassRadType")[:,4] * self.a / self._H
+    
+    @property
+    def mass_in_rad(self):
+        return self.load_groupcat("SubhaloMassInRadType")[:,4] * 1e10 / self._H
+ 
+# Here one can add special treatment of the different simulations. However, try to keep the code below this line as simple as possible!
+# In an ideal world there should be nothing here at all
+#-----------------------------------------------------------------------------------------------------------------------------
+        
+class SubhalosTNG100(Subhalos):
+    
+    def define_auxcat_paths(self):
+        auxcat_path = "/vera/ptmp/gc/dnelson/sims.TNG/L75n1820TNG/data.files/auxCat"
+        self._stellar_phot_dust_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
+        self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
+        self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
+
+class SubhalosStellar(Subhalos):
+    def __init__(self, subhalo_ids, snapshot_id, simulation, path, projection=0):
+        super(SubhalosStellar, self).__init__(subhalo_ids, snapshot_id, simulation, path, projection)
+        self._assembly_path = self._base_path + "/postprocessing/StellarAssembly/galaxies_%03d.hdf5" % (snapshot_id)
+        self._circularity_path = self._base_path + "/postprocessing/circularities/circularities_aligned_10Re_" + self._full_qualifier + "%03d.hdf5" % (snapshot_id)
+        self._stellar_ages_path = self._base_path + "/postprocessing/stellar_ages/stellar_ages_%03d.hdf5" % (snapshot_id)
+        self._stellar_phot_path = self._base_path + "/postprocessing/stellar_light/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (snapshot_id)
+        
+        #Load additional paths to data which is not available in the basepath
+        self.define_merger_paths()
+        self.define_auxcat_paths()
+        self.define_statmorph_paths()
+        
+    
+    #Path definitions
+    #-------------------------------------------------------------------------
+    def define_merger_paths(self):
+        '''Define alternative paths until the cleaned mergercats are in the general repo'''
+        clean_merger_base_path = '/u/leisert/mergerhistorycleanup/output/' + self._simulation
+        
+        self._history_path = clean_merger_base_path + "/postprocessing/MergerHistory/merger_history_cleaned_%03d.hdf5" % (self._snapshot_id)
+        self._history_addons_path = clean_merger_base_path + "/postprocessing/MergerHistory/merger_history_addons_cleaned_%03d.hdf5" % (self._snapshot_id)
+        self._history_bonus_path = clean_merger_base_path + "/postprocessing/MergerHistory/merger_history_bonus_cleaned_%03d.hdf5" % (self._snapshot_id)
+    
+    def define_auxcat_paths(self):
+        '''Add here additional paths which are not in the base path of the simulation'''
+        
+        auxcat_path = self._base_path + "/postprocessing/dnelson/auxCat"
+        self._stellar_phot_dust_path = self._base_path + "/postprocessing/stellar_light/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
+        self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
+        self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)
+        
+    def define_statmorph_paths(self):
+        statmorph_path = "/vera/ptmp/gc/vrg/HSC_morph/IllustrisTNG/" +  self._simulation + "/snapnum_%03d" % (self._snapshot_id)
+        self._morph_path = lambda x:  statmorph_path + "/morphs_v" + str(x) + ".hdf5"
+        
+
+    #Properties
+            
+    @property
+    def stellar_age_2rhalf_lumw(self):
+        return self.load_stellar_ages("Subhalo_StellarAge_2rhalf_rBandLumWt")
+
+    @property
+    def fraction_disk_stars(self):
+        return self.load_circularity("CircAbove07Frac")[:,0]
+ 
+
+    #Statmorph parameters
+    #-------------------------------------------------------------------------
+    @property
+    def asymmetry(self):
+        return self.load_statmorph('asymmetry')
+    
+    @property
+    def concentration(self):
+        return self.load_statmorph('concentration')
+    
+    @property
+    def deviation(self):
+        return self.load_statmorph('deviation')
+    
+    @property
+    def gini(self):
+        return self.load_statmorph('gini')
+    
+    @property
+    def m20(self):
+        return self.load_statmorph('m20')
+    
+    @property
+    def multimode(self):
+        return self.load_statmorph('multimode')
+    
+    @property
+    def sersic_n(self):
+        return self.load_statmorph('sersic_n')
+    
+    @property
+    def sersic_rhalf(self):
+        return self.load_statmorph('sersic_rhalf')
+    
+    @property
+    def sersic_ellip(self):
+        return self.load_statmorph('sersic_ellip')
+    
+    @property
+    def smoothness(self):
+        return self.load_statmorph('smoothness')
+    
+    @property
+    def gini_m20_bulge(self):
+        return self.load_statmorph('gini_m20_bulge')
+    
+    @property
+    def gini_m20_merger(self):
+        return self.load_statmorph('gini_m20_merger')
     
     def load_auxcat(self, path, field):
         
@@ -322,101 +598,7 @@ class Subhalos(object):
     @property
     def mean_merger_mass_ratio(self):
         return self.load_merger_history_bonus("MeanMassRatio")
-
-
-    #RootDescendantID
-    #For spliting according to Branches
-    #-------------------------------------------------------------------------
-    @property
-    def root_descendant_id(self):
-        treeName = "SubLink"
-        
-        search_path = il.sublink.treePath(self._tree_path, treeName, '*')
-        numTreeFiles = len(glob.glob(search_path))
-        
-        offsetFile = il.sublink.offsetPath(self._tree_path, self._snapshot_id)
-        prefix = 'Subhalo/' + treeName + '/'
-
-        with h5py.File(offsetFile, 'r') as f:
-            # load the merger tree offsets of this subgroup
-            RowNum = f[prefix+'RowNum'][self._subhalo_ids]
-            
-        #Get offsets
-        offsets = il.sublink.subLinkOffsets(self._tree_path, treeName)
     
-        # find the tree file chunk containing this row
-        rowOffsets = RowNum[:,np.newaxis] - offsets
-        
-        def get_fileNum(exception_value, x):
-            try:
-                index = np.where(x>=0)
-                return np.max(index)
-            except ValueError:
-                #Set to an index which is never reached by the loop, i.e. they stay nan
-                print("Weird Value Error when loading the root_descendant_id")
-                return exception_value
-        
-        fileNum_Off = np.apply_along_axis(partial(get_fileNum, 0), 1, rowOffsets)
-        fileNum = np.apply_along_axis(partial(get_fileNum, numTreeFiles), 1, rowOffsets)
-
-        #Calculate the index within the files
-        fileOff = rowOffsets[range(len(rowOffsets)), fileNum_Off]
-        
-        #Now go through the files
-        result = np.full_like(self._subhalo_ids, np.nan, dtype=int)
-        
-        for i in range(numTreeFiles):
-            
-            #Look only at subhalos which are contained in this file
-            file_index = np.where(i==fileNum)
-            
-            with h5py.File(il.sublink.treePath(self._tree_path, treeName, i),'r') as f:
-                
-                #Get data (sort because h5py insists on an increasing order)
-                file_offset = fileOff[file_index]
-                j = np.argsort(file_offset)
-                sort = file_offset[j]
-                file_rd_id = f['RootDescendantID'][sort]
-                
-                #Now reverse the sorting
-                file_rd_id = file_rd_id[np.argsort(j)]
-                
-            result[file_index] = file_rd_id
-            
-        return result
-    
-
-    #Integrated properties of Subhalo
-    #-------------------------------------------------------------------------
-    @property
-    def z(self):
-        return load_redshift(self.snapshot_id)
-
-    @property
-    def a(self):
-        return 1.0/(1.0 + self.z)
-    
-    @property
-    def luminosity_distance(self):
-        return cosmo.luminosity_distance(self.z).to(u.pc).value
-    
-    @property
-    def distance_modulus(self):
-        return 5*np.log10(self.luminosity_distance/10.0)
-    
-    @property
-    def lookback(self):
-        zeros = [0]*len(self._subhalo_ids)
-        return np.array(cosmo.age(zeros) - cosmo.age(self.z))
-    
-    @property
-    def num_dm_particles(self):
-        return self.load_groupcat("SubhaloLenType")[:,1]
-    
-    @property
-    def stellar_mass(self):
-        return self.load_groupcat("SubhaloMassType")[:,4] * 1e10 / self._H
-
     @property
     def i_band_mag_dust_apparent(self):
         return self.load_auxcat(self._stellar_phot_dust_path, "Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc")[:,3]
@@ -442,130 +624,7 @@ class Subhalos(object):
         return self.g_band_mag_dust_apparent - self.r_band_mag_dust_apparent
 
     @property
-    def z_band_mag(self):
-        return self.load_groupcat("SubhaloStellarPhotometrics")[:,7]
-    
-    @property
-    def i_band_mag(self):
-        return self.load_groupcat("SubhaloStellarPhotometrics")[:,6]
-    
-    @property
-    def r_band_mag(self):
-        return self.load_groupcat("SubhaloStellarPhotometrics")[:,5]
-
-    @property
-    def g_band_mag(self):
-        return self.load_groupcat("SubhaloStellarPhotometrics")[:,4]
-    
-    @property
-    def color(self):
-        return self.g_band_mag - self.r_band_mag
-
-    @property
-    def metallicity_star(self):
-        return self.load_auxcat(self._stellar_metalicity_path, "Subhalo_StellarZ_2rhalf_rBandLumWt")
-    
-    @property
-    def metallicity_gas(self):
-        return self.load_groupcat("SubhaloStarMetallicityHalfRad")
-
-    @property
-    def sfr(self):
-        return self.load_groupcat("SubhaloSFRinHalfRad")
-    
-    @property
-    def log_sfr(self):
-        '''Log the sfr, replace 0 by minimum'''
-        sfr = np.array(self.sfr)
-        mask = (sfr == 0)
-        min_sfr = np.min(sfr[~mask])
-        sfr[mask] = min_sfr
-        return np.log10(sfr)
-    
-    @property
-    def velocity_dispersion(self):
-        return self.load_groupcat("SubhaloVelDisp")
-
-    @property
-    def half_mass_rad_physical(self):
-        return self.load_groupcat("SubhaloHalfmassRadType")[:,4] * self.a / self._H
-    
-    @property
     def half_light_rad(self):
         return self.load_auxcat(self._stellar_halfrad_path, "Subhalo_HalfLightRad_p07c_cf00dust_z")[:,2] * self.a / self._H
 
-    @property
-    def mass_in_rad(self):
-        return self.load_groupcat("SubhaloMassInRadType")[:,4] * 1e10 / self._H
     
-    @property
-    def stellar_age_2rhalf_lumw(self):
-        return self.load_stellar_ages("Subhalo_StellarAge_2rhalf_rBandLumWt")
-
-    @property
-    def fraction_disk_stars(self):
-        return self.load_circularity("CircAbove07Frac")[:,0]
- 
-
-    #Statmorph parameters
-    #-------------------------------------------------------------------------
-    @property
-    def asymmetry(self):
-        return self.load_statmorph('asymmetry')
-    
-    @property
-    def concentration(self):
-        return self.load_statmorph('concentration')
-    
-    @property
-    def deviation(self):
-        return self.load_statmorph('deviation')
-    
-    @property
-    def gini(self):
-        return self.load_statmorph('gini')
-    
-    @property
-    def m20(self):
-        return self.load_statmorph('m20')
-    
-    @property
-    def multimode(self):
-        return self.load_statmorph('multimode')
-    
-    @property
-    def sersic_n(self):
-        return self.load_statmorph('sersic_n')
-    
-    @property
-    def sersic_rhalf(self):
-        return self.load_statmorph('sersic_rhalf')
-    
-    @property
-    def sersic_ellip(self):
-        return self.load_statmorph('sersic_ellip')
-    
-    @property
-    def smoothness(self):
-        return self.load_statmorph('smoothness')
-    
-    @property
-    def gini_m20_bulge(self):
-        return self.load_statmorph('gini_m20_bulge')
-    
-    @property
-    def gini_m20_merger(self):
-        return self.load_statmorph('gini_m20_merger')
-    
-    
-# Here one can add special treatment of the different simulations. However, try to keep the code below this line as simple as possible!
-# In an ideal world there should be nothing here at all
-#-----------------------------------------------------------------------------------------------------------------------------
-        
-class SubhalosTNG100(Subhalos):
-    
-    def define_auxcat_paths(self):
-        auxcat_path = "/vera/ptmp/gc/dnelson/sims.TNG/L75n1820TNG/data.files/auxCat"
-        self._stellar_phot_dust_path = auxcat_path + "/Subhalo_StellarPhot_p07c_cf00dust_res_conv_z_30pkpc_%03d.hdf5" % (self._snapshot_id)
-        self._stellar_halfrad_path = auxcat_path + "/Subhalo_HalfLightRad_p07c_cf00dust_z_%03d.hdf5" % (self._snapshot_id)
-        self._stellar_metalicity_path = auxcat_path + "/Subhalo_StellarZ_2rhalf_rBandLumWt_%03d.hdf5" % (self._snapshot_id)

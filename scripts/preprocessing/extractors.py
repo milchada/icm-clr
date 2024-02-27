@@ -13,7 +13,7 @@ from scripts.util.chunked_pool import ChunkedPool
 from scripts.preprocessing.caching import Cache
 from scripts.util.logging import logger
 
-import os
+import glob, os
 from tqdm import tqdm
 import glob
 from astropy.io import fits
@@ -47,8 +47,11 @@ class DataExtractor(object):
         
         self._fields = fields
         self._image_size = image_size
-        self._filters = filters
-        self._filters_keys = self.get_filter_keys(filters)
+        try:
+            self._filters = filters
+            self._filters_keys = self.get_filter_keys(filters)
+        except:
+            pass
         self._simulation = simulation
         self._fraction = fraction
         
@@ -60,6 +63,8 @@ class DataExtractor(object):
         
         if dataset in {"TNG50-1", "TNG100-1", "TNG300-1"}:
             return TNGDataExtractor(dataset, min_mass, max_mass, snapshots, fields)
+        elif dataset in {"Xray-TNG-Cluster"}:
+            return TNGHSCExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation="TNG-Cluster", by_fof=True)
         elif dataset in {"HSC_TNG50", "HSC_TNG50_Ideal"}:
             return TNGHSCExtractor(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation="TNG50-1")
         elif dataset in {"HSC_TNG100"}:
@@ -146,6 +151,10 @@ class DataExtractor(object):
 
 class TNGDataExtractor(DataExtractor):
     '''Class to load the TNG data'''
+    def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None, fraction=1.0, by_fof=False):
+        self._by_fof = by_fof
+        super(TNGDataExtractor, self).__init__(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation, fraction)
+        print(self._by_fof)
     
     def _load_TNG_labels(self, fields):
         
@@ -161,21 +170,23 @@ class TNGDataExtractor(DataExtractor):
             cat = Catalogue(self._simulation,
                             snap,
                             c.illustris_path,
-                            min_stellar_mass=self._min_mass,
-                            max_stellar_mass=self._max_mass,
-                            random = False)
+                            min_mass=self._min_mass,
+                            max_mass=self._max_mass,
+                            random = False, by_fof=self._by_fof)
 
             halos = cat.get_subhalos()
 
+            labels = []
+            for field in fields:
+                field_values = getattr(halos, field)
+                labels.append(field_values)
+                print(field, 'logged')
+                print(np.array(labels).shape)
+            
             for projection in range(NUM_PROJECTIONS):
-                halos.projection = projection
-                
-                labels = []
-                for field in fields:
-                    field_values = getattr(halos, field) 
-                    labels.append(field_values)
-
+                labels[-1] = [projection]*len(halos._subhalo_ids)
                 out.append(np.transpose(labels))
+                print(np.array(out).shape)
 
         return pd.DataFrame(np.concatenate(out), columns=fields)
         
@@ -186,20 +197,21 @@ class TNGDataExtractor(DataExtractor):
      
 class TNGHSCExtractor(TNGDataExtractor):
     '''Class to load the TNG data incl the HSC Mocks'''
+    def __init__(self, dataset, min_mass, max_mass, snapshots, fields=None, image_size=None, filters=None, simulation=None, fraction=1.0, by_fof=False):
+        super(TNGHSCExtractor, self).__init__(dataset, min_mass, max_mass, snapshots, fields, image_size, filters, simulation, fraction, by_fof)
     
     @property
     def filter_dict(self):
-        return {'G': 'SUBARU_HSC.G', 'R': 'SUBARU_HSC.R', 'I': 'SUBARU_HSC.I'}
+        return {'G': 'SUBARU_HSC.G', 'R': 'SUBARU_HSC.R', 'I': 'SUBARU_HSC.I', '0.5-5.0':'0.5-5.0'}
     
     def _split_filenames(self, filelist):
         #~/simclr/dataset_raw/TNG50-1/images/059/shalo_059-101_v3_HSC_GRIZY.fits
-        splitlist = list(map(lambda x: os.path.split(x), filelist))
+        splitlist = list(map(lambda x: os.path.split(x)[1], filelist))
         #shalo_059-101_v3_HSC_GRIZY.fits
-        snap_ids = list(map(lambda x: x[1].split("_")[1], splitlist))
-        projections = list(map(lambda x: x[1].split("_")[2][1], splitlist))
+        snapnums = list(map(lambda x: x.split("snap")[1].split("_")[0], splitlist))
+        projections = list(map(lambda x: x.split("_")[2].split('.')[0], splitlist))
         #059-101
-        snapnums = list(map(lambda x: x.split("-")[0], snap_ids))
-        sub_ids  = list(map(lambda x: x.split("-")[1], snap_ids))
+        sub_ids  = list(map(lambda x: x.split("halo")[1].split("_")[0], splitlist))
 
         snapnums = np.array(snapnums, dtype=np.int32)
         sub_ids  = np.array(sub_ids, dtype=np.int32)
@@ -210,9 +222,12 @@ class TNGHSCExtractor(TNGDataExtractor):
     def _add_image_path(self, df):
         '''Add the path to the respective image for each entry in df. Multiply entrys if there are multiple images for the same galaxy and delete if there is no image'''
 
-        #Get list of all available images
-        filelist = glob.glob(self._image_path + '**/*.fits', recursive=True) 
-        
+        snapshot_ids = df["snapshot_id"].to_numpy(dtype=np.int32)
+        subhalo_ids = df["subhalo_id"].to_numpy(dtype=np.int32)
+        projection_ids = df["projection"].to_numpy(dtype=np.int32)
+
+        filelist = glob.glob(self._image_path + '**/*_halo*.fits', recursive=True) 
+
         if len(filelist) == 0:
             logger.info("No images available, extract images first!")
 
@@ -225,12 +240,8 @@ class TNGHSCExtractor(TNGDataExtractor):
         target = []
         mask = [] #Mask to sort out images with not avail data
 
-        snapshot_ids = df["snapshot_id"].to_numpy(dtype=np.int32)
-        subhalo_ids = df["subhalo_id"].to_numpy(dtype=np.int32)
-        projection_ids = df["projection"].to_numpy(dtype=np.int32)
-
         #Loop over all images
-        for j, (snap, i, p, filepath) in enumerate(zip(snapnums, sub_ids, projections, filelist)):
+        for (snap, i, p) in enumerate(zip(snapnums, sub_ids, projections)):
             #Get matched df index for the image
             index = np.argwhere(np.logical_and(np.logical_and(snapshot_ids==snap, subhalo_ids==i), projection_ids==p))
             assert len(index)<=1, "Multiple Data for one Image"
@@ -259,14 +270,11 @@ class TNGHSCExtractor(TNGDataExtractor):
 
         #Test if file is already existing; either skip and use the cached data or delete and reload 
         if self.skip_image(new_path):
-            return ['', np.nan, np.nan]
+            return [''] 
         
         #Resize images and copy only needed filters
         with fits.open(filedir) as hdul:
-
-            cropper = PetrosianCropper(image_target_size=self._image_size, petro_multiplier=PETRO_RADIUS_FACTOR)
-            cropper.fit(hdul["SUBARU_HSC.R"].data)
-
+            cropper = FractionalCropper(image_target_size=self._image_size)
             hdu_copy = [fits.PrimaryHDU()]
 
             for fk, f in zip(self._filters_keys, self._filters):
@@ -278,32 +286,32 @@ class TNGHSCExtractor(TNGDataExtractor):
             hdul_copy = fits.HDUList(hdu_copy)
             hdul_copy.writeto(new_path)
         
-        return [new_path, cropper.r_half_light, cropper.r_90_light]
+        return [new_path]
         
     def _resized_copy_exceptions(self, filedirs):
         try:
             return self._resized_copy(filedirs)
         except OSError:
             logger.warning("Faulty fits file: skip image!")
-            return ['', np.nan, np.nan]
+            return ['']
         except KeyError:
             logger.warning("Filter missing: skip image!")
-            return ['', np.nan, np.nan]
+            return ['']
         except TypeError:
             logger.warning("Weird type error: skip image!")
-            return ['', np.nan, np.nan]
+            return ['']
         except ValueError:
             logger.warning("Weird value error: skip image!")
-            return ['', np.nan, np.nan]
+            return ['']
         
     def _extract_images(self):
-        image_path_wildcard = os.path.join(c.image_cache_path, self._dataset) + '/**/*.fits'
+        image_path_wildcard = os.path.join(c.image_cache_path, self._dataset) + '/**/*halo*.fits'
         filelist = glob.glob(image_path_wildcard, recursive=True)
         logger.info(str(len(filelist)) + " images found. Start loading...")
         
         def checkpoint(x):
             x = np.array(x)
-            df = pd.DataFrame(x, columns=["image_path", "petro_half_light", "petro_90_light"])
+            df = pd.DataFrame(x, columns=["image_path"])
             self.push_to_cache(df)
             
         multi_resized_copy = ChunkedPool(self._resized_copy_exceptions, checkpoint, SIZE_CHUNKS, NUM_WORKERS)
@@ -311,14 +319,21 @@ class TNGHSCExtractor(TNGDataExtractor):
     
     def _extract_labels(self):
         logger.info("Load labels...")
-        df = self._load_TNG_labels(self._fields)
+        try:
+            df = pd.read_csv(self._label_path)
+        except FileNotFoundError:
+            logger.info("building from scratch")
+            df = self._load_TNG_labels(self._fields)
+            self.save_labels(df)
+        logger.info("Labels loaded")
         df = self._add_image_path(df)
-        df_cache = self.pull_from_cache()
-        df = pd.merge(df, df_cache, on=["image_path"])
+        if USE_CACHE: 
+            df_cache = self.pull_from_cache()
+            df = pd.merge(df, df_cache, on=["image_path"])
         self.save_labels(df)
         
     def extract(self):
-        self._extract_images()
+        # self._extract_images()
         self._extract_labels()
     
 class HSCDataExtractor(DataExtractor):

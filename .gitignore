@@ -1,5 +1,8 @@
 *core*
 *.pyc
+**fits
+**npy
+**csv
 **/.ipynb_checkpoints
 **/__pycache__
 /dataset_raw

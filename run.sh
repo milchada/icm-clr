@@ -14,14 +14,14 @@
 #SBATCH --mem=125000
 #
 #SBATCH --mail-type=none
-#SBATCH --mail-user=eisert@mpia.de
+#SBATCH --mail-user=chadayammuri@mpia.de
 #SBATCH --time=24:00:00
 
 module purge
 module load anaconda/3/2021.11
-module load cuda/11.6
-module load cudnn/8.4.1
-module load pytorch/gpu-cuda-11.6/1.13.0
+module load cuda/11.6   
+module load cudnn/8.4.1   
+module load pytorch/gpu-cuda-11.6/1.13.0 
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
@@ -43,4 +43,6 @@ conda activate ergo
 alias python3=python3.9
 alias python=python3.9
 
-srun dvc repro
+python3 -m scripts.model.train_clr 
+#srun dvc repro
+

@@ -8,12 +8,14 @@ import numpy as np
 from copy import copy
 
 from skimage.transform import resize
-
-from petrofit.segmentation import make_catalog, plot_segments
 from astropy.stats import sigma_clipped_stats
-from petrofit.photometry import source_photometry
-from petrofit.photometry import make_radius_list
-from petrofit.petrosian import Petrosian
+try:
+    from petrofit.photometry import source_photometry
+    from petrofit.photometry import make_radius_list
+    from petrofit.petrosian import Petrosian
+    from petrofit.segmentation import make_catalog
+except:
+    pass
 
 class ImageCropper(object):
     

@@ -104,7 +104,29 @@ class Subhalos(object):
                 prop.append(bh.sum())
             except AttributeError:
                 prop.append(0)
-        return prop
+        return np.array(prop)
+    
+    def load_sublink(self, field, rcut=0.1):
+        for subid in self._subhalo_ids:
+            tree = il.sublink.loadTree(self._base_path, self._snapshot_id, subid, onlyMPB=False)
+            snaps = tree['SnapNum']
+            msub = tree['SubhaloMass']
+            mfof = tree['Group_M_Crit200']
+            prop = []
+            for snap in np.unique(snaps):
+                snapmask = (snaps == snap)
+                mainmass = msub[snapmask].max()
+                r = msub[snapmask]/mainmass
+                rmask = (r > rcut) * (r != 1.0)
+                if 'SnapLastMerger' in field:
+                    props = tree['SnapNum'][snapmask][rmask]
+                    prop.append(props.max())
+                if 'SubMassRatio' in field:
+                    
+                if 'FoFMassRatio' in field:
+
+
+
     #RootDescendantID
     #For spliting according to Branches
     #-------------------------------------------------------------------------
@@ -221,11 +243,11 @@ class Subhalos(object):
 
     @property
     def bh_tinj_cum(self):
-        return self.load_bhcat("BH_CumEgyInjection_QM") * 1e10 / (0.978 * self._H) 
+        return self.load_bhcat("BH_CumEgyInjection_QM")# * 1e10 / (0.978 * self._H) 
     
     @property
     def bh_kinj_cum(self):
-        return self.load_bhcat("BH_CumEgyInjection_RM") * 1e10 / (0.978 * self._H) 
+        return self.load_bhcat("BH_CumEgyInjection_RM") #* 1e10 / (0.978 * self._H) 
     
     @property
     def bh_einj_cum(self):

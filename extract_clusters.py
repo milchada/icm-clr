@@ -114,3 +114,5 @@ if __name__ == "__main__":
     df = get_labels()
     df = add_image_path(df)
     df.to_csv(image_path.replace('images/','label.csv', index=False)
+
+#add more labels

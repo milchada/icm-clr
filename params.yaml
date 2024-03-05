@@ -15,8 +15,10 @@ extract:
     SNAPSHOTS:
       - [50, 59, 67, 72, 78, 84, 91, 99]
     FIELDS: 
-      - ["z", "stellar_mass", "gas_mass","m200c", "m500c",
-         "bh_mass", "bh_accr"] #, "bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum"]
+      # - ["z", "stellar_mass", "gas_mass","m200c", "m500c",
+      #    "bh_mass", "bh_accr", 
+        - ["bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum",
+         "log_sfr"]
     #Load datasets?
     LOAD:
       - True

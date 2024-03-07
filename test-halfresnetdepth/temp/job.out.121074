@@ -1,0 +1,147 @@
+Running stage 'train_clr':
+> python3 -m scripts.model.train_clr
+WARNING: Neptune init failed. Experiment tracking via neptune disabled!
+| Wide-Resnet 10x2
+start building 1
+layer 1 built
+start building 2
+layer 2 built
+start building 3
+layer 3 built
+MODEL TOPOLOGY:
+	0 - 
+	1 - conv1
+	2 - conv1._basisexpansion
+	3 - conv1._basisexpansion.block_expansion_('irrep_0,0', 'regular')
+	4 - layer1
+	5 - layer1.0
+	6 - layer1.0.bn1
+	7 - layer1.0.bn1.batch_norm_[16]
+	8 - layer1.0.relu1
+	9 - layer1.0.conv1
+	10 - layer1.0.conv1._basisexpansion
+	11 - layer1.0.conv1._basisexpansion.block_expansion_('regular', 'regular')
+	12 - layer1.0.bn2
+	13 - layer1.0.bn2.batch_norm_[16]
+	14 - layer1.0.relu2
+	15 - layer1.0.dropout
+	16 - layer1.0.conv2
+	17 - layer1.0.conv2._basisexpansion
+	18 - layer1.0.shortcut
+	19 - layer1.0.shortcut._basisexpansion
+	20 - layer1.0.shortcut._basisexpansion.block_expansion_('regular', 'regular')
+	21 - layer2
+	22 - layer2.0
+	23 - layer2.0.bn1
+	24 - layer2.0.bn1.batch_norm_[16]
+	25 - layer2.0.relu1
+	26 - layer2.0.conv1
+	27 - layer2.0.conv1._basisexpansion
+	28 - layer2.0.bn2
+	29 - layer2.0.bn2.batch_norm_[16]
+	30 - layer2.0.relu2
+	31 - layer2.0.dropout
+	32 - layer2.0.conv2
+	33 - layer2.0.conv2._basisexpansion
+	34 - layer2.0.shortcut
+	35 - layer2.0.shortcut._basisexpansion
+	36 - layer3
+	37 - layer3.0
+	38 - layer3.0.bn1
+	39 - layer3.0.bn1.batch_norm_[16]
+	40 - layer3.0.relu1
+	41 - layer3.0.conv1
+	42 - layer3.0.conv1._basisexpansion
+	43 - layer3.0.bn2
+	44 - layer3.0.bn2.batch_norm_[16]
+	45 - layer3.0.relu2
+	46 - layer3.0.dropout
+	47 - layer3.0.conv2
+	48 - layer3.0.conv2._basisexpansion
+	49 - layer3.0.conv2._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	50 - layer3.0.shortcut
+	51 - layer3.0.shortcut._basisexpansion
+	52 - layer3.0.shortcut._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	53 - bn
+	54 - bn.batch_norm_[1]
+	55 - relu
+	56 - linear
+Updating lock file 'dvc.lock'
+
+Running stage 'write_representation':
+> python3 -m scripts.postprocessing.write_representation
+| Wide-Resnet 10x2
+start building 1
+layer 1 built
+start building 2
+layer 2 built
+start building 3
+layer 3 built
+MODEL TOPOLOGY:
+	0 - 
+	1 - conv1
+	2 - conv1._basisexpansion
+	3 - conv1._basisexpansion.block_expansion_('irrep_0,0', 'regular')
+	4 - layer1
+	5 - layer1.0
+	6 - layer1.0.bn1
+	7 - layer1.0.bn1.batch_norm_[16]
+	8 - layer1.0.relu1
+	9 - layer1.0.conv1
+	10 - layer1.0.conv1._basisexpansion
+	11 - layer1.0.conv1._basisexpansion.block_expansion_('regular', 'regular')
+	12 - layer1.0.bn2
+	13 - layer1.0.bn2.batch_norm_[16]
+	14 - layer1.0.relu2
+	15 - layer1.0.dropout
+	16 - layer1.0.conv2
+	17 - layer1.0.conv2._basisexpansion
+	18 - layer1.0.shortcut
+	19 - layer1.0.shortcut._basisexpansion
+	20 - layer1.0.shortcut._basisexpansion.block_expansion_('regular', 'regular')
+	21 - layer2
+	22 - layer2.0
+	23 - layer2.0.bn1
+	24 - layer2.0.bn1.batch_norm_[16]
+	25 - layer2.0.relu1
+	26 - layer2.0.conv1
+	27 - layer2.0.conv1._basisexpansion
+	28 - layer2.0.bn2
+	29 - layer2.0.bn2.batch_norm_[16]
+	30 - layer2.0.relu2
+	31 - layer2.0.dropout
+	32 - layer2.0.conv2
+	33 - layer2.0.conv2._basisexpansion
+	34 - layer2.0.shortcut
+	35 - layer2.0.shortcut._basisexpansion
+	36 - layer3
+	37 - layer3.0
+	38 - layer3.0.bn1
+	39 - layer3.0.bn1.batch_norm_[16]
+	40 - layer3.0.relu1
+	41 - layer3.0.conv1
+	42 - layer3.0.conv1._basisexpansion
+	43 - layer3.0.bn2
+	44 - layer3.0.bn2.batch_norm_[16]
+	45 - layer3.0.relu2
+	46 - layer3.0.dropout
+	47 - layer3.0.conv2
+	48 - layer3.0.conv2._basisexpansion
+	49 - layer3.0.conv2._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	50 - layer3.0.shortcut
+	51 - layer3.0.shortcut._basisexpansion
+	52 - layer3.0.shortcut._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	53 - bn
+	54 - bn.batch_norm_[1]
+	55 - relu
+	56 - linear
+Updating lock file 'dvc.lock'
+
+To track the changes with git, run:
+
+	git add dvc.lock
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+Use `dvc push` to send your updates to remote storage.

@@ -23,7 +23,7 @@ snaps = np.array([file.split('snap')[1].split('_')[0] for file in files]).astype
 snaps.sort()
 
 
-def get_labels():
+def get_labels(name=None):
     for snap in np.unique(snaps):
         out = []
         print(snap)
@@ -49,9 +49,13 @@ def get_labels():
             print(np.array(out).shape)
 
         dfnew = pd.DataFrame(np.concatenate(out), columns=FIELDS[0]+['halo_num', 'snapshot_id', 'subhalo_id', 'projection'])
-        print(dfnew.shape)
-        df = pd.concat((df, dfnew))
-        return df.drop_duplicates()
+        if snap == snaps.min():
+            df = dfnew
+        else:
+            df = pd.concat((df, dfnew))
+        if name:
+            df.to_csv(name, index=False)
+    return df.drop_duplicates()
 
 def split_filenames(filelist):
         #~/simclr-gas/dataset_raw/Xray-TNG-Cluster/images/snap59_halo110011010_1.fits

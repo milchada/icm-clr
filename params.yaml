@@ -4,7 +4,7 @@
 neptune:
   project_name: "milchada/simclr"
   api_token: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJmMmIzZWE2Zi01MjhhLTQ1OTAtOWFiYi0yZTBjOTRjODAxZjYifQ=="
-  tags: ["nnclr", "dev", 'gas', 'TNGCluster', 'v0']
+  tags: ["nnclr", "dev", 'gas', 'TNGCluster', 'v1']
 
 #Parameters for the loading of the data from various sources
 extract:

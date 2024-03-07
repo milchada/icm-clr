@@ -1,0 +1,273 @@
+# -*- coding: utf-8 -*-
+
+#Parameter for the metric tracking with neptune
+neptune:
+  project_name: "milchada/simclr"
+  api_token: "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJmMmIzZWE2Zi01MjhhLTQ1OTAtOWFiYi0yZTBjOTRjODAxZjYifQ=="
+  tags: ["nnclr", "dev", 'gas', 'TNGCluster', 'v0']
+
+#Parameters for the loading of the data from various sources
+extract:
+    MIN_MASS: 5e14
+    MAX_MASS: 5e15
+    DATASETS:
+      - "Xray-TNG-Cluster"
+    SNAPSHOTS:
+      - [50, 59, 67, 72, 78, 84, 91, 99]
+    FIELDS: 
+       - ["z", "stellar_mass", "gas_mass","m200c", "m500c",
+          "bh_mass", "bh_accr"] 
+      #  - ["bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum",
+      #   "log_sfr"]
+    #Load datasets?
+    LOAD:
+      - True
+    #Only use fractions of the overall set - not 
+    FRACTION:
+      - 1.0
+    #Target image size to apply the augmentations to
+    IMAGE_SIZE: 256
+    #Number of projections per Simualted Image
+    NUM_PROJECTIONS: 3 #3 for Xray, 4 for stellar; number of copies of each galaxy in catalogue
+    #Filters to load from the raw images
+    #this should be set to None if we are creating catalogues; only set if working with images
+    FILTERS: ['0.5-5.0']
+    #Get Cutouts which are multiple of Petrosian radius; for stellar light only
+    PETRO_RADIUS_FACTOR: None # 4
+    #Use cache = True means the training images have already been resized. 
+    USE_CACHE: False
+    #Number of workers to use
+    NUM_WORKERS: 8
+    #Chunk size of the image loading
+    SIZE_CHUNKS: 2000
+
+prepare:
+    #Seed for the random split algorithm
+    SPLIT_SEED: 42
+    #Datasets to use with the split fractions: Training, Validation, Testing
+    #Note, that feature scaling is determined by the first set
+    SETS:
+      - ["Xray-TNG-Cluster", [0.8, 0.0, 0.1, 0.1]]  
+    #The source set is the set drawing samples from to match them to the target set.
+    #I.e. we try to find a example in source for each example in the target. 
+    MATCHING_SOURCE_SETS: [None]                # ['HSC_TNG50'] #['HSC']
+    MATCHING_TARGET_SETS: [None]                #['HSC_TNG100'] #['HSC_TNG100', 'HSC_TNG50']
+    #Specify fields to match between the sets and the uncertainties they are matched with
+    MATCHING_FIELDS:
+       "None"
+    MATCHING_UNCERTAINTIES:
+      "None"
+    #List of observables and unobservables used
+    #NOTE: the names might alter from the original dataset_raw fields as prepare.py might modify the fields
+    #'''Observables vs Unobservables are NOT needed for CLR part, rather for the INN (or any inference)'''
+    OBSERVABLES: 
+      - None #['z'] #,'Lx_0.5_5.0kev', 'Tx_0.5_5.0kev']
+    UNOBSERVABLES:
+      - None #['gas_mass', 'stellar_mass', 'bh_mass', 'm200c','m500c','bh_accr',"bh_einj_cum", "bh_kinj_cum", "bh_ting_cum"]
+    
+    #These Labels are only because observed datasets may have different names for the same fields. This is not used in the CLR bit. 
+    #Ideally we modify this eventually 
+
+    LABELS:  ['z', 'gas_mass', 'stellar_mass', 'bh_mass', 'm200c','m500c','bh_accr'] #,"bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum"]
+    #Split According to root descendant
+    ROOT_DESCENDANT_SPLIT: True
+    
+data:
+    #Valid range for the UNOBSERVABLE parameters; if samples are outside of this interval, results are treated as categorical 
+    #Used to identify galaxies with no major mergers
+    VALID_RANGE:
+      - None
+    #Choose the Dataset Object which determines how the images are loaded and streched
+    DATASET: 'SingleStretchDataset'
+    #Target filters to use
+    FILTERS: ['0.5-5.0'] 
+    #Target edge size of the images
+    IMAGE_SIZE: 128
+    #Number of data loading workers
+    NUM_WORKERS: 16
+
+params_opt:
+    STUDY_NAME: 'Gas_Test_HalfTrainSize'
+    STUDY_OBJECT: 'ParameterOptimizationCLR_All'
+    NUM_TRIALS: 200
+    SAVE_MODELS: True
+
+train_clr:
+    #Learning Rate for the SIMCLR training
+    LEARNING_RATE: 0.001
+    #Weight decay for the simclr training
+    L2_DECAY: 0.000001
+    #Betas for the ADAM optimizer
+    BETA_1: 0.9
+    BETA_2: 0.999
+    #Reduce the Learning rate if the validation loss has not improved for this number of epochs
+    LR_PATIENCE: 3
+    #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
+    LR_DECAY: 0.8
+    #Size of batches used for the training and evaluation
+    BATCH_SIZE: 32
+    #Maximum number of training epochs
+    NUM_EPOCHS: 500
+    #If there is a lot of data, one full epoch takes very long. So limit the number of batches in each epoch
+    MAX_NUM_BATCHES_PER_EPOCH: 350
+    #Stop the training if a max runtime (in seconds) has been reached
+    MAX_RUNTIME_SECONDS: 86400
+    #Stop the training after validation loss has not improved for PATIENCE epochs
+    PATIENCE: 15
+    #Train model on multiple devices by splitting and distributing batches 
+    #If set to True the device in config.py should be set to the cpu ... torch will take care of the correct assignment
+    #Note also that the use of torch.nn.DataParallel is not recommended by Pytorch
+    #Updating this might bring a better performance
+    #Furthermore there seems to be a problem when loading the parallelized model later on
+    PARALLEL_TRAINING: False
+    #Train CLR on training and domain set
+    DOMAIN_TRAINING: True
+    #Domain Adaption during the clr learning
+    DOMAIN_ADAPTION: False
+    #Contrastive Learning Type (SIMCLR or NNCLR):
+    CLR_TYPE: "NNCLR"
+    #Size of Queue (i.e. number of batches) in case that NNCLR is used:
+    NNCLR_QUEUE_SIZE: 512
+    #Augmentation parameters
+    AUGMENTATION_PARAMS:
+        ROTATION: 15 #In degree
+        TRANSLATE: 0.25 #As fraction of the overall image size
+        SCALE: 1.1 #max zoom in
+        FLIP: True
+        GAUSSIAN_BLUR_SIGMA: [0.0001, 0.1] #Std in Pixel
+        NOISE_STD: [0.01, 0.08] #Noise std (Image values are normalized to 1)
+    
+train_cinn:
+    #Parameters of the Adam Optimizer
+    L2_DECAY: 0.0002
+    BETA_1: 0.9
+    BETA_2: 0.999
+    
+    #Initial learning rate
+    LEARNING_RATE: 0.002
+    #Reduce the Learning rate if the validation loss has not improved for this number of epochs
+    LR_PATIENCE: 5 
+    #Learning rate decay (i.e. the lr is multiplied by the decayfactor every milestone)
+    LR_DECAY: 0.5
+    
+    #Maximum number of training epochs
+    NUM_EPOCHS: 200
+    #Stop the training after validation loss has not improved for this number of epochs
+    PATIENCE: 20
+
+    #Use the simclr pretrained resnet
+    USE_PRETRAINED_RESNET: True
+    #Fix initialy the Resnet params during training
+    FIX_RESNET_PARAMS: True
+    #Unfix the RESNET params if the cINN training has reached this learning rate
+    #(set to 0 if RESNET should be always fixed)
+    RESNET_LR_THRESHOLD: 0.00005
+    
+    #Size of batches used for the training (and validation)
+    BATCH_SIZE: 128
+
+    #Level of the gaussian noise augmentation (Note that quantities are normalized)
+    NOISE: 0.0
+    #Number of models used in the averaging
+    NUM_MODELS: 1
+    
+    #Augmentation parameters
+    AUGMENTATION_PARAMS:
+        ROTATION: 10
+        TRANSLATE: 0.15
+        SCALE: 1.2
+        FLIP: True
+        GAUSSIAN_BLUR_SIGMA: [0.1, 5]
+        NOISE_STD: [0.0, 0.05]
+
+model:
+    #Clamp parameter of the coupling layers
+    CLAMP: 1.0
+    
+    #Number of coupling layers
+    NUM_COUPLING_LAYERS: 12
+    
+    #Conditional input size of the coupling layers 
+    NUM_COND_NODES: 128
+    
+    #Width and Depth of the hidden networks in the coupling layers 
+    NUM_HIDDEN_NODES: 128
+    NUM_HIDDEN_LAYERS: 2
+    #Dropout and Batch Norm between the layers in the hidden networks in the coupling layers
+    DROPOUT: 0.0
+    BATCH_NORM: False
+
+    #Width and Depth of the conditional network
+    NUM_HIDDEN_NODES_COND: 128    
+    NUM_HIDDEN_LAYERS_COND: 2
+    #Dropout and Batch Norm between the layers in the conditional network
+    DROPOUT_COND: 0.0
+    BATCH_NORM_COND: False
+
+    #Width and Depth of the MLP network
+    NUM_HIDDEN_NODES_MLP: 128    
+    NUM_HIDDEN_LAYERS_MLP: 2
+    #Dropout and Batch Norm between the layers in the MLP network
+    DROPOUT_MLP: 0.0
+    BATCH_NORM_MLP: False
+    
+    #Parameters for the resnet 
+    #Resnet depth should be 6n+4
+    RESNET_DEPTH: 16
+    RESNET_WIDTH: 2
+    RESNET_DROPOUT: 0.3
+    RESNET_REPRESENTATION_DIM: 256
+    RESNET_REPRESENTATION_DEPTH: 2
+    RESNET_PROJECTION_DIM: 128
+    RESNET_PROJECTION_DEPTH: 2
+    RESNET_NUM_CHANNELS: 1
+    
+    #The Number of discrete rotations the RESNET is initially equivariant
+    RESNET_ROTATION_EQUIVARIANCE: 8
+    #Restrict the Rotation equivariance 
+    #0 = No restriction
+    #1 = Restriction before the last block to N/2
+    #2 = Restriction after the first block to N/2
+    #3 = Restriction after the first (to N/2) and the second block (to 1)
+    RESNET_ROTATION_RESTRICTION: 0
+    #Flag if the RESNET should be reflection invariant
+    RESNET_REFLECTION_EQUIVARIANCE: True
+    #Initial Stride of the Resnet
+    RESNET_INITIAL_STRIDE: 2
+    
+    #NOTE: If RESNET_ROTATION_EQUIVARIANCE = 1 and RESNET_REFLECTION_EQUIVARIANCE = False
+    #the RESNET should be equivalent to a standard CNN
+
+losses:
+    #Kernel vor forward and backward maximum mean discrepancy loss
+    mmd_kernel_type: "inverse_multiquadratic"
+    mmd_kernels: [[0.2, 0.1], [0.2, 0.5], [0.2, 2]]
+    
+    #Loss type for the adaption
+    adaption_type: "huber_linear_mmd"
+    
+    #Prefactor for the contrastive learning losses
+    lambd_clr_train: 1.
+    lambd_clr_domain: 0.
+    lambd_clr_adaption: 0.
+    
+    #Prefactor for the cINN losses
+    #i.e. the overall loss is given as weighted sum with the weights given as prefactors
+    lambd_max_likelihood: 1.
+    lambd_mmd_forw: 0.
+    lambd_mmd_back: 0.
+    lambd_mae: 0.
+    lambd_mse: 0.
+    
+    #Softmax temperature for SimCLR NCE Loss
+    nce_temperature: 0.04
+    
+sample_posterior:
+    #Number of posterior samples drawn for each galaxy in the test set
+    NUM_SAMPLES: 400
+
+peak_detection:
+    EVAL_BINS: 512
+    MIN_PEAK_DISTANCE: 32
+    MIN_PEAK_PROMINENCE: 0.02
+    MIN_PEAK_HEIGHT: 0.05

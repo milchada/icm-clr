@@ -1,0 +1,126 @@
+schema: '2.0'
+stages:
+  train_clr:
+    cmd: python3 -m scripts.model.train_clr
+    deps:
+    - path: ./dataset/
+      hash: md5
+      md5: 0ad9f72b1ea3f5bb3cb21f47c8671ec5.dir
+      size: 821663
+      nfiles: 14
+    - path: ./scripts/model/
+      hash: md5
+      md5: feea6311433f5f11076e458f516aa305.dir
+      size: 139109509
+      nfiles: 35
+    params:
+      params.yaml:
+        data:
+          VALID_RANGE:
+          - None
+          DATASET: SingleStretchDataset
+          FILTERS:
+          - 0.5-5.0
+          IMAGE_SIZE: 128
+          NUM_WORKERS: 16
+        losses:
+          mmd_kernel_type: inverse_multiquadratic
+          mmd_kernels:
+          - - 0.2
+            - 0.1
+          - - 0.2
+            - 0.5
+          - - 0.2
+            - 2
+          adaption_type: huber_linear_mmd
+          lambd_clr_train: 1.0
+          lambd_clr_domain: 0.0
+          lambd_clr_adaption: 0.0
+          lambd_max_likelihood: 1.0
+          lambd_mmd_forw: 0.0
+          lambd_mmd_back: 0.0
+          lambd_mae: 0.0
+          lambd_mse: 0.0
+          nce_temperature: 0.04
+        model:
+          CLAMP: 1.0
+          NUM_COUPLING_LAYERS: 12
+          NUM_COND_NODES: 128
+          NUM_HIDDEN_NODES: 128
+          NUM_HIDDEN_LAYERS: 2
+          DROPOUT: 0.0
+          BATCH_NORM: false
+          NUM_HIDDEN_NODES_COND: 128
+          NUM_HIDDEN_LAYERS_COND: 2
+          DROPOUT_COND: 0.0
+          BATCH_NORM_COND: false
+          NUM_HIDDEN_NODES_MLP: 128
+          NUM_HIDDEN_LAYERS_MLP: 2
+          DROPOUT_MLP: 0.0
+          BATCH_NORM_MLP: false
+          RESNET_DEPTH: 16
+          RESNET_WIDTH: 2
+          RESNET_DROPOUT: 0.3
+          RESNET_REPRESENTATION_DIM: 256
+          RESNET_REPRESENTATION_DEPTH: 2
+          RESNET_PROJECTION_DIM: 256
+          RESNET_PROJECTION_DEPTH: 2
+          RESNET_NUM_CHANNELS: 1
+          RESNET_ROTATION_EQUIVARIANCE: 8
+          RESNET_ROTATION_RESTRICTION: 0
+          RESNET_REFLECTION_EQUIVARIANCE: true
+          RESNET_INITIAL_STRIDE: 2
+        train_clr:
+          LEARNING_RATE: 0.001
+          L2_DECAY: 1e-06
+          BETA_1: 0.9
+          BETA_2: 0.999
+          LR_PATIENCE: 3
+          LR_DECAY: 0.8
+          BATCH_SIZE: 32
+          NUM_EPOCHS: 500
+          MAX_NUM_BATCHES_PER_EPOCH: 350
+          MAX_RUNTIME_SECONDS: 86400
+          PATIENCE: 15
+          PARALLEL_TRAINING: false
+          DOMAIN_TRAINING: true
+          DOMAIN_ADAPTION: false
+          CLR_TYPE: NNCLR
+          NNCLR_QUEUE_SIZE: 512
+          AUGMENTATION_PARAMS:
+            ROTATION: 15
+            TRANSLATE: 0.25
+            SCALE: 1.1
+            FLIP: true
+            GAUSSIAN_BLUR_SIGMA:
+            - 0.0001
+            - 0.1
+            NOISE_STD:
+            - 0.01
+            - 0.08
+    outs:
+    - path: ./model/resnet.pt
+      hash: md5
+      md5: 8236157dd08491c41623fc4b38a3e69d
+      size: 138917122
+  write_representation:
+    cmd: python3 -m scripts.postprocessing.write_representation
+    deps:
+    - path: ./dataset/
+      hash: md5
+      md5: 0ad9f72b1ea3f5bb3cb21f47c8671ec5.dir
+      size: 821663
+      nfiles: 14
+    - path: ./model/resnet.pt
+      hash: md5
+      md5: 8236157dd08491c41623fc4b38a3e69d
+      size: 138917122
+    - path: ./scripts/postprocessing/write_representation.py
+      hash: md5
+      md5: 442ab6763d87ec824eab91847254cb5d
+      size: 1173
+    outs:
+    - path: ./postprocessing/representation.npy
+      hash: md5
+      md5: 7d395807efa2ff9a63901259fdd8d5c5
+      size: 208000

@@ -1,0 +1,213 @@
+Running stage 'train_clr':
+> python3 -m scripts.model.train_clr
+WARNING: Neptune init failed. Experiment tracking via neptune disabled!
+| Wide-Resnet 16x2
+start building 1
+layer 1 built
+start building 2
+layer 2 built
+start building 3
+layer 3 built
+MODEL TOPOLOGY:
+	0 - 
+	1 - conv1
+	2 - conv1._basisexpansion
+	3 - conv1._basisexpansion.block_expansion_('irrep_0,0', 'regular')
+	4 - layer1
+	5 - layer1.0
+	6 - layer1.0.bn1
+	7 - layer1.0.bn1.batch_norm_[16]
+	8 - layer1.0.relu1
+	9 - layer1.0.conv1
+	10 - layer1.0.conv1._basisexpansion
+	11 - layer1.0.conv1._basisexpansion.block_expansion_('regular', 'regular')
+	12 - layer1.0.bn2
+	13 - layer1.0.bn2.batch_norm_[16]
+	14 - layer1.0.relu2
+	15 - layer1.0.dropout
+	16 - layer1.0.conv2
+	17 - layer1.0.conv2._basisexpansion
+	18 - layer1.0.shortcut
+	19 - layer1.0.shortcut._basisexpansion
+	20 - layer1.0.shortcut._basisexpansion.block_expansion_('regular', 'regular')
+	21 - layer1.1
+	22 - layer1.1.bn1
+	23 - layer1.1.bn1.batch_norm_[16]
+	24 - layer1.1.relu1
+	25 - layer1.1.conv1
+	26 - layer1.1.bn2
+	27 - layer1.1.bn2.batch_norm_[16]
+	28 - layer1.1.relu2
+	29 - layer1.1.dropout
+	30 - layer1.1.conv2
+	31 - layer2
+	32 - layer2.0
+	33 - layer2.0.bn1
+	34 - layer2.0.bn1.batch_norm_[16]
+	35 - layer2.0.relu1
+	36 - layer2.0.conv1
+	37 - layer2.0.conv1._basisexpansion
+	38 - layer2.0.bn2
+	39 - layer2.0.bn2.batch_norm_[16]
+	40 - layer2.0.relu2
+	41 - layer2.0.dropout
+	42 - layer2.0.conv2
+	43 - layer2.0.conv2._basisexpansion
+	44 - layer2.0.shortcut
+	45 - layer2.0.shortcut._basisexpansion
+	46 - layer2.1
+	47 - layer2.1.bn1
+	48 - layer2.1.bn1.batch_norm_[16]
+	49 - layer2.1.relu1
+	50 - layer2.1.conv1
+	51 - layer2.1.bn2
+	52 - layer2.1.bn2.batch_norm_[16]
+	53 - layer2.1.relu2
+	54 - layer2.1.dropout
+	55 - layer2.1.conv2
+	56 - layer3
+	57 - layer3.0
+	58 - layer3.0.bn1
+	59 - layer3.0.bn1.batch_norm_[16]
+	60 - layer3.0.relu1
+	61 - layer3.0.conv1
+	62 - layer3.0.conv1._basisexpansion
+	63 - layer3.0.bn2
+	64 - layer3.0.bn2.batch_norm_[16]
+	65 - layer3.0.relu2
+	66 - layer3.0.dropout
+	67 - layer3.0.conv2
+	68 - layer3.0.conv2._basisexpansion
+	69 - layer3.0.shortcut
+	70 - layer3.0.shortcut._basisexpansion
+	71 - layer3.1
+	72 - layer3.1.bn1
+	73 - layer3.1.bn1.batch_norm_[16]
+	74 - layer3.1.relu1
+	75 - layer3.1.conv1
+	76 - layer3.1.bn2
+	77 - layer3.1.bn2.batch_norm_[16]
+	78 - layer3.1.relu2
+	79 - layer3.1.dropout
+	80 - layer3.1.conv2
+	81 - layer3.1.conv2._basisexpansion
+	82 - layer3.1.conv2._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	83 - layer3.1.shortcut
+	84 - layer3.1.shortcut._basisexpansion
+	85 - layer3.1.shortcut._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	86 - bn
+	87 - bn.batch_norm_[1]
+	88 - relu
+	89 - linear
+Updating lock file 'dvc.lock'
+
+Running stage 'write_representation':
+> python3 -m scripts.postprocessing.write_representation
+| Wide-Resnet 16x2
+start building 1
+layer 1 built
+start building 2
+layer 2 built
+start building 3
+layer 3 built
+MODEL TOPOLOGY:
+	0 - 
+	1 - conv1
+	2 - conv1._basisexpansion
+	3 - conv1._basisexpansion.block_expansion_('irrep_0,0', 'regular')
+	4 - layer1
+	5 - layer1.0
+	6 - layer1.0.bn1
+	7 - layer1.0.bn1.batch_norm_[16]
+	8 - layer1.0.relu1
+	9 - layer1.0.conv1
+	10 - layer1.0.conv1._basisexpansion
+	11 - layer1.0.conv1._basisexpansion.block_expansion_('regular', 'regular')
+	12 - layer1.0.bn2
+	13 - layer1.0.bn2.batch_norm_[16]
+	14 - layer1.0.relu2
+	15 - layer1.0.dropout
+	16 - layer1.0.conv2
+	17 - layer1.0.conv2._basisexpansion
+	18 - layer1.0.shortcut
+	19 - layer1.0.shortcut._basisexpansion
+	20 - layer1.0.shortcut._basisexpansion.block_expansion_('regular', 'regular')
+	21 - layer1.1
+	22 - layer1.1.bn1
+	23 - layer1.1.bn1.batch_norm_[16]
+	24 - layer1.1.relu1
+	25 - layer1.1.conv1
+	26 - layer1.1.bn2
+	27 - layer1.1.bn2.batch_norm_[16]
+	28 - layer1.1.relu2
+	29 - layer1.1.dropout
+	30 - layer1.1.conv2
+	31 - layer2
+	32 - layer2.0
+	33 - layer2.0.bn1
+	34 - layer2.0.bn1.batch_norm_[16]
+	35 - layer2.0.relu1
+	36 - layer2.0.conv1
+	37 - layer2.0.conv1._basisexpansion
+	38 - layer2.0.bn2
+	39 - layer2.0.bn2.batch_norm_[16]
+	40 - layer2.0.relu2
+	41 - layer2.0.dropout
+	42 - layer2.0.conv2
+	43 - layer2.0.conv2._basisexpansion
+	44 - layer2.0.shortcut
+	45 - layer2.0.shortcut._basisexpansion
+	46 - layer2.1
+	47 - layer2.1.bn1
+	48 - layer2.1.bn1.batch_norm_[16]
+	49 - layer2.1.relu1
+	50 - layer2.1.conv1
+	51 - layer2.1.bn2
+	52 - layer2.1.bn2.batch_norm_[16]
+	53 - layer2.1.relu2
+	54 - layer2.1.dropout
+	55 - layer2.1.conv2
+	56 - layer3
+	57 - layer3.0
+	58 - layer3.0.bn1
+	59 - layer3.0.bn1.batch_norm_[16]
+	60 - layer3.0.relu1
+	61 - layer3.0.conv1
+	62 - layer3.0.conv1._basisexpansion
+	63 - layer3.0.bn2
+	64 - layer3.0.bn2.batch_norm_[16]
+	65 - layer3.0.relu2
+	66 - layer3.0.dropout
+	67 - layer3.0.conv2
+	68 - layer3.0.conv2._basisexpansion
+	69 - layer3.0.shortcut
+	70 - layer3.0.shortcut._basisexpansion
+	71 - layer3.1
+	72 - layer3.1.bn1
+	73 - layer3.1.bn1.batch_norm_[16]
+	74 - layer3.1.relu1
+	75 - layer3.1.conv1
+	76 - layer3.1.bn2
+	77 - layer3.1.bn2.batch_norm_[16]
+	78 - layer3.1.relu2
+	79 - layer3.1.dropout
+	80 - layer3.1.conv2
+	81 - layer3.1.conv2._basisexpansion
+	82 - layer3.1.conv2._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	83 - layer3.1.shortcut
+	84 - layer3.1.shortcut._basisexpansion
+	85 - layer3.1.shortcut._basisexpansion.block_expansion_('regular', 'irrep_0,0')
+	86 - bn
+	87 - bn.batch_norm_[1]
+	88 - relu
+	89 - linear
+Updating lock file 'dvc.lock'
+
+To track the changes with git, run:
+
+	git add dvc.lock
+
+To enable auto staging, run:
+
+	dvc config core.autostage true
+Use `dvc push` to send your updates to remote storage.

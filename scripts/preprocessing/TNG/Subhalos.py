@@ -106,27 +106,26 @@ class Subhalos(object):
                 prop.append(0)
         return np.array(prop)
     
-    def load_sublink(self, field, rcut=0.1):
-        for subid in self._subhalo_ids:
-            tree = il.sublink.loadTree(self._base_path, self._snapshot_id, subid, onlyMPB=False)
-            snaps = tree['SnapNum']
-            msub = tree['SubhaloMass']
-            mfof = tree['Group_M_Crit200']
-            prop = []
-            for snap in np.unique(snaps):
-                snapmask = (snaps == snap)
-                mainmass = msub[snapmask].max()
-                r = msub[snapmask]/mainmass
-                rmask = (r > rcut) * (r != 1.0)
-                if 'SnapLastMerger' in field:
-                    props = tree['SnapNum'][snapmask][rmask]
-                    prop.append(props.max())
-                if 'SubMassRatio' in field:
-                    
-                if 'FoFMassRatio' in field:
+    def load_sub_mergers(self, type='Major', tsince='250Myr', stat = 'Num'):
+        assert (type in ['Major', 'Minor', '']), 'Merger type must be Major, Minor or blank'
+        assert (tsince in ['250Myr', '500Myr', 'Gyr']), 'Time since merger must be 250Myr, 500Myr or Gyr'
+        assert (stat in ['Num', 'SnapLast', 'SnapNext']), 'Stat must be Num, SnapLast or SnapNext'
 
-
-
+        merger_stats = h5py.File(self._path+self._simulation+'/postprocessing/MergerHistory2/merger_history_0%d.hdf5' % self._snapshot_id)
+        if stat == 'Num':
+            numkey = "Num%sMergersLast%s" % (type, tsince)
+            num = np.array([merger_stats[numkey][i] for i in self._subhalo_ids])
+            return num
+        elif stat == 'SnapLast':
+            snapkey = "SnapNumLast%sMerger" % type
+            snap = np.array([merger_stats[snapkey][i] for i in self._subhalo_ids])
+            return snap
+        elif stat == 'SnapNext':
+            snapnextkey = "SnapNumNext%sMerger" % type
+            snapnext = np.array([merger_stats[snapnextkey][i] for i in self._subhalo_ids])
+            return snapnext
+    
+    def load_fof_mergers
     #RootDescendantID
     #For spliting according to Branches
     #-------------------------------------------------------------------------

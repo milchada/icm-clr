@@ -55,4 +55,3 @@ The `FIELDS` specified above in `params.yaml` are read in from a simulation cata
 Then run `python -m scripts.preprocessing.extract.py`.
 
 ### 5. what does prepare.py do?
-

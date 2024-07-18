@@ -5,54 +5,56 @@ stages:
     deps:
     - path: ./scripts/preprocessing/prepare.py
       hash: md5
-      md5: a2c4131a57447985301e22c211f5d594
-      size: 22028
+      md5: 22c3e8e267a3076fa13cdd3129b5f9f8
+      size: 22070
     params:
       params.yaml:
         prepare:
           SPLIT_SEED: 42
           SETS:
-          - - HSC_TNG50
+          - - Xray-TNG-Cluster
             - - 0.8
               - 0.0
               - 0.1
               - 0.1
-          MATCHING_FIELDS: None
-          MATCHING_UNCERTAINTIES: None
           MATCHING_SOURCE_SETS:
           - None
           MATCHING_TARGET_SETS:
           - None
+          MATCHING_FIELDS: None
+          MATCHING_UNCERTAINTIES: None
           OBSERVABLES:
           - None
           UNOBSERVABLES:
-          - - z
-            - i_band_mag_dust_apparent
-            - petro_90_light
+          - None
           LABELS:
           - z
-          - i_band_mag
-          - petro_90_radius
+          - gas_mass
+          - stellar_mass
+          - bh_mass
+          - m200c
+          - m500c
+          - bh_accr
           ROOT_DESCENDANT_SPLIT: true
     outs:
     - path: ./dataset/
       hash: md5
-      md5: 4308b21bd1abd4beb00f038c9eee7811.dir
-      size: 138551724
+      md5: fcb28edf77b73469174b151b7a5b1741.dir
+      size: 2892897
       nfiles: 14
   train_clr:
     cmd: python3 -m scripts.model.train_clr
     deps:
     - path: ./dataset/
       hash: md5
-      md5: 4308b21bd1abd4beb00f038c9eee7811.dir
-      size: 138551724
+      md5: fcb28edf77b73469174b151b7a5b1741.dir
+      size: 2892897
       nfiles: 14
     - path: ./scripts/model/
       hash: md5
-      md5: ec92c0ab1973c6aa424108cb7c85c022.dir
-      size: 192351
-      nfiles: 34
+      md5: 10070b54f842dacab686d702e136d2f7.dir
+      size: 139120656
+      nfiles: 36
     params:
       params.yaml:
         data:
@@ -60,9 +62,7 @@ stages:
           - None
           DATASET: SingleStretchDataset
           FILTERS:
-          - I
-          - R
-          - G
+          - 0.5-5.0
           IMAGE_SIZE: 128
           NUM_WORKERS: 16
         losses:
@@ -107,7 +107,7 @@ stages:
           RESNET_REPRESENTATION_DEPTH: 2
           RESNET_PROJECTION_DIM: 256
           RESNET_PROJECTION_DEPTH: 2
-          RESNET_NUM_CHANNELS: 3
+          RESNET_NUM_CHANNELS: 1
           RESNET_ROTATION_EQUIVARIANCE: 8
           RESNET_ROTATION_RESTRICTION: 0
           RESNET_REFLECTION_EQUIVARIANCE: true
@@ -140,31 +140,33 @@ stages:
             NOISE_STD:
             - 0.01
             - 0.08
+            CLIP_DELTA: 5
     outs:
     - path: ./model/resnet.pt
       hash: md5
-      md5: 745a10f09d9518376654c2b3007fe91f
-      size: 138930562
+      md5: b41c0ef2f051597e4293a9d611c07d58
+      size: 138917122
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
     deps:
     - path: ./dataset/
       hash: md5
-      md5: 4308b21bd1abd4beb00f038c9eee7811.dir
-      size: 138551724
+      md5: fcb28edf77b73469174b151b7a5b1741.dir
+      size: 2892897
       nfiles: 14
     - path: ./model/resnet.pt
       hash: md5
-      md5: 745a10f09d9518376654c2b3007fe91f
-      size: 138930562
+      md5: b41c0ef2f051597e4293a9d611c07d58
+      size: 138917122
     - path: ./scripts/postprocessing/write_representation.py
-      md5: 442ab6763d87ec824eab91847254cb5d
-      size: 1173
+      hash: md5
+      md5: ee37623f03398d843f372b93129ed1c1
+      size: 2400
     outs:
     - path: ./postprocessing/representation.npy
       hash: md5
-      md5: d894cf2cd4357296f6505087c62fd123
-      size: 12158592
+      md5: c8f2b0ae6ac38c98cfedb42f8ec9d1e0
+      size: 395392
   params_opt:
     cmd: sbatch -W run_params_opt.sh
     deps:

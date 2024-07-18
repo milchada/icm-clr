@@ -14,6 +14,26 @@ class RandomGaussianNoise(object):
     
     def __repr__(self):
         return self.__class__.__name__
+
+class ClipFaintPixels(object):
+    """
+    Sets all the values below min(random.uniform(), clip_min_ to 0.
+    
+    Args:
+    - image: Input image tensor (assuming it's a PyTorch tensor).
+    - clip_min: Threshold value for clipping.
+    
+    Returns:
+    - Clipped image tensor.
+    """
+    def __init__(self, clip_min):
+        self._clip_min = clip_min
+
+    def __call__(self, tensor):
+        delta =  min(self._clip_min, np.random.uniform()) 
+        print(delta)
+        clipped_image = torch.clamp(tensor, min = delta)
+        return clipped_image
     
 class Augmentation(object):
     def __init__(self, params=None):
@@ -51,7 +71,7 @@ class Augmentation(object):
             self._append_transform(transforms.RandomHorizontalFlip())
             self._append_transform(transforms.RandomVerticalFlip())
         else:
-            print("AUGMENTAION: Flipping switched off")
+            print("AUGMENTATION: Flipping switched off")
     
     def _random_noise(self, std_limits):
         assert std_limits[1] >= std_limits[0]
@@ -59,7 +79,12 @@ class Augmentation(object):
             gaussian_noise = RandomGaussianNoise(std_limits)
             self._append_transform(gaussian_noise)
         else:
-            print("AUGMENTAION: Noise switched off")
+            print("AUGMENTATION: Noise switched off")
+
+    def _clip(self, clip_min):
+        if clip_min:
+            clip = ClipFaintPixels(clip_min)
+            self._append_transform(clip)
         
     def _gaussian_blur(self, gaussian_blur_sigma):
     
@@ -72,8 +97,8 @@ class Augmentation(object):
             gaussian_blur = transforms.GaussianBlur(round_up_to_odd(data.IMAGE_SIZE*0.1), sigma=gaussian_blur_sigma)
             self._append_transform(gaussian_blur)
         else:
-            print("AUGMENTAION: Gaussian Blur switched off")
-        
+            print("AUGMENTATION: Gaussian Blur switched off")
+    
     def _set_up(self, params):
         '''Function to set up the augmentation as desired'''
         pass
@@ -90,12 +115,12 @@ class DefaultAugmentation(Augmentation):
         
 class FlipAugmentation(Augmentation):
     def _set_up(self, params):
-        '''Augmentations for the simclr training'''
+        '''Flip image with 50% probability if FLIP:True in params'''
         self._to_image()
         self._resize()
         self._random_flip(params["FLIP"])
         self._to_tensor()
-        
+
 class SimCLRAugmentation(Augmentation):
     def _set_up(self, params):
         '''Augmentations for the simclr training'''
@@ -103,6 +128,7 @@ class SimCLRAugmentation(Augmentation):
         self._random_affine(params["ROTATION"], params["TRANSLATE"], params["SCALE"])
         self._resize()
         self._random_flip(params["FLIP"])
-        self._gaussian_blur(params["GAUSSIAN_BLUR_SIGMA"])
+        self._gaussian_blur(params["GAUSSIAN_BLUR_SIGMA"]) #oh this is already implemented
         self._to_tensor()
         self._random_noise(params["NOISE_STD"])
+        self._clip(params["CLIP_MIN"])

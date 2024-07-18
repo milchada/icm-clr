@@ -17,6 +17,7 @@ from scripts.data.augmentations import SimCLRAugmentation, FlipAugmentation
 
 #Load Parameters
 import yaml
+logger.info('Params read from', os.getcwd())
 params = yaml.safe_load(open('params.yaml'))
 train_default_params = params['train_clr']
 

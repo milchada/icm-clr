@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
 stages:
   #Preprocessing
-  #---------------------------------------------------------
-  # make_directories:
-  #   cmd: python3 -m scripts.preprocessing.make_directories
-
   # frozen: true
-  # prepare:
-  #   cmd: python3 -m scripts.preprocessing.prepare
-  #   params:
-  #     - prepare
-  #   deps:
-  #     - ./scripts/preprocessing/prepare.py
-  #   outs:
-  #     - ./dataset/
-  #     - ./plots/preprocessing/
+  #  prepare:
+  #  cmd: python3 -m scripts.preprocessing.prepare
+  #  params:
+  #    - prepare
+  #  deps:
+  #    - ./scripts/preprocessing/prepare.py
+  #  outs:
+  #    - ./dataset/
 
   # # visualize_matching:
   # #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb

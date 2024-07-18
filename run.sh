@@ -5,7 +5,7 @@
 # Initial working directory:
 #SBATCH -D ./
 # Job name
-#SBATCH -J ergo
+#SBATCH -J clip-ergo
 #
 #SBATCH --partition=p.gpu
 #SBATCH --ntasks=1
@@ -43,6 +43,6 @@ conda activate ergo
 alias python3=python3.9
 alias python=python3.9
 
-python3 -m scripts.model.train_clr 
-#srun dvc repro
+#srun python3 -m scripts.model.train_clr 
+srun dvc repro
 

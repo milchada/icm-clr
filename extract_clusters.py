@@ -114,6 +114,47 @@ def add_image_path(df):
 
     return df_matched
 
+def load_fof_mergers(cat, r=0.2, eps = 0.05, ignore_spurious = True):
+    tmerges = {}
+    for snap in np.unique(cat['snapshot_id']):
+        print('snap: ',snap)
+        subs = cat[cat['snapshot_id'] == snap]
+        subhalo_ids = np.unique(subs['subhalo_id']).astype(int)
+        tmerge = {}
+        
+        for subid in subhalo_ids:
+            print('SubID: ', subid)
+            tree = il.sublink.loadTree(simulation+'TNG-Cluster/output', int(snap), subid, onlyMPB=True)
+            fofmass = tree['GroupMass']
+            r_fof = fofmass[:-1]/fofmass[1:] - 1
+            for i in range(len(r_fof)-1):
+                if r_fof[i] > r:
+                    if ignore_spurious:
+                        if fofmass[i] > (1+r_fof[i] - eps)*(fofmass[i+1:].max()): #the post-merger mass is greater than anything prior 
+                            fof_merger_snap = tree['SnapNum'][i]
+                            break
+                    else:
+                        if fofmass[i] > (1+r_fof[i] - eps):
+                            fof_merger_snap = tree['SnapNum'][i]
+                            break
+            print('Merger snap: ', fof_merger_snap)
+            try:
+                tmerge[subid] = il.groupcat.loadHeader(simulation+'TNG-Cluster/output', snap)['Time'] - il.groupcat.loadHeader(simulation+'TNG-Cluster/output', fof_merger_snap)['Time']
+            except (NameError, TypeError):
+                tmerge[subid] = il.groupcat.loadHeader(simulation+'TNG-Cluster/output', snap)['Time']
+            print('Time since merger :', tmerge[subid])
+            
+        tmerges[snap] = tmerge
+
+def match_to_zoom_halo_id(cat):
+    zids = il.groupcat.loadHalos(simulation+'/TNG-Cluster/output', 50, fields=['GroupOrigHaloID'])
+    zids = np.unique(zids)
+    original_zoom_id = np.zeros(len(cat))
+    for i in cat.index:
+        halo = il.groupcat.loadSingle(simulation+'/TNG-Cluster/output', cat['snapshot_id'][i].astype(int), haloID=cat['halo_num'][i].astype(int))['GroupOrigHaloID']
+        original_zoom_id[i] = np.argwhere(zids == halo)[0]
+    return original_zoom_id
+
 if __name__ == "__main__":
     df = get_labels()
     df = add_image_path(df)

@@ -63,12 +63,15 @@ prepare:
     OBSERVABLES: 
       - None #['z'] #,'Lx_0.5_5.0kev', 'Tx_0.5_5.0kev']
     UNOBSERVABLES:
-      - None #['gas_mass', 'stellar_mass', 'bh_mass', 'm200c','m500c','bh_accr',"bh_einj_cum", "bh_kinj_cum", "bh_ting_cum"]
+      - ['sublink_tmerge_major', 'centralCoolingTime',
+       'Mass_Criterion', 'Distance_Criterion', 'time_since_last_major_merger',
+       'z', 'stellar_mass', 'gas_mass', 'slope_ne', 'central_ne', 'm200c',
+       'bh_mass', 'bh_accr', 'log_sfr', 'bh_tinj_cum', 'bh_kinj_cum', 'bh_einj_cum']
     
     #These Labels are only because observed datasets may have different names for the same fields. This is not used in the CLR bit. 
     #Ideally we modify this eventually 
 
-    LABELS:  ['z', 'gas_mass', 'stellar_mass', 'bh_mass', 'm200c','m500c','bh_accr'] #,"bh_einj_cum", "bh_kinj_cum", "bh_tinj_cum"]
+    # LABELS:  ['z', 'gas_mass', 'bh_mass', 'm200c','bh_accr',"bh_einj_cum",]
     #Split According to root descendant
     ROOT_DESCENDANT_SPLIT: True
     
@@ -92,6 +95,16 @@ params_opt:
     NUM_TRIALS: 200
     SAVE_MODELS: True
 
+train_mlp:
+  #Learning Rate for the SIMCLR training
+  LEARNING_RATE: 0.001
+  #Weight decay for the simclr training
+  BATCH_SIZE: 32
+  #Maximum number of training epochs
+  NUM_EPOCHS: 500
+  #image size
+  IMAGE_SIZE: 128
+  
 train_clr:
     #Learning Rate for the SIMCLR training
     LEARNING_RATE: 0.001
@@ -130,12 +143,13 @@ train_clr:
     NNCLR_QUEUE_SIZE: 512
     #Augmentation parameters
     AUGMENTATION_PARAMS:
-        ROTATION: 15 #In degree
+        ROTATION: 15 #In degree #this could probably be a lot more 
         TRANSLATE: 0.25 #As fraction of the overall image size
         SCALE: 1.1 #max zoom in
         FLIP: True
         GAUSSIAN_BLUR_SIGMA: [0.0001, 0.1] #Std in Pixel
         NOISE_STD: [0.01, 0.08] #Noise std (Image values are normalized to 1)
+        CLIP_MIN: 0.2
     
 train_cinn:
     #Parameters of the Adam Optimizer
@@ -235,6 +249,8 @@ model:
     #Initial Stride of the Resnet
     RESNET_INITIAL_STRIDE: 2
     
+    #Stop the training after validation loss has not improved for PATIENCE epochs
+    PATIENCE: 15
     #NOTE: If RESNET_ROTATION_EQUIVARIANCE = 1 and RESNET_REFLECTION_EQUIVARIANCE = False
     #the RESNET should be equivalent to a standard CNN
 

@@ -208,7 +208,9 @@ class Data():
     def get_loader(self, batch_size, labels, augmentation, n_views, shuffle, drop_last, meta_path, label_path):
         
         module = __import__("scripts.data.datasets", globals(), locals(), self.__dataset_classname)
-        dataset_object = getattr(module, self.__dataset_classname)
+        #the next line imports the object from dataset.py specified in params.yaml under data
+        #i.e. how to normalise the images
+        dataset_object = getattr(module, self.__dataset_classname) 
         
         if labels:
             dataset = dataset_object(meta_path, label_file=label_path, augmentation=augmentation, n_views=n_views)

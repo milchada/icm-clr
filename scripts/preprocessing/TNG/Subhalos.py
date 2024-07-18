@@ -101,7 +101,7 @@ class Subhalos(object):
                                         self._snapshot_id,
                                         subid, 'bh', fields=[field])
             try:
-                prop.append(bh.sum())
+                prop.append(bh.sum()) #dont sum this, instead use only the most massive one
             except AttributeError:
                 prop.append(0)
         return np.array(prop)
@@ -125,7 +125,29 @@ class Subhalos(object):
             snapnext = np.array([merger_stats[snapnextkey][i] for i in self._subhalo_ids])
             return snapnext
     
-    def load_fof_mergers
+    def load_fof_mergers(self, r=0.2, eps = 0.05, ignore_spurious = True):
+        tmerge = np.zeros(len(self._subhalo_ids))
+        for subid in self._subhalo_ids:
+            tree = il.sublink.loadTree(self._base_path+'/output', self._snapshot_id, subid, onlyMPB=True)
+            fofmass = tree['GroupMass']
+            r_fof = fofmass[:-1]/fofmass[1:] - 1
+            for i in range(len(r_fof)-1):
+                if r_fof[i] > r:
+                    if ignore_spurious:
+                        if fofmass[i] > (1+r_fof[i] - eps)*(fofmass[i+1:].max()): #the post-merger mass is greater than anything prior 
+                            fof_merger_snap = tree['SnapNum'][i]
+                            break
+                    else:
+                        if fofmass[i] > (1+r_fof[i] - eps):
+                            fof_merger_snap = tree['SnapNum'][i]
+                            break
+            try:
+                tmerge[subid] = il.groupcat.loadHeader(self._base_path+'/output', self._snapshot_id)['Time'] - il.groupcat.loadHeader(self._base_path+'/output', fof_merger_snap)['Time']
+            except (NameError, TypeError):
+                tmerge[subid] = il.groupcat.loadHeader(self._base_path+'/output', self._snapshot_id)['Time']
+        return tmerge
+
+
     #RootDescendantID
     #For spliting according to Branches
     #-------------------------------------------------------------------------
@@ -251,6 +273,11 @@ class Subhalos(object):
     @property
     def bh_einj_cum(self):
         return self.bh_kinj_cum + self.bh_tinj_cum
+
+    @property
+    def time_since_last_major_merger(self):
+        #in units of Hubble Time
+        return self.load_fof_mergers(r = 0.2, ignore_spurious = False, eps=0)
 
     @property
     def z_band_mag(self):

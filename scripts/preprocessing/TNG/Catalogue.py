@@ -61,7 +61,8 @@ class Catalogue:
         if self._grouptype == 'SubFind':
             mask = np.logical_and(mass_mask, flag)
         else:
-            mask = mass_mask
+            mask = mass_mask # add a mask for group['GroupPrimaryZoomTarget'] == 1 
+                             # else there are some massive groups that are not zoomed into 
 
         #Get index of subhalos which are fine
         mask_index = np.nonzero(mask)

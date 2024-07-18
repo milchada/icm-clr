@@ -61,7 +61,7 @@ class SimClrDataset(Dataset):
         
         #Load the transforms from the augmentation object
         if augmentation is None or augmentation is False:
-            self.transform = DefaultAugmentation().get_transforms()
+            self.transform = DefaultAugmentation().get_transforms() #and what is this?
         else:
             self.transform = augmentation.get_transforms()
         
@@ -116,9 +116,9 @@ class FitsDataset(SimClrDataset):
             for f in data_params['FILTERS']:
                 filter_list.append(hdul[f].data)
             
-        stretched_filter_list = self._stretch(filter_list)
+        stretched_filter_list = self._stretch(filter_list) #stretched between 0 and 1
 
-        stretched_filter_list = [np.array(f*(2**8 - 1), dtype=np.uint8) for f in stretched_filter_list]
+        stretched_filter_list = [np.array(f*(2**8 - 1), dtype=np.uint8) for f in stretched_filter_list] #stretched to between 0 and 255,as in RGB channels
         
         return np.concatenate(list(map(lambda x: x[...,np.newaxis], stretched_filter_list)), axis=2)
     
@@ -126,21 +126,6 @@ class FitsDataset(SimClrDataset):
         """Stretch channels"""
         raise NotImplementedError("This function is supposed to be overwritten!")
 
-class ConnorStretchDataset(FitsDataset):
-    
-    def _stretch_single_channel(self, x):
-        u_min = -0.05
-        u_max = 2. / 3.
-        u_a = np.exp(10.)
-        x = np.arcsinh(u_a*x) / np.arcsinh(u_a)
-        x = (x - u_min) / (u_max - u_min)
-        return x
-    
-    def _stretch(self, channels, ref_mag=26):
-        channels = [c*10**(0.4*(22.5-ref_mag)) for c in channels]
-        return list(map(lambda x: self._stretch_single_channel(x), channels))
-
-        
 class SingleStretchDataset(FitsDataset):
     '''Dataset for the HSC Realistic TNG Images'''
     
@@ -155,11 +140,8 @@ class SingleStretchDataset(FitsDataset):
     def _stretch_single_channel(self, x):
         """Perform a log stretch on x and normalize"""
         x[x<=0] = np.nan
-        x = np.log10(x)
-        x[x<-7] = np.nan
-        
-        a_min = np.nanmedian(x)
         a_max = np.nanquantile(self._get_central_crop(x), 0.99)
+        a_min = a_max - 5
         
         x = np.nan_to_num(x, nan=a_min, posinf=a_min, neginf=a_min)
         x = np.clip(x, a_min, a_max)
@@ -171,8 +153,7 @@ class SingleStretchDataset(FitsDataset):
     
     def _stretch(self, channels):
         return list(map(lambda x: self._stretch_single_channel(x), channels))
-    
-        
+
 class MultiStretchDataset(SingleStretchDataset):
 
     def _stretch(self, channels):

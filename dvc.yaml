@@ -1,23 +1,38 @@
 # -*- coding: utf-8 -*-
 stages:
-  #Preprocessing
+  #Extract labels and image paths
+  #-------------------------------------------------------
+  # frozen:true
+    extract:
+    cmd: python3 -m scripts.preprocessing.extract
+    params:
+      - extract 
+    deps:
+      - scripts/preprocessing/extract.py
+    outs:
+      - ./dataset_raw/
+  
+  #Train/validate/test split
+  #--------------------------------------------------------
   # frozen: true
-  #  prepare:
-  #  cmd: python3 -m scripts.preprocessing.prepare
-  #  params:
-  #    - prepare
-  #  deps:
-  #    - ./scripts/preprocessing/prepare.py
-  #  outs:
-  #    - ./dataset/
+    prepare:
+    cmd: python3 -m scripts.preprocessing.prepare
+    params:
+      - prepare
+    deps:
+      - ./scripts/preprocessing/prepare.py
+    outs:
+      - ./dataset/
 
-  # # visualize_matching:
-  # #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
-  # #  deps:
-  # #  - ./scripts/preprocessing/visualize_matching.ipynb
-  # #  - ./dataset/
-  # #Parameter Optimization
-  # #---------------------------------------------------------
+   # visualize_matching:
+   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/visualize_matching.ipynb
+   #  deps:
+   #  - ./scripts/preprocessing/visualize_matching.ipynb
+   #  - ./dataset/
+
+   #[OPTIONAL]: Parameter Optimization
+   #Recommended only if input data structure changes significantly
+   #---------------------------------------------------------
   # params_opt: 
   #   cmd: sbatch -W run_params_opt.sh
   #     params:
@@ -27,8 +42,9 @@ stages:
   #       - ./scripts/model/
   #     outs:
   #       - ./metrics/optuna_journal.log
-  #       - ./model/optuna/
-  # #Training
+  #:       - ./model/optuna/
+
+  # Train CLR
   #---------------------------------------------------------
   #  frozen: true
   train_clr:
@@ -44,9 +60,8 @@ stages:
     outs:
       - ./model/resnet.pt
 
-  #Resnet Analysis
+  #Analyse trained ResNet
   #---------------------------------------------------------
-
   #  frozen: true
   write_representation:
     cmd: python3 -m scripts.postprocessing.write_representation
@@ -71,6 +86,7 @@ stages:
   #  deps:
   #  - ./scripts/postprocessing/visualize_UMAP.ipynb
   #  - ./postprocessing/representation.npy
+  
   #compare_distributions:
   #  cmd: jupyter nbconvert --execute --to notebook --inplace ./scripts/postprocessing/compare_distributions.ipynb
   #  deps:
